@@ -29,6 +29,12 @@
 ;; blinky blinky
 (blink-cursor-mode +1)
 
+;; autocomplete in minibuffers
+(icomplete-mode +1)
+; (setq-default icicle-expand-input-to-common-match 4)
+
+
+
 ;; y or n
 (defalias 'yes-or-no-p 'y-or-n-p)
 
@@ -58,13 +64,21 @@
 (global-set-key "\C-c\C-e"
                 (lambda ()
                   (interactive)
-                  (find-file "~/.emacs"))
-)
+                  (find-file "~/.emacs.d/init.el")))
+
 ;; M-g is now the same as M-x goto-line
 (global-set-key "\eg" 'goto-line)
 
 ; spawn term with C-c C-s (s for shell)
 (global-set-key "\C-c\C-s" 'term)
+
+;; start ecb with C-c C-p
+(global-set-key "\C-c\C-p" 'ecb-minor-mode)
+
+;; SETTINGS
+
+;; Bar cursor please
+(setq-default cursor-type 'bar)
 
 ;; NEVER TABS. NEVER
 (setq-default indent-tabs-mode nil)

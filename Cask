@@ -12,6 +12,7 @@
 (depends-on "dash")
 (depends-on "ecb")
 (depends-on "epl")
+(depends-on "erlang")
 (depends-on "f")
 (depends-on "git-commit-mode")
 (depends-on "git-rebase-mode")
