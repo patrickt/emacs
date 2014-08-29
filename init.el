@@ -1,7 +1,9 @@
 ;; Patrick Thomson's .emacs file.
 
 ;; global requirements
-(mapcar 'require '(erlang recentf go-mode linum package saveplace))
+(require 'package)
+(require 'cask "~/.cask/cask.el")
+(cask-initialize)
 
 ;; load melpa and marmalade to start
 (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
@@ -31,9 +33,7 @@
 
 ;; autocomplete in minibuffers
 (icomplete-mode +1)
-; (setq-default icicle-expand-input-to-common-match 4)
-
-
+(setq-default icicle-expand-input-to-common-match 4)
 
 ;; y or n
 (defalias 'yes-or-no-p 'y-or-n-p)

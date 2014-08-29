@@ -1,4 +1,3 @@
-(source gnu)
 (source marmalade)
 (source melpa)
 
@@ -14,6 +13,7 @@
 (depends-on "epl")
 (depends-on "erlang")
 (depends-on "f")
+(depends-on "go-mode")
 (depends-on "git-commit-mode")
 (depends-on "git-rebase-mode")
 (depends-on "haskell-mode")
