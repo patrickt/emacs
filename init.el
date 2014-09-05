@@ -18,9 +18,10 @@
 (electric-pair-mode +1)
 
 ;; ECB
-(ecb-minor-mode +1)
+;; oh my god shut up
+(setq ecb-tip-of-the-day nil)
 
-;; Persist window setups
+(ecb-minor-mode +1)
 
 ;; Track recent files.
 (recentf-mode +1)
@@ -77,8 +78,22 @@
 
 ;; SETTINGS
 
+;; don't alarm bell when going to end of document
+(defun my-bell-function ()
+  (unless (memq this-command
+        '(isearch-abort abort-recursive-edit exit-minibuffer
+              keyboard-quit mwheel-scroll down up next-line previous-line
+              backward-char forward-char))
+    (ding)))
+(setq ring-bell-function 'my-bell-function)
+
 ;; Bar cursor please
 (setq-default cursor-type 'bar)
+
+;; please don't scroll so hard
+(setq mouse-wheel-scroll-amount '(1 ((shift) . 1)))
+
+(setq visual-bell t)
 
 ;; NEVER TABS. NEVER
 (setq-default indent-tabs-mode nil)
