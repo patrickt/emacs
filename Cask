@@ -18,6 +18,7 @@
 (depends-on "git-rebase-mode")
 (depends-on "go-mode")
 (depends-on "haskell-mode")
+(depends-on "highlight-indentation")
 (depends-on "icicles")
 (depends-on "keyfreq")
 (depends-on "magit")

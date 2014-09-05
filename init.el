@@ -118,6 +118,14 @@
 (set-keyboard-coding-system 'utf-8)
 (prefer-coding-system 'utf-8)
 
+;; HOOKS AND AUTO-MODES
+
+;; highlight indentation
+(add-hook 'prog-mode-hook '(lambda ()
+                             (highlight-indentation-mode +1)
+                             (highlight-indentation-current-column-mode +1)
+                             (auto-complete-mode +1)))
+
 ; execute erlang-mode when encountering .erl files
 (add-to-list 'auto-mode-alist '("\\.erl?$" . erlang-mode))
 
