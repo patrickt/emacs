@@ -32,6 +32,9 @@
 ;; blinky blinky
 (blink-cursor-mode +1)
 
+;; autocomplete
+(auto-complete-mode +1)
+
 ;; autocomplete in minibuffers
 (icomplete-mode +1)
 (setq-default icicle-expand-input-to-common-match 4)
@@ -75,6 +78,9 @@
 
 ;; start ecb with C-c C-p
 (global-set-key "\C-c\C-p" 'ecb-minor-mode)
+
+;; Compile current file
+(global-set-key (kbd "C-; c") 'compile)
 
 ;; SETTINGS
 
