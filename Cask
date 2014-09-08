@@ -18,6 +18,7 @@
 (depends-on "fic-ext-mode")
 (depends-on "flycheck")
 (depends-on "flycheck-haskell")
+(depends-on "flycheck-tip")
 (depends-on "git-commit-mode")
 (depends-on "git-rebase-mode")
 (depends-on "go-mode")
