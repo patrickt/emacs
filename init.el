@@ -57,30 +57,30 @@
 
 ;; KEYBOARD SHORTCUTS
 
-;; C-c C-r opens recent files. 
-(global-set-key "\C-c\C-r" 'recentf-open-files)
+;; C-; is my namespace
+(global-set-key (kbd "C-;") nil)
 
-;; C-c g (g for git) is magit
-;; C-c C-g is git-grep
-(global-set-key (kbd "\C-c g") 'magit-status)
+;; C-; r is recentf
+(global-set-key (kbd "C-; r") 'recentf-open-files)
 
+;; C-; g is git
+(global-set-key (kbd "C-; g") 'magit-status)
+
+;; C-; f is git-grep
 (autoload 'magit-grep "magit" "Grep for files" t)
+(global-set-key (kbd "C-; f") 'magit-grep)
 
-(global-set-key (kbd "\C-c\C-g") 'magit-grep)
-
-(global-set-key "\C-c\C-e"
+;; C-; e edits my .emacs setup
+(global-set-key (kbd "C-; e")
                 (lambda ()
                   (interactive)
                   (find-file "~/.emacs.d/init.el")))
 
-;; M-g is now the same as M-x goto-line
-(global-set-key "\eg" 'goto-line)
+;; C-; l is goto-line
+(global-set-key (kbd "C-; l") 'goto-line)
 
-; spawn term with C-c C-s (s for shell)
-(global-set-key "\C-c\C-s" 'term)
-
-;; start ecb with C-c C-p
-(global-set-key "\C-c\C-p" 'ecb-minor-mode)
+; C-; s spawns a shell
+(global-set-key (kbd "C-; s") 'term)
 
 ;; Compile current file
 (global-set-key (kbd "C-; c") 'compile)
@@ -107,16 +107,17 @@
 ;; NEVER TABS. NEVER
 (setq-default indent-tabs-mode nil)
 
-; fullscreen plz
-(add-to-list 'default-frame-alist '(fullscreen . fullboth))
+;; fullscreen plz
+(unless (eql system-type 'darwin)
+  (add-to-list 'default-frame-alist '(fullscreen . fullboth)))
 
-; emacs kindly stop leaving your trash everywhere
+;; emacs kindly stop leaving your trash everywhere
 (setq backup-directory-alist
       `((".*" . "~/.emacs.d/backups")))
 (setq auto-save-file-name-transforms
       `((".*" "~/.emacs.d/backups" t)))
 
-; Ensuring Unicode compliance (may not be necessary)
+;; Ensuring Unicode compliance (may not be necessary)
 (set-terminal-coding-system 'utf-8)
 (set-keyboard-coding-system 'utf-8)
 (prefer-coding-system 'utf-8)
@@ -127,7 +128,10 @@
 (add-hook 'prog-mode-hook '(lambda ()
                              (highlight-indentation-mode +1)
                              (highlight-indentation-current-column-mode +1)
-                             (auto-complete-mode +1)))
+                             (auto-complete-mode +1)
+                             (toggle-truncate-lines)))
+
+(add-hook 'c-mode-hook 'flycheck-mode)
 
 ; execute erlang-mode when encountering .erl files
 (add-to-list 'auto-mode-alist '("\\.erl?$" . erlang-mode))
