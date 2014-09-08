@@ -63,6 +63,9 @@
 ;; C-c g (g for git) is magit
 ;; C-c C-g is git-grep
 (global-set-key (kbd "\C-c g") 'magit-status)
+
+(autoload 'magit-grep "magit" "Grep for files" t)
+
 (global-set-key (kbd "\C-c\C-g") 'magit-grep)
 
 (global-set-key "\C-c\C-e"
