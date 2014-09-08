@@ -22,6 +22,7 @@
 (depends-on "git-commit-mode")
 (depends-on "git-rebase-mode")
 (depends-on "go-mode")
+(depends-on "goto-chg")
 (depends-on "haskell-mode")
 (depends-on "highlight-indentation")
 (depends-on "icicles")

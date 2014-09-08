@@ -35,7 +35,7 @@
 (tabbar-mode +1)
 
 ;; Flycheck, where possible.
-(flycheck-mode +1)
+(global-flycheck-mode +1)
 
 ;; Projectile, where possible.
 (projectile-global-mode +1)
@@ -43,8 +43,11 @@
 ;; blinky blinky
 (blink-cursor-mode +1)
 
+;; highlight parentheses
+(show-paren-mode +1)
+
 ;; autocomplete in minibuffers
-(icomplete-mode +1)
+(icomplete-mode 99)
 (setq-default icicle-expand-input-to-common-match 4)
 
 ;; delete selections, like LITERALLY EVERYWHERE ELSE
@@ -52,6 +55,27 @@
 
 ;; Highlight Fixmes and Todos.
 (fic-ext-mode +1)
+
+;; Icicle-mode
+(icicle-mode t)
+
+;; Semantic parsing for tags
+(semantic-mode t)
+
+;; Achievements
+(achievements-mode t)
+
+;; Column numbers in the gutter
+(column-number-mode)
+
+;; Line numbers everywhere
+(global-linum-mode)
+
+;; Highlight the current line
+(global-hl-line-mode)
+
+;; My wrists hurt
+(type-break-mode)
 
 ;; y or n
 (defalias 'yes-or-no-p 'y-or-n-p)
@@ -92,6 +116,9 @@
 ;; Find file in project
 (global-set-key (kbd "C-; p") 'projectile-find-file)
 
+(global-set-key (kbd "C-; .") 'goto-chg)
+
+(require 'autopair)
 (defun eol-then-newline ()
   "Move to EOL then insert a newline, a la Cmd-Ret in Textmate."
   (interactive)
@@ -122,7 +149,7 @@
 (setq mouse-wheel-scroll-amount '(1 ((shift) . 1)))
 
 ;; no dinging please
-(setq-default visual-bell t)
+(setq visual-bell t)
 
 ;; I don't know why everyone gets so bent out of shape over trailing whitespace, but I want in.
 (setq-default show-trailing-whitespace t)
@@ -183,11 +210,10 @@ tabbar.el v1.7."
 
 (add-hook 'erlang-mode-hook (lambda () (electric-indent-mode 0)))
 
-;; line numbers and line highlights
-(column-number-mode)
-(global-linum-mode)
-(global-hl-line-mode)
 (setq-default linum-format "%d ")
+
+;; show completions with force and verve
+(setq-default icicle-show-Completions-initially-flag t)
 
 ; does these do anything? unclear
 (require 'uniquify)
@@ -196,15 +222,14 @@ tabbar.el v1.7."
 ; default directory for minibuffer
 (setq default-directory "~/src")
 
-; blink matching parens
-(show-paren-mode)
+;; blink matching parens please
 (setq blink-matching-paren t)
 
-; miscellaneous modes
-(icicle-mode t)
-(semantic-mode t)
-(achievements-mode t)
+;; Save place in the file
 (setq-default save-place t)
+
+;; I don't care what version of Emacs this is.
+(setq inhibit-startup-screen t)
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
@@ -217,7 +242,6 @@ tabbar.el v1.7."
  '(ecb-options-version "2.40")
  '(fci-rule-color "#2e2e2e")
  '(flycheck-clang-include-path (quote ("/Users/Thomson/src/leopold/dablooms/src")))
- '(inhibit-startup-screen t)
  '(vc-annotate-background "#3b3b3b")
  '(vc-annotate-color-map (quote ((20 . "#dd5542") (40 . "#CC5542") (60 . "#fb8512") (80 . "#baba36") (100 . "#bdbc61") (120 . "#7d7c61") (140 . "#6abd50") (160 . "#6aaf50") (180 . "#6aa350") (200 . "#6a9550") (220 . "#6a8550") (240 . "#6a7550") (260 . "#9b55c3") (280 . "#6CA0A3") (300 . "#528fd1") (320 . "#5180b3") (340 . "#6380b3") (360 . "#DC8CC3"))))
  '(vc-annotate-very-old-color "#DC8CC3")
