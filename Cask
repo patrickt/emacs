@@ -7,6 +7,7 @@
 (depends-on "ample-zen-theme")
 (depends-on "assemblage-theme")
 (depends-on "auto-complete")
+(depends-on "autopair")
 (depends-on "badger-theme")
 (depends-on "cask")
 (depends-on "dash")

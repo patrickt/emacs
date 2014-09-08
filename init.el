@@ -15,7 +15,7 @@
 
 ;; Automatically indent and insert completing characters.
 (electric-indent-mode +1)
-(electric-pair-mode +1)
+(autopair-global-mode +1)
 
 ;; ECB
 ;; oh my god shut up
@@ -31,9 +31,6 @@
 
 ;; blinky blinky
 (blink-cursor-mode +1)
-
-;; autocomplete
-(auto-complete-mode +1)
 
 ;; autocomplete in minibuffers
 (icomplete-mode +1)
@@ -183,6 +180,7 @@
  '(custom-safe-themes (quote ("ad9fc392386f4859d28fe4ef3803585b51557838dbc072762117adad37e83585" "2b5aa66b7d5be41b18cc67f3286ae664134b95ccc4a86c9339c886dfd736132d" default)))
  '(ecb-options-version "2.40")
  '(fci-rule-color "#2e2e2e")
+ '(flycheck-clang-include-path (quote ("/Users/Thomson/src/leopold/dablooms/src")))
  '(inhibit-startup-screen t)
  '(vc-annotate-background "#3b3b3b")
  '(vc-annotate-color-map (quote ((20 . "#dd5542") (40 . "#CC5542") (60 . "#fb8512") (80 . "#baba36") (100 . "#bdbc61") (120 . "#7d7c61") (140 . "#6abd50") (160 . "#6aaf50") (180 . "#6aa350") (200 . "#6a9550") (220 . "#6a8550") (240 . "#6a7550") (260 . "#9b55c3") (280 . "#6CA0A3") (300 . "#528fd1") (320 . "#5180b3") (340 . "#6380b3") (360 . "#DC8CC3"))))
