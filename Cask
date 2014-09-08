@@ -15,6 +15,7 @@
 (depends-on "epl")
 (depends-on "erlang")
 (depends-on "f")
+(depends-on "fic-ext-mode")
 (depends-on "flycheck")
 (depends-on "flycheck-haskell")
 (depends-on "git-commit-mode")

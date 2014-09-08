@@ -5,7 +5,6 @@
 ;;; Commentary:
 ;; This should be portable between OS X and sane Linux distros.
 ;; Cask and Pallet must be installed first.
-;; TODO: write a shell script for that.
 
 ;;; Code:
 
@@ -51,6 +50,9 @@
 ;; delete selections, like LITERALLY EVERYWHERE ELSE
 (delete-selection-mode +1)
 
+;; Highlight Fixmes and Todos.
+(fic-ext-mode +1)
+
 ;; y or n
 (defalias 'yes-or-no-p 'y-or-n-p)
 
@@ -90,6 +92,14 @@
 ;; Find file in project
 (global-set-key (kbd "C-; p") 'projectile-find-file)
 
+(defun eol-then-newline ()
+  "Move to EOL then insert a newline, a la Cmd-Ret in Textmate."
+  (interactive)
+  (move-end-of-line nil)
+  (autopair-newline))
+
+(global-set-key (kbd "s-<return>") 'eol-then-newline)
+
 ;; SETTINGS
 
 ;; don't alarm bell when going to end of document
@@ -111,7 +121,11 @@
 ;; please don't scroll so hard
 (setq mouse-wheel-scroll-amount '(1 ((shift) . 1)))
 
+;; no dinging please
 (setq-default visual-bell t)
+
+;; I don't know why everyone gets so bent out of shape over trailing whitespace, but I want in.
+(setq-default show-trailing-whitespace t)
 
 ;; NEVER TABS. NEVER
 (setq-default indent-tabs-mode nil)
