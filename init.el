@@ -207,8 +207,10 @@ tabbar.el v1.7."
                            (add-hook 'before-save-hook 'gofmt-before-save)))
 
 ;; erlang indentation is fucky so don't do that
-
 (add-hook 'erlang-mode-hook (lambda () (electric-indent-mode 0)))
+
+;; TODO: look into eldoc for other languages.
+(add-hook 'emacs-lisp-hook 'eldoc-mode)
 
 (setq-default linum-format "%d ")
 
@@ -238,7 +240,7 @@ tabbar.el v1.7."
  ;; If there is more than one, they won't work right.
  '(ansi-color-names-vector ["black" "#d55e00" "#009e73" "#f8ec59" "#0072b2" "#cc79a7" "#56b4e9" "white"])
  '(custom-enabled-themes (quote (badger)))
- '(custom-safe-themes (quote ("ad9fc392386f4859d28fe4ef3803585b51557838dbc072762117adad37e83585" "2b5aa66b7d5be41b18cc67f3286ae664134b95ccc4a86c9339c886dfd736132d" default)))
+ '(custom-safe-themes (quote ("3b819bba57a676edf6e4881bd38c777f96d1aa3b3b5bc21d8266fa5b0d0f1ebf" "ad9fc392386f4859d28fe4ef3803585b51557838dbc072762117adad37e83585" "2b5aa66b7d5be41b18cc67f3286ae664134b95ccc4a86c9339c886dfd736132d" default)))
  '(ecb-options-version "2.40")
  '(fci-rule-color "#2e2e2e")
  '(flycheck-clang-include-path (quote ("/Users/Thomson/src/leopold/dablooms/src")))

@@ -39,3 +39,4 @@
 (depends-on "shut-up")
 (depends-on "smooth-scrolling")
 (depends-on "tabbar")
+(depends-on "zenburn-theme")
