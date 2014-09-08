@@ -1,4 +1,13 @@
-;; Patrick Thomson's .emacs file.
+;;; init.el --- Patrick Thomson's .emacs file
+
+;;; This file is in the public domain.
+
+;;; Commentary:
+;; This should be portable between OS X and sane Linux distros.
+;; Cask and Pallet must be installed first.
+;; TODO: write a shell script for that.
+
+;;; Code:
 
 ;; global requirements
 (require 'package)
@@ -18,9 +27,6 @@
 (autopair-global-mode +1)
 
 ;; ECB
-;; oh my god shut up
-(setq ecb-tip-of-the-day nil)
-
 (ecb-minor-mode +1)
 
 ;; Track recent files.
@@ -29,6 +35,12 @@
 ;; Tabs, please.
 (tabbar-mode +1)
 
+;; Flycheck, where possible.
+(flycheck-mode +1)
+
+;; Projectile, where possible.
+(projectile-global-mode +1)
+
 ;; blinky blinky
 (blink-cursor-mode +1)
 
@@ -36,21 +48,11 @@
 (icomplete-mode +1)
 (setq-default icicle-expand-input-to-common-match 4)
 
+;; delete selections, like LITERALLY EVERYWHERE ELSE
+(delete-selection-mode +1)
+
 ;; y or n
 (defalias 'yes-or-no-p 'y-or-n-p)
-
-;; TABS
-
- (defun my-tabbar-buffer-groups ()
-   "Returns the name of the tab group names the current buffer belongs to.
- There are two groups: Emacs buffers (those whose name starts with '*', plus
- dired buffers), and the rest.  This works at least with Emacs v24.2 using
- tabbar.el v1.7."
-   (list (cond ((string-equal "*" (substring (buffer-name) 0 1)) "emacs")
-               ((eq major-mode 'dired-mode) "emacs")
-               (t "user"))))
-
-(setq tabbar-buffer-groups-function 'my-tabbar-buffer-groups)
 
 ;; KEYBOARD SHORTCUTS
 
@@ -82,10 +84,17 @@
 ;; Compile current file
 (global-set-key (kbd "C-; c") 'compile)
 
+;; Goto next error
+(global-set-key (kbd "C-; d") 'flycheck-tip-cycle)
+
+;; Find file in project
+(global-set-key (kbd "C-; p") 'projectile-find-file)
+
 ;; SETTINGS
 
 ;; don't alarm bell when going to end of document
 (defun my-bell-function ()
+  "Prevents the bell from going off during scroll events."
   (unless (memq this-command
         '(isearch-abort abort-recursive-edit exit-minibuffer
               keyboard-quit mwheel-scroll down up next-line previous-line
@@ -93,13 +102,16 @@
     (ding)))
 (setq ring-bell-function 'my-bell-function)
 
+;; oh my god shut up ECB
+(setq-default ecb-tip-of-the-day nil)
+
 ;; Bar cursor please
 (setq-default cursor-type 'bar)
 
 ;; please don't scroll so hard
 (setq mouse-wheel-scroll-amount '(1 ((shift) . 1)))
 
-(setq visual-bell t)
+(setq-default visual-bell t)
 
 ;; NEVER TABS. NEVER
 (setq-default indent-tabs-mode nil)
@@ -119,6 +131,19 @@
 (set-keyboard-coding-system 'utf-8)
 (prefer-coding-system 'utf-8)
 
+;; TABS
+
+(defun my-tabbar-buffer-groups ()
+  "Group tabs by whether they are Emacs-local or user-opened.
+There are two groups: Emacs buffers (those whose name starts with '*', plus
+dired buffers), and the rest.  This works at least with Emacs v24.2 using
+tabbar.el v1.7."
+   (list (cond ((string-equal "*" (substring (buffer-name) 0 1)) "emacs")
+               ((eq major-mode 'dired-mode) "emacs")
+               (t "user"))))
+
+(setq-default tabbar-buffer-groups-function 'my-tabbar-buffer-groups)
+
 ;; HOOKS AND AUTO-MODES
 
 ;; highlight indentation
@@ -128,30 +153,27 @@
                              (auto-complete-mode +1)
                              (toggle-truncate-lines)))
 
-(add-hook 'c-mode-hook 'flycheck-mode)
-
-; execute erlang-mode when encountering .erl files
+;; execute erlang-mode when encountering .erl files
 (add-to-list 'auto-mode-alist '("\\.erl?$" . erlang-mode))
 
-; haskell
+;; haskell
 (add-to-list 'auto-mode-alist '("\\.hs?$" . haskell-mode))
 (add-hook 'haskell-mode-hook 'haskell-indent-mode)
 (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
 
-; run go-fmt before saving go code
-(add-hook 'before-save-hook 'gofmt-before-save)
+;; run go-fmt before saving go code
+(add-hook 'go-mode-hook '(lambda ()
+                           (add-hook 'before-save-hook 'gofmt-before-save)))
 
 ;; erlang indentation is fucky so don't do that
 
 (add-hook 'erlang-mode-hook (lambda () (electric-indent-mode 0)))
 
-(projectile-global-mode +1)
-
 ;; line numbers and line highlights
 (column-number-mode)
 (global-linum-mode)
 (global-hl-line-mode)
-(setq linum-format "%d ")
+(setq-default linum-format "%d ")
 
 ; does these do anything? unclear
 (require 'uniquify)
@@ -193,4 +215,5 @@
  ;; If there is more than one, they won't work right.
  )
 
-
+(provide 'init)
+;;; init.el ends here
