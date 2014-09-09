@@ -1,3 +1,4 @@
+
 ;;; init.el --- Patrick Thomson's .emacs file
 
 ;;; This file is in the public domain.
@@ -19,14 +20,14 @@
 
 (package-initialize)
 
+(require 'powerline)
+(powerline-default-theme)
+
 ;; GLOBAL MODES
 
 ;; Automatically indent and insert completing characters.
 (electric-indent-mode +1)
 (autopair-global-mode +1)
-
-;; ECB
-(ecb-minor-mode +1)
 
 ;; Track recent files.
 (recentf-mode +1)
@@ -211,6 +212,9 @@ tabbar.el v1.7."
 
 ;; TODO: look into eldoc for other languages.
 (add-hook 'emacs-lisp-hook 'eldoc-mode)
+
+;; Word wrap when writing Markdown
+(add-hook 'markdown-mode-hook 'visual-line-mode)
 
 (setq-default linum-format "%d ")
 
