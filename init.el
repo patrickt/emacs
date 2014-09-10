@@ -117,7 +117,7 @@
 ;; Find file in project
 (global-set-key (kbd "C-; p") 'projectile-find-file)
 
-(global-set-key (kbd "C-; .") 'goto-chg)
+(global-set-key (kbd "C-; .") 'goto-last-change)
 
 (require 'autopair)
 (defun eol-then-newline ()
