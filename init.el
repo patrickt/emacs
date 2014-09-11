@@ -106,10 +106,10 @@
 (global-set-key (kbd "C-; l") 'goto-line)
 
 ; C-; s spawns a shell
-(global-set-key (kbd "C-; s") 'term)
+(global-set-key (kbd "C-; s") 'ansi-term)
 
 ;; Compile current file
-(global-set-key (kbd "C-; c") 'compile)
+(global-set-key (kbd "C-; c") 'projectile-compile-project)
 
 ;; Goto next error
 (global-set-key (kbd "C-; d") 'flycheck-tip-cycle)
@@ -117,6 +117,10 @@
 ;; Find file in project
 (global-set-key (kbd "C-; p") 'projectile-find-file)
 
+;; Projectile commander
+(global-set-key (kbd "C-; P") 'projectile-commander)
+
+;; Go to last change
 (global-set-key (kbd "C-; .") 'goto-last-change)
 
 (require 'autopair)
@@ -124,7 +128,7 @@
   "Move to EOL then insert a newline, a la Cmd-Ret in Textmate."
   (interactive)
   (move-end-of-line nil)
-  (autopair-newline))
+  (newline-and-indent))
 
 (global-set-key (kbd "s-<return>") 'eol-then-newline)
 
@@ -167,6 +171,9 @@
       `((".*" . "~/.emacs.d/backups")))
 (setq auto-save-file-name-transforms
       `((".*" "~/.emacs.d/backups" t)))
+
+;; don't go crazy with the autocompletion 
+(setq icicle-icomplete-mode-max-candidates 25)
 
 ;; Ensuring Unicode compliance (may not be necessary)
 (set-terminal-coding-system 'utf-8)
