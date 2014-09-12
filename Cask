@@ -1,7 +1,6 @@
 (source marmalade)
 (source melpa)
 
-(depends-on "achievements")
 (depends-on "afternoon-theme")
 (depends-on "ample-theme")
 (depends-on "ample-zen-theme")

@@ -1,4 +1,3 @@
-
 ;;; init.el --- Patrick Thomson's .emacs file
 
 ;;; This file is in the public domain.
@@ -63,9 +62,6 @@
 ;; Semantic parsing for tags
 (semantic-mode t)
 
-;; Achievements
-(achievements-mode t)
-
 ;; Column numbers in the gutter
 (column-number-mode)
 
@@ -75,8 +71,11 @@
 ;; Highlight the current line
 (global-hl-line-mode)
 
-;; My wrists hurt
-(type-break-mode)
+;; Screw you, Emacs
+(cua-mode)
+
+;; Autorevert
+(global-auto-revert-mode t)
 
 ;; y or n
 (defalias 'yes-or-no-p 'y-or-n-p)
@@ -123,7 +122,14 @@
 ;; Go to last change
 (global-set-key (kbd "C-; .") 'goto-last-change)
 
-(require 'autopair)
+;; Shortcut for M-x
+(global-set-key (kbd "C-; ;") 'execute-extended-command)
+
+(defun close-all-buffers ()
+  "Close all buffers."
+  (interactive)
+  (mapc 'kill-buffer (buffer-list)))
+
 (defun eol-then-newline ()
   "Move to EOL then insert a newline, a la Cmd-Ret in Textmate."
   (interactive)
@@ -155,9 +161,6 @@
 
 ;; no dinging please
 (setq visual-bell t)
-
-;; I don't know why everyone gets so bent out of shape over trailing whitespace, but I want in.
-(setq-default show-trailing-whitespace t)
 
 ;; NEVER TABS. NEVER
 (setq-default indent-tabs-mode nil)
