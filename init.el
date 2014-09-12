@@ -25,36 +25,36 @@
 ;; GLOBAL MODES
 
 ;; Automatically indent and insert completing characters.
-(electric-indent-mode +1)
-(autopair-global-mode +1)
+(electric-indent-mode t)
+(autopair-global-mode t)
 
 ;; Track recent files.
-(recentf-mode +1)
+(recentf-mode t)
 
 ;; Tabs, please.
-(tabbar-mode +1)
+(tabbar-mode t)
 
 ;; Flycheck, where possible.
-(global-flycheck-mode +1)
+(global-flycheck-mode t)
 
 ;; Projectile, where possible.
-(projectile-global-mode +1)
+(projectile-global-mode t)
 
 ;; blinky blinky
-(blink-cursor-mode +1)
+(blink-cursor-mode t)
 
 ;; highlight parentheses
-(show-paren-mode +1)
+(show-paren-mode t)
 
 ;; autocomplete in minibuffers
 (icomplete-mode 99)
 (setq-default icicle-expand-input-to-common-match 4)
 
 ;; delete selections, like LITERALLY EVERYWHERE ELSE
-(delete-selection-mode +1)
+(delete-selection-mode t)
 
 ;; Highlight Fixmes and Todos.
-(fic-ext-mode +1)
+(fic-ext-mode t)
 
 ;; Icicle-mode
 (icicle-mode t)
@@ -63,16 +63,19 @@
 (semantic-mode t)
 
 ;; Column numbers in the gutter
-(column-number-mode)
+(column-number-mode t)
 
 ;; Line numbers everywhere
-(global-linum-mode)
+(global-linum-mode t)
 
 ;; Highlight the current line
-(global-hl-line-mode)
+(global-hl-line-mode t)
 
 ;; Screw you, Emacs
-(cua-mode)
+(cua-mode t)
+
+;; Snippets
+(yas-global-mode t)
 
 ;; Autorevert
 (global-auto-revert-mode t)

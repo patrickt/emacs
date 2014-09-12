@@ -1,6 +1,7 @@
 (source marmalade)
 (source melpa)
 
+(depends-on "achievements")
 (depends-on "afternoon-theme")
 (depends-on "ample-theme")
 (depends-on "ample-zen-theme")
@@ -41,4 +42,5 @@
 (depends-on "smooth-scrolling")
 (depends-on "tabbar")
 (depends-on "typopunct")
+(depends-on "yasnippet")
 (depends-on "zenburn-theme")
