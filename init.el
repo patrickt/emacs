@@ -56,8 +56,8 @@
 ;; Highlight Fixmes and Todos.
 (fic-ext-mode t)
 
-;; Icicle-mode
-(icicle-mode t)
+;; Ido-mode
+(ido-mode t)
 
 ;; Semantic parsing for tags
 (semantic-mode t)
@@ -87,6 +87,9 @@
 
 ;; C-; is my namespace
 (global-set-key (kbd "C-;") nil)
+
+;; C-; C-; is ESC-prefix
+(global-set-key (kbd "C-; C-;") 'ESC-prefix)
 
 ;; C-; r is recentf
 (global-set-key (kbd "C-; r") 'recentf-open-files)
@@ -163,7 +166,7 @@
 (setq mouse-wheel-scroll-amount '(1 ((shift) . 1)))
 
 ;; no dinging please
-(setq visual-bell t)
+(setq-default visual-bell t)
 
 ;; NEVER TABS. NEVER
 (setq-default indent-tabs-mode nil)
@@ -178,8 +181,8 @@
 (setq auto-save-file-name-transforms
       `((".*" "~/.emacs.d/backups" t)))
 
-;; don't go crazy with the autocompletion 
-(setq icicle-icomplete-mode-max-candidates 25)
+;; don't go crazy with the autocompletion
+(setq-default icicle-icomplete-mode-max-candidates 25)
 
 ;; Ensuring Unicode compliance (may not be necessary)
 (set-terminal-coding-system 'utf-8)
@@ -256,8 +259,9 @@ tabbar.el v1.7."
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(ansi-color-names-vector ["black" "#d55e00" "#009e73" "#f8ec59" "#0072b2" "#cc79a7" "#56b4e9" "white"])
+ '(ansi-term-color-vector [unspecified "#073642" "#dc322f" "#859900" "#b58900" "#268bd2" "#6c71c4" "#268bd2" "#eee8d5"])
  '(custom-enabled-themes (quote (badger)))
- '(custom-safe-themes (quote ("3b819bba57a676edf6e4881bd38c777f96d1aa3b3b5bc21d8266fa5b0d0f1ebf" "ad9fc392386f4859d28fe4ef3803585b51557838dbc072762117adad37e83585" "2b5aa66b7d5be41b18cc67f3286ae664134b95ccc4a86c9339c886dfd736132d" default)))
+ '(custom-safe-themes (quote ("f0ea6118d1414b24c2e4babdc8e252707727e7b4ff2e791129f240a2b3093e32" "ae8d0f1f36460f3705b583970188e4fbb145805b7accce0adb41031d99bd2580" "51bea7765ddaee2aac2983fac8099ec7d62dff47b708aa3595ad29899e9e9e44" "1affe85e8ae2667fb571fc8331e1e12840746dae5c46112d5abb0c3a973f5f5a" "41b6698b5f9ab241ad6c30aea8c9f53d539e23ad4e3963abff4b57c0f8bf6730" "978ff9496928cc94639cb1084004bf64235c5c7fb0cfbcc38a3871eb95fa88f6" "f41fd682a3cd1e16796068a2ca96e82cfd274e58b978156da0acce4d56f2b0d5" "de2c46ed1752b0d0423cde9b6401062b67a6a1300c068d5d7f67725adc6c3afb" "e53cc4144192bb4e4ed10a3fa3e7442cae4c3d231df8822f6c02f1220a0d259a" "3b819bba57a676edf6e4881bd38c777f96d1aa3b3b5bc21d8266fa5b0d0f1ebf" "ad9fc392386f4859d28fe4ef3803585b51557838dbc072762117adad37e83585" "2b5aa66b7d5be41b18cc67f3286ae664134b95ccc4a86c9339c886dfd736132d" default)))
  '(ecb-options-version "2.40")
  '(fci-rule-color "#2e2e2e")
  '(flycheck-clang-include-path (quote ("/Users/Thomson/src/leopold/dablooms/src")))
