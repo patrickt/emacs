@@ -1,3 +1,4 @@
+
 ;;; init.el --- Patrick Thomson's .emacs file
 
 ;;; This file is in the public domain.
@@ -48,7 +49,7 @@
 
 ;; autocomplete in minibuffers
 (icomplete-mode 99)
-(setq-default icicle-expand-input-to-common-match 4)
+; (setq-default icicle-expand-input-to-common-match 4)
 
 ;; delete selections, like LITERALLY EVERYWHERE ELSE
 (delete-selection-mode t)
@@ -75,10 +76,14 @@
 (cua-mode t)
 
 ;; Snippets
+(require 'yasnippet)
 (yas-global-mode t)
 
 ;; Autorevert
 (global-auto-revert-mode t)
+
+;; Load keychain
+(keychain-refresh-environment)
 
 ;; y or n
 (defalias 'yes-or-no-p 'y-or-n-p)
@@ -107,6 +112,11 @@
                   (interactive)
                   (find-file "~/.emacs.d/init.el")))
 
+(global-set-key (kbd "C-; z")
+                (lambda ()
+                  (interactive)
+                  (find-file "~/.zshrc")))
+
 ;; C-; l is goto-line
 (global-set-key (kbd "C-; l") 'goto-line)
 
@@ -131,10 +141,25 @@
 ;; Shortcut for M-x
 (global-set-key (kbd "C-; ;") 'execute-extended-command)
 
+;; Go to other related file
+(global-set-key (kbd "C-; o") 'ff-find-other-file)
+
 (defun close-all-buffers ()
   "Close all buffers."
   (interactive)
   (mapc 'kill-buffer (buffer-list)))
+
+(defun switch-to-previous-buffer ()
+  "Switch to previously open buffer.
+Repeated invocations toggle between the two most recently open buffers."
+  (interactive)
+  (switch-to-buffer (other-buffer (current-buffer) 1)))
+
+(global-set-key (kbd "C-'") 'switch-to-previous-buffer)
+
+(global-set-key (kbd "C-; SPC") 'yas-expand-from-trigger-key)
+
+
 
 (defun eol-then-newline ()
   "Move to EOL then insert a newline, a la Cmd-Ret in Textmate."
@@ -157,10 +182,14 @@
 (setq ring-bell-function 'my-bell-function)
 
 ;; oh my god shut up ECB
-(setq-default ecb-tip-of-the-day nil)
+(require 'ecb)
+(setq ecb-tip-of-the-day nil)
 
 ;; Bar cursor please
 (setq-default cursor-type 'bar)
+
+;; yasnippet, please be quiet
+(setq yas-verbosity 1)
 
 ;; please don't scroll so hard
 (setq mouse-wheel-scroll-amount '(1 ((shift) . 1)))
@@ -189,6 +218,9 @@
 (set-keyboard-coding-system 'utf-8)
 (prefer-coding-system 'utf-8)
 
+;; point erlang flycheck in the right direction
+(setq-default flycheck-erlang-executable "/usr/local/erl/bin/erlc")
+
 ;; TABS
 
 (defun my-tabbar-buffer-groups ()
@@ -208,14 +240,13 @@ tabbar.el v1.7."
 (add-hook 'prog-mode-hook '(lambda ()
                              (highlight-indentation-mode +1)
                              (highlight-indentation-current-column-mode +1)
-                             (auto-complete-mode +1)
-                             (toggle-truncate-lines)))
+                             (auto-complete-mode +1)))
 
 ;; execute erlang-mode when encountering .erl files
 (add-to-list 'auto-mode-alist '("\\.erl?$" . erlang-mode))
 
 ;; haskell
-(add-to-list 'auto-mode-alist '("\\.hs?$" . haskell-mode))
+(add-to-list 'auto-mode-alist '("\\.hs$" . haskell-mode))
 (add-hook 'haskell-mode-hook 'haskell-indent-mode)
 (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
 
@@ -229,10 +260,14 @@ tabbar.el v1.7."
 ;; TODO: look into eldoc for other languages.
 (add-hook 'emacs-lisp-hook 'eldoc-mode)
 
+;; C eldoc mode
+(add-hook 'c-mode-hook 'c-turn-on-eldoc-mode)
+
 ;; Word wrap when writing Markdown
 (add-hook 'markdown-mode-hook 'visual-line-mode)
 
-(setq-default linum-format "%d ")
+(require 'linum)
+(setq linum-format "%d ")
 
 ;; show completions with force and verve
 (setq-default icicle-show-Completions-initially-flag t)
@@ -261,7 +296,7 @@ tabbar.el v1.7."
  '(ansi-color-names-vector ["black" "#d55e00" "#009e73" "#f8ec59" "#0072b2" "#cc79a7" "#56b4e9" "white"])
  '(ansi-term-color-vector [unspecified "#073642" "#dc322f" "#859900" "#b58900" "#268bd2" "#6c71c4" "#268bd2" "#eee8d5"])
  '(custom-enabled-themes (quote (badger)))
- '(custom-safe-themes (quote ("f0ea6118d1414b24c2e4babdc8e252707727e7b4ff2e791129f240a2b3093e32" "ae8d0f1f36460f3705b583970188e4fbb145805b7accce0adb41031d99bd2580" "51bea7765ddaee2aac2983fac8099ec7d62dff47b708aa3595ad29899e9e9e44" "1affe85e8ae2667fb571fc8331e1e12840746dae5c46112d5abb0c3a973f5f5a" "41b6698b5f9ab241ad6c30aea8c9f53d539e23ad4e3963abff4b57c0f8bf6730" "978ff9496928cc94639cb1084004bf64235c5c7fb0cfbcc38a3871eb95fa88f6" "f41fd682a3cd1e16796068a2ca96e82cfd274e58b978156da0acce4d56f2b0d5" "de2c46ed1752b0d0423cde9b6401062b67a6a1300c068d5d7f67725adc6c3afb" "e53cc4144192bb4e4ed10a3fa3e7442cae4c3d231df8822f6c02f1220a0d259a" "3b819bba57a676edf6e4881bd38c777f96d1aa3b3b5bc21d8266fa5b0d0f1ebf" "ad9fc392386f4859d28fe4ef3803585b51557838dbc072762117adad37e83585" "2b5aa66b7d5be41b18cc67f3286ae664134b95ccc4a86c9339c886dfd736132d" default)))
+ '(custom-safe-themes (quote ("9bac44c2b4dfbb723906b8c491ec06801feb57aa60448d047dbfdbd1a8650897" "f0ea6118d1414b24c2e4babdc8e252707727e7b4ff2e791129f240a2b3093e32" "ae8d0f1f36460f3705b583970188e4fbb145805b7accce0adb41031d99bd2580" "51bea7765ddaee2aac2983fac8099ec7d62dff47b708aa3595ad29899e9e9e44" "1affe85e8ae2667fb571fc8331e1e12840746dae5c46112d5abb0c3a973f5f5a" "41b6698b5f9ab241ad6c30aea8c9f53d539e23ad4e3963abff4b57c0f8bf6730" "978ff9496928cc94639cb1084004bf64235c5c7fb0cfbcc38a3871eb95fa88f6" "f41fd682a3cd1e16796068a2ca96e82cfd274e58b978156da0acce4d56f2b0d5" "de2c46ed1752b0d0423cde9b6401062b67a6a1300c068d5d7f67725adc6c3afb" "e53cc4144192bb4e4ed10a3fa3e7442cae4c3d231df8822f6c02f1220a0d259a" "3b819bba57a676edf6e4881bd38c777f96d1aa3b3b5bc21d8266fa5b0d0f1ebf" "ad9fc392386f4859d28fe4ef3803585b51557838dbc072762117adad37e83585" "2b5aa66b7d5be41b18cc67f3286ae664134b95ccc4a86c9339c886dfd736132d" default)))
  '(ecb-options-version "2.40")
  '(fci-rule-color "#2e2e2e")
  '(flycheck-clang-include-path (quote ("/Users/Thomson/src/leopold/dablooms/src")))
