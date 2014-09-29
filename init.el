@@ -1,4 +1,3 @@
-
 ;;; init.el --- Patrick Thomson's .emacs file
 
 ;;; This file is in the public domain.
@@ -288,28 +287,9 @@ tabbar.el v1.7."
 ;; I don't care what version of Emacs this is.
 (setq inhibit-startup-screen t)
 
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(ansi-color-names-vector ["black" "#d55e00" "#009e73" "#f8ec59" "#0072b2" "#cc79a7" "#56b4e9" "white"])
- '(ansi-term-color-vector [unspecified "#073642" "#dc322f" "#859900" "#b58900" "#268bd2" "#6c71c4" "#268bd2" "#eee8d5"])
- '(custom-enabled-themes (quote (badger)))
- '(custom-safe-themes (quote ("9bac44c2b4dfbb723906b8c491ec06801feb57aa60448d047dbfdbd1a8650897" "f0ea6118d1414b24c2e4babdc8e252707727e7b4ff2e791129f240a2b3093e32" "ae8d0f1f36460f3705b583970188e4fbb145805b7accce0adb41031d99bd2580" "51bea7765ddaee2aac2983fac8099ec7d62dff47b708aa3595ad29899e9e9e44" "1affe85e8ae2667fb571fc8331e1e12840746dae5c46112d5abb0c3a973f5f5a" "41b6698b5f9ab241ad6c30aea8c9f53d539e23ad4e3963abff4b57c0f8bf6730" "978ff9496928cc94639cb1084004bf64235c5c7fb0cfbcc38a3871eb95fa88f6" "f41fd682a3cd1e16796068a2ca96e82cfd274e58b978156da0acce4d56f2b0d5" "de2c46ed1752b0d0423cde9b6401062b67a6a1300c068d5d7f67725adc6c3afb" "e53cc4144192bb4e4ed10a3fa3e7442cae4c3d231df8822f6c02f1220a0d259a" "3b819bba57a676edf6e4881bd38c777f96d1aa3b3b5bc21d8266fa5b0d0f1ebf" "ad9fc392386f4859d28fe4ef3803585b51557838dbc072762117adad37e83585" "2b5aa66b7d5be41b18cc67f3286ae664134b95ccc4a86c9339c886dfd736132d" default)))
- '(ecb-options-version "2.40")
- '(fci-rule-color "#2e2e2e")
- '(flycheck-clang-include-path (quote ("/Users/Thomson/src/leopold/dablooms/src")))
- '(vc-annotate-background "#3b3b3b")
- '(vc-annotate-color-map (quote ((20 . "#dd5542") (40 . "#CC5542") (60 . "#fb8512") (80 . "#baba36") (100 . "#bdbc61") (120 . "#7d7c61") (140 . "#6abd50") (160 . "#6aaf50") (180 . "#6aa350") (200 . "#6a9550") (220 . "#6a8550") (240 . "#6a7550") (260 . "#9b55c3") (280 . "#6CA0A3") (300 . "#528fd1") (320 . "#5180b3") (340 . "#6380b3") (360 . "#DC8CC3"))))
- '(vc-annotate-very-old-color "#DC8CC3")
- '(vc-follow-symlinks nil))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
+;; Load per-machine settings.
+(setq custom-file "~/.emacs.d/custom.el")
+(load custom-file)
 
 (provide 'init)
 ;;; init.el ends here
