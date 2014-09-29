@@ -19,10 +19,23 @@
 
 (package-initialize)
 
-(require 'powerline)
-(powerline-default-theme)
+;; Load per-machine settings.
+(setq custom-file "~/.emacs.d/custom.el")
+(load custom-file)
 
 ;; GLOBAL MODES
+
+;; Smart modeline.
+(require 'smart-mode-line)
+(sml/setup)
+(sml/apply-theme 'respectful)
+
+;; Rich minority mode
+(require 'rich-minority)
+(rich-minority-mode 1)
+
+;; Break me of these awful habits
+(guru-global-mode 1)
 
 ;; Automatically indent and insert completing characters.
 (electric-indent-mode t)
@@ -64,6 +77,12 @@
 
 ;; Column numbers in the gutter
 (column-number-mode t)
+
+;; Display time mode
+(display-time-mode t)
+
+;; Show the battery
+(display-battery-mode t)
 
 ;; Line numbers everywhere
 (global-linum-mode t)
@@ -220,6 +239,15 @@ Repeated invocations toggle between the two most recently open buffers."
 ;; point erlang flycheck in the right direction
 (setq-default flycheck-erlang-executable "/usr/local/erl/bin/erlc")
 
+;; Modeline customization
+(setq rm-excluded-modes '(" yas"
+                          " pair"
+                          " guru"
+                          " |"
+                          " ||"
+                          " AC"
+                          ))
+
 ;; TABS
 
 (defun my-tabbar-buffer-groups ()
@@ -286,10 +314,6 @@ tabbar.el v1.7."
 
 ;; I don't care what version of Emacs this is.
 (setq inhibit-startup-screen t)
-
-;; Load per-machine settings.
-(setq custom-file "~/.emacs.d/custom.el")
-(load custom-file)
 
 (provide 'init)
 ;;; init.el ends here
