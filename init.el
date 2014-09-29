@@ -28,11 +28,6 @@
 ;; Smart modeline.
 (require 'smart-mode-line)
 (sml/setup)
-(sml/apply-theme 'respectful)
-
-;; Rich minority mode
-(require 'rich-minority)
-(rich-minority-mode 1)
 
 ;; Break me of these awful habits
 (guru-global-mode 1)
@@ -61,7 +56,6 @@
 
 ;; autocomplete in minibuffers
 (icomplete-mode 99)
-; (setq-default icicle-expand-input-to-common-match 4)
 
 ;; delete selections, like LITERALLY EVERYWHERE ELSE
 (delete-selection-mode t)
@@ -228,9 +222,6 @@ Repeated invocations toggle between the two most recently open buffers."
 (setq auto-save-file-name-transforms
       `((".*" "~/.emacs.d/backups" t)))
 
-;; don't go crazy with the autocompletion
-(setq-default icicle-icomplete-mode-max-candidates 25)
-
 ;; Ensuring Unicode compliance (may not be necessary)
 (set-terminal-coding-system 'utf-8)
 (set-keyboard-coding-system 'utf-8)
@@ -240,13 +231,31 @@ Repeated invocations toggle between the two most recently open buffers."
 (setq-default flycheck-erlang-executable "/usr/local/erl/bin/erlc")
 
 ;; Modeline customization
-(setq rm-excluded-modes '(" yas"
-                          " pair"
-                          " guru"
-                          " |"
-                          " ||"
-                          " AC"
-                          ))
+(setq-default rm-blacklist '(" yas"
+                             " pair"
+                             " guru"
+                             " |"
+                             " ||"
+                             " AC"
+                             ))
+
+(require 'linum)
+(setq linum-format "%d ")
+
+;; require a final newline because POSIX, motherfuckers
+(setq require-final-newline t)
+
+; default directory for minibuffer
+(setq default-directory "~/src")
+
+;; blink matching parens please
+(setq blink-matching-paren t)
+
+;; Save place in the file
+(setq-default save-place t)
+
+;; I don't care what version of Emacs this is.
+(setq inhibit-startup-screen t)
 
 ;; TABS
 
@@ -292,28 +301,6 @@ tabbar.el v1.7."
 
 ;; Word wrap when writing Markdown
 (add-hook 'markdown-mode-hook 'visual-line-mode)
-
-(require 'linum)
-(setq linum-format "%d ")
-
-;; show completions with force and verve
-(setq-default icicle-show-Completions-initially-flag t)
-
-; does these do anything? unclear
-(require 'uniquify)
-(defconst font-lock-maximum-decoration t)
-
-; default directory for minibuffer
-(setq default-directory "~/src")
-
-;; blink matching parens please
-(setq blink-matching-paren t)
-
-;; Save place in the file
-(setq-default save-place t)
-
-;; I don't care what version of Emacs this is.
-(setq inhibit-startup-screen t)
 
 (provide 'init)
 ;;; init.el ends here
