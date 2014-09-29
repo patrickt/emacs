@@ -29,9 +29,6 @@
 (require 'smart-mode-line)
 (sml/setup)
 
-;; Break me of these awful habits
-(guru-global-mode 1)
-
 ;; Automatically indent and insert completing characters.
 (electric-indent-mode t)
 (autopair-global-mode t)
@@ -237,6 +234,7 @@ Repeated invocations toggle between the two most recently open buffers."
                              " |"
                              " ||"
                              " AC"
+                             " MRev"
                              ))
 
 (require 'linum)
