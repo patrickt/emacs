@@ -75,6 +75,10 @@
 ;; Ido-mode
 (ido-mode t)
 
+;; Company mode
+(global-company-mode t)
+(diminish 'company-mode)
+
 ;; Eldoc
 (eldoc-mode t)
 (diminish 'eldoc-mode)
@@ -83,7 +87,7 @@
 (semantic-mode t)
 
 ;; Column numbers in the gutter
-(column-number-mode t)
+(column-number-mode 1)
 
 ;; Display time mode
 (display-time-mode t)
@@ -109,6 +113,7 @@
 ;; Autorevert
 (global-auto-revert-mode t)
 
+(require 'magit)
 (magit-auto-revert-mode 1)
 (diminish 'magit-auto-revert-mode)
 
@@ -303,8 +308,8 @@ tabbar.el v1.7."
                              (diminish 'highlight-indentation-mode)
                              (highlight-indentation-current-column-mode +1)
                              (diminish 'highlight-indentation-current-column-mode)
-                             (auto-complete-mode +1)
-                             (diminish 'auto-complete-mode)))
+                             
+                             ))
 
 ;; execute erlang-mode when encountering .erl files
 (add-to-list 'auto-mode-alist '("\\.erl?$" . erlang-mode))
