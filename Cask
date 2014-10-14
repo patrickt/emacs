@@ -40,6 +40,7 @@
 (depends-on "popup")
 (depends-on "projectile")
 (depends-on "rainbow-mode")
+(depends-on "rich-minority")
 (depends-on "s")
 (depends-on "shut-up")
 (depends-on "smart-mode-line")

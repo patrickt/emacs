@@ -70,9 +70,7 @@
 
 ;; Highlight Fixmes and Todos.
 (fic-ext-mode t)
-
-;; Have a little fun.
-(zone-when-idle 20)
+(diminish 'fic-ext-mode)
 
 ;; Ido-mode
 (ido-mode t)
@@ -111,6 +109,9 @@
 ;; Autorevert
 (global-auto-revert-mode t)
 
+(magit-auto-revert-mode 1)
+(diminish 'magit-auto-revert-mode)
+
 ;; Load keychain
 (keychain-refresh-environment)
 
@@ -124,6 +125,9 @@
 
 ;; C-; is my namespace
 (global-set-key (kbd "C-;") nil)
+
+;; the bs package provides a nicer buffer list
+(global-set-key (kbd "C-; b") 'bs-show)
 
 ;; C-; C-; is ESC-prefix
 (global-set-key (kbd "C-; C-;") 'ESC-prefix)
@@ -206,15 +210,7 @@ Repeated invocations toggle between the two most recently open buffers."
 
 ;; SETTINGS
 
-;; don't alarm bell when going to end of document
-(defun my-bell-function ()
-  "Prevents the bell from going off during scroll events."
-  (unless (memq this-command
-        '(isearch-abort abort-recursive-edit exit-minibuffer
-              keyboard-quit mwheel-scroll down up next-line previous-line
-              backward-char forward-char))
-    (ding)))
-(setq ring-bell-function 'my-bell-function)
+(setq ring-bell-function 'ignore)
 
 ;; oh my god shut up ECB
 (require 'ecb)
@@ -266,6 +262,13 @@ Repeated invocations toggle between the two most recently open buffers."
 
 ;; require a final newline because POSIX, motherfuckers
 (setq require-final-newline t)
+
+;; avoid the silly buffer<2> things
+(require 'uniquify)
+(setq uniquify-buffer-name-style 'forward)
+
+(require 'saveplace)
+(setq-default save-place t)
 
 ; default directory for minibuffer
 (setq default-directory "~/src")
