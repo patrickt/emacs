@@ -25,6 +25,9 @@
 
 ;; GLOBAL MODES
 
+;; Import facilities to get crap out of the menu bar.
+(require 'diminish)
+
 ;; Smart modeline.
 (require 'smart-mode-line)
 (sml/setup)
@@ -32,6 +35,10 @@
 ;; Automatically indent and insert completing characters.
 (electric-indent-mode t)
 (autopair-global-mode t)
+(diminish 'autopair-mode)
+
+;; Electric indent.
+(electric-indent-mode t)
 
 ;; Track recent files.
 (recentf-mode t)
@@ -44,6 +51,10 @@
 
 ;; Projectile, where possible.
 (projectile-global-mode t)
+(diminish 'projectile-mode)
+
+;; no toolbar please
+(tool-bar-mode -1)
 
 ;; blinky blinky
 (blink-cursor-mode t)
@@ -60,8 +71,15 @@
 ;; Highlight Fixmes and Todos.
 (fic-ext-mode t)
 
+;; Have a little fun.
+(zone-when-idle 20)
+
 ;; Ido-mode
 (ido-mode t)
+
+;; Eldoc
+(eldoc-mode t)
+(diminish 'eldoc-mode)
 
 ;; Semantic parsing for tags
 (semantic-mode t)
@@ -84,6 +102,8 @@
 ;; Screw you, Emacs
 (cua-mode t)
 
+(electric-indent-mode 1)
+
 ;; Snippets
 (require 'yasnippet)
 (yas-global-mode t)
@@ -93,6 +113,9 @@
 
 ;; Load keychain
 (keychain-refresh-environment)
+
+;; Undo trees
+(undo-tree-mode +1)
 
 ;; y or n
 (defalias 'yes-or-no-p 'y-or-n-p)
@@ -110,6 +133,8 @@
 
 ;; C-; g is git
 (global-set-key (kbd "C-; g") 'magit-status)
+
+(global-set-key (kbd "C-; /") 'comment-or-uncomment-region)
 
 ;; C-; f is git-grep
 (autoload 'magit-grep "magit" "Grep for files" t)
@@ -153,9 +178,10 @@
 ;; Go to other related file
 (global-set-key (kbd "C-; o") 'ff-find-other-file)
 
-(defun close-all-buffers ()
+(defun kill-all-buffers ()
   "Close all buffers."
   (interactive)
+  (ecb-deactivate)
   (mapc 'kill-buffer (buffer-list)))
 
 (defun switch-to-previous-buffer ()
@@ -194,6 +220,9 @@ Repeated invocations toggle between the two most recently open buffers."
 (require 'ecb)
 (setq ecb-tip-of-the-day nil)
 
+;; no backup files at all
+(setq make-backup-files nil)
+
 ;; Bar cursor please
 (setq-default cursor-type 'bar)
 
@@ -228,14 +257,9 @@ Repeated invocations toggle between the two most recently open buffers."
 (setq-default flycheck-erlang-executable "/usr/local/erl/bin/erlc")
 
 ;; Modeline customization
-(setq-default rm-blacklist '(" yas"
-                             " pair"
-                             " guru"
-                             " |"
-                             " ||"
-                             " AC"
-                             " MRev"
-                             ))
+(setq-default rm-blacklist nil)
+
+(diminish 'yas-minor-mode)
 
 (require 'linum)
 (setq linum-format "%d ")
@@ -273,8 +297,11 @@ tabbar.el v1.7."
 ;; highlight indentation
 (add-hook 'prog-mode-hook '(lambda ()
                              (highlight-indentation-mode +1)
+                             (diminish 'highlight-indentation-mode)
                              (highlight-indentation-current-column-mode +1)
-                             (auto-complete-mode +1)))
+                             (diminish 'highlight-indentation-current-column-mode)
+                             (auto-complete-mode +1)
+                             (diminish 'auto-complete-mode)))
 
 ;; execute erlang-mode when encountering .erl files
 (add-to-list 'auto-mode-alist '("\\.erl?$" . erlang-mode))
