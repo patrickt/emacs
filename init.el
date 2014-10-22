@@ -32,6 +32,11 @@
 (require 'smart-mode-line)
 (sml/setup)
 
+(require 'ecb)
+
+(require 'xcscope)
+(cscope-setup)
+
 ;; Automatically indent and insert completing characters.
 (electric-indent-mode t)
 (autopair-global-mode t)
@@ -114,7 +119,6 @@
 (global-auto-revert-mode t)
 
 (require 'magit)
-(magit-auto-revert-mode 1)
 (diminish 'magit-auto-revert-mode)
 
 ;; Load keychain
@@ -164,7 +168,7 @@
 (global-set-key (kbd "C-; l") 'goto-line)
 
 ; C-; s spawns a shell
-(global-set-key (kbd "C-; s") 'ansi-term)
+(global-set-key (kbd "C-; s") 'eshell)
 
 ;; Compile current file
 (global-set-key (kbd "C-; c") 'projectile-compile-project)
@@ -218,7 +222,6 @@ Repeated invocations toggle between the two most recently open buffers."
 (setq ring-bell-function 'ignore)
 
 ;; oh my god shut up ECB
-(require 'ecb)
 (setq ecb-tip-of-the-day nil)
 
 ;; no backup files at all
@@ -244,6 +247,7 @@ Repeated invocations toggle between the two most recently open buffers."
   (add-to-list 'default-frame-alist '(fullscreen . fullboth)))
 
 ;; emacs kindly stop leaving your trash everywhere
+(setq create-lockfiles nil)
 (setq backup-directory-alist
       `((".*" . "~/.emacs.d/backups")))
 (setq auto-save-file-name-transforms
@@ -319,15 +323,17 @@ tabbar.el v1.7."
 (add-hook 'haskell-mode-hook 'haskell-indent-mode)
 (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
 
+;; ruby and gemfiles
+(add-to-list 'auto-mode-alist '("\\.gemspec$" . ruby-mode))
+(add-to-list 'auto-mode-alist '("Gemfile" . ruby-mode))
+(add-to-list 'auto-mode-alist '("Rakefile" . ruby-mode))
+
 ;; run go-fmt before saving go code
 (add-hook 'go-mode-hook '(lambda ()
                            (add-hook 'before-save-hook 'gofmt-before-save)))
 
 ;; erlang indentation is fucky so don't do that
 (add-hook 'erlang-mode-hook (lambda () (electric-indent-mode 0)))
-
-;; TODO: look into eldoc for other languages.
-(add-hook 'emacs-lisp-hook 'eldoc-mode)
 
 ;; C eldoc mode
 (add-hook 'c-mode-hook 'c-turn-on-eldoc-mode)
