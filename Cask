@@ -52,6 +52,7 @@
 (depends-on "s")
 (depends-on "shut-up")
 (depends-on "smart-mode-line")
+(depends-on "smex")
 (depends-on "smooth-scrolling")
 (depends-on "spacegray-theme")
 (depends-on "tabbar")

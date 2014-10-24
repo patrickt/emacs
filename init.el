@@ -164,6 +164,12 @@
                   (interactive)
                   (find-file "~/.zshrc")))
 
+;; I hate forward delete
+(global-set-key (kbd "<deletechar>") 'autopair-backspace)
+
+;; And I hate Insert even more
+(global-unset-key (kbd "<insert>"))
+
 ;; C-; l is goto-line
 (global-set-key (kbd "C-; l") 'goto-line)
 
@@ -186,7 +192,7 @@
 (global-set-key (kbd "C-; .") 'goto-last-change)
 
 ;; Shortcut for M-x
-(global-set-key (kbd "C-; ;") 'execute-extended-command)
+(global-set-key (kbd "C-; ;") 'smex)
 
 ;; Go to other related file
 (global-set-key (kbd "C-; o") 'ff-find-other-file)
@@ -197,16 +203,16 @@
   (ecb-deactivate)
   (mapc 'kill-buffer (buffer-list)))
 
+(global-set-key (kbd "C-; k") 'kill-all-buffers)
+
 (defun switch-to-previous-buffer ()
-  "Switch to previously open buffer.
-Repeated invocations toggle between the two most recently open buffers."
+  "Switch to previously open buffer.  Repeated invocations toggle between the two most recently open buffers."
   (interactive)
   (switch-to-buffer (other-buffer (current-buffer) 1)))
 
 (global-set-key (kbd "C-'") 'switch-to-previous-buffer)
 
 (global-set-key (kbd "C-; SPC") 'yas-expand-from-trigger-key)
-
 
 
 (defun eol-then-newline ()
