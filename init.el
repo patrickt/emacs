@@ -98,7 +98,9 @@
 (display-time-mode t)
 
 ;; Show the battery
-(display-battery-mode t)
+;; This doesn't work on OSX for reasons that are still unclear
+(unless (eq system-type 'darwin)
+  (display-battery-mode t))
 
 ;; Line numbers everywhere
 (global-linum-mode t)
