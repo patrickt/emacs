@@ -40,6 +40,7 @@
 ;; Guide-key.
 (require 'guide-key)
 (guide-key-mode)
+(diminish 'guide-key-mode)
 
 (require 'xcscope)
 (cscope-setup)
@@ -71,6 +72,10 @@
 
 ;; blinky blinky
 (blink-cursor-mode t)
+
+;; git gutter is neat as heck
+(require 'git-gutter-fringe)
+(global-git-gutter-mode)
 
 ;; highlight parentheses
 (show-paren-mode t)
@@ -112,6 +117,7 @@
 
 ;; Line numbers everywhere
 (global-linum-mode t)
+(setq linum-format "%d ")
 
 ;; Highlight the current line
 (global-hl-line-mode t)
@@ -124,6 +130,7 @@
 ;; Snippets
 (require 'yasnippet)
 (yas-global-mode t)
+(diminish 'yas-minor-mode)
 
 ;; Autorevert
 (global-auto-revert-mode t)
@@ -219,19 +226,19 @@
 (global-set-key (kbd "C-; j c") 'ace-jump-char-mode)
 (global-set-key (kbd "C-; j l") 'ace-jump-line-mode)
 
-;; Enable guide-key mode for my namespace
-(setq guide-key/guide-key-sequence '("C-c" "C-;"))
-
 ;; Use company instead of dabbrev-expand or hippie-expand
 (global-set-key (kbd "M-/") 'company-complete)
 (global-set-key (kbd "C-.") 'company-complete)
 
-(global-set-key (kbd "M-_")
-                (lambda ()
-                  (interactive)
-                  (insert-char ?—)))
+;; Browse kill ring with C-; y (mnemonic: yank)
+(global-set-key (kbd "C-; y") 'popup-kill-ring)
 
-(setq-default use-dialog-box nil)
+(defun insert-em-dash ()
+  "Insert an em-dash."
+  (interactive)
+  (insert-char ?—))
+
+(global-set-key (kbd "M-_") 'insert-em-dash)
 
 (defun kill-all-buffers ()
   "Close all buffers."
@@ -306,10 +313,7 @@
 ;; Modeline customization
 (setq-default rm-blacklist nil)
 
-(diminish 'yas-minor-mode)
-
 (require 'linum)
-(setq linum-format "%d ")
 
 ;; require a final newline because POSIX, motherfuckers
 (setq require-final-newline t)
@@ -335,8 +339,14 @@
 
 ;; Exclude all of emacs's garbage from the recentf list
 (add-to-list 'recentf-exclude "\\.emacs.d")
-(add-to-list 'recentf-exclude "ido.last")
+(add-to-list 'recentf-exclude "\\.ido\\.last")
 
+;; Enable guide-key mode for my namespace
+(setq guide-key/guide-key-sequence '("C-c" "C-;"))
+
+;; Don't try to use graphical boxes, ever.
+;; They don't work at all on OS X.
+(setq-default use-dialog-box nil)
 
 ;; TABS
 
