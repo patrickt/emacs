@@ -25,14 +25,21 @@
 
 ;; GLOBAL MODES
 
+;; Load paths from shell
+(exec-path-from-shell-initialize)
+
 ;; Import facilities to get crap out of the menu bar.
 (require 'diminish)
 
 ;; Smart modeline.
-(require 'smart-mode-line)
 (sml/setup)
 
+;; ECB.
 (require 'ecb)
+
+;; Guide-key.
+(require 'guide-key)
+(guide-key-mode)
 
 (require 'xcscope)
 (cscope-setup)
@@ -46,6 +53,7 @@
 (electric-indent-mode t)
 
 ;; Track recent files.
+(require 'recentf)
 (recentf-mode t)
 
 ;; Tabs, please.
@@ -155,16 +163,21 @@
 (autoload 'magit-grep "magit" "Grep for files" t)
 (global-set-key (kbd "C-; f") 'magit-grep)
 
-;; C-; e edits my .emacs setup
-(global-set-key (kbd "C-; e")
-                (lambda ()
-                  (interactive)
-                  (find-file "~/.emacs.d/init.el")))
+(defun find-init-el ()
+  "Open ~/.emacs.d/init.el."
+  (interactive)
+  (find-file "~/.emacs.d/init.el"))
 
-(global-set-key (kbd "C-; z")
-                (lambda ()
-                  (interactive)
-                  (find-file "~/.zshrc")))
+;; C-; e edits my .emacs setup
+(global-set-key (kbd "C-; e") 'find-init-el)
+
+(defun find-zshrc ()
+  "Open ~/.zshrc."
+  (interactive)
+  (find-file "~/.zshrc"))
+
+;; C-; z edits .zshrc
+(global-set-key (kbd "C-; z") 'find-zshrc)
 
 ;; I hate forward delete
 (global-set-key (kbd "<deletechar>") 'autopair-backspace)
@@ -202,12 +215,16 @@
 
 ;; Keyspace for ace-jump
 (global-set-key (kbd "C-; j") nil)
-
 (global-set-key (kbd "C-; j j") 'ace-jump-word-mode)
-
 (global-set-key (kbd "C-; j c") 'ace-jump-char-mode)
-
 (global-set-key (kbd "C-; j l") 'ace-jump-line-mode)
+
+;; Enable guide-key mode for my namespace
+(setq guide-key/guide-key-sequence '("C-c" "C-;"))
+
+;; Use company instead of dabbrev-expand or hippie-expand
+(global-set-key (kbd "M-/") 'company-complete)
+(global-set-key (kbd "C-.") 'company-complete)
 
 (global-set-key (kbd "M-_")
                 (lambda ()
@@ -316,6 +333,11 @@
 ;; I don't care what version of Emacs this is.
 (setq inhibit-startup-screen t)
 
+;; Exclude all of emacs's garbage from the recentf list
+(add-to-list 'recentf-exclude "\\.emacs.d")
+(add-to-list 'recentf-exclude "ido.last")
+
+
 ;; TABS
 
 (defun my-tabbar-buffer-groups ()
@@ -365,6 +387,9 @@ tabbar.el v1.7."
 
 ;; Word wrap when writing Markdown
 (add-hook 'markdown-mode-hook 'visual-line-mode)
+(add-hook 'markdown-mode-hook '(lambda ()
+                                 (local-unset-key (kbd "M-<left>"))
+                                 (local-unset-key (kbd "M-<right>"))))
 
 (provide 'init)
 ;;; init.el ends here
