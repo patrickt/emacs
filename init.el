@@ -193,11 +193,28 @@
 ;; Go to last change
 (global-set-key (kbd "C-; .") 'goto-last-change)
 
-;; Shortcut for M-x
+;; Rebind everything to smex
+(global-set-key (kbd "M-x") 'smex)
 (global-set-key (kbd "C-; ;") 'smex)
 
 ;; Go to other related file
 (global-set-key (kbd "C-; o") 'ff-find-other-file)
+
+;; Keyspace for ace-jump
+(global-set-key (kbd "C-; j") nil)
+
+(global-set-key (kbd "C-; j j") 'ace-jump-word-mode)
+
+(global-set-key (kbd "C-; j c") 'ace-jump-char-mode)
+
+(global-set-key (kbd "C-; j l") 'ace-jump-line-mode)
+
+(global-set-key (kbd "M-_")
+                (lambda ()
+                  (interactive)
+                  (insert-char ?—)))
+
+(setq-default use-dialog-box nil)
 
 (defun kill-all-buffers ()
   "Close all buffers."
