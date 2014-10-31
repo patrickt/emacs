@@ -9,3 +9,5 @@ ede-projects.el
 .DS_Store
 ac-comphist.dat
 custom.el
+eshell/
+

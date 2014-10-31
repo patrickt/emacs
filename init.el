@@ -76,6 +76,7 @@
 ;; git gutter is neat as heck
 (require 'git-gutter-fringe)
 (global-git-gutter-mode)
+(diminish 'git-gutter-mode)
 
 ;; highlight parentheses
 (show-paren-mode t)
@@ -364,13 +365,12 @@ tabbar.el v1.7."
 ;; HOOKS AND AUTO-MODES
 
 ;; highlight indentation
-(add-hook 'prog-mode-hook '(lambda ()
-                             (highlight-indentation-mode +1)
-                             (diminish 'highlight-indentation-mode)
-                             (highlight-indentation-current-column-mode +1)
-                             (diminish 'highlight-indentation-current-column-mode)
-                             
-                             ))
+;; (add-hook 'prog-mode-hook '(lambda ()
+;;                              (highlight-indentation-mode +1)
+;;                              (diminish 'highlight-indentation-mode)
+;;                              (highlight-indentation-current-column-mode +1)
+;;                              (diminish 'highlight-indentation-current-column-mode)
+;;                              ))
 
 ;; execute erlang-mode when encountering .erl files
 (add-to-list 'auto-mode-alist '("\\.erl?$" . erlang-mode))
