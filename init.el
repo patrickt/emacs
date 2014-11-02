@@ -32,10 +32,7 @@
 (require 'diminish)
 
 ;; Smart modeline.
-;; (sml/setup)
-
-;; ECB.
-(require 'ecb)
+(sml/setup)
 
 ;; Guide-key.
 (require 'guide-key)
@@ -45,6 +42,9 @@
 ;; ghc-mod.
 (autoload 'ghc-init "ghc" nil t)
 (autoload 'ghc-debug "ghc" nil t)
+
+(autoload 'ecb-deactivate "ecb" nil t)
+(autoload 'ecb-tip-of-the-day "ecb" nil t)
 
 (require 'xcscope)
 (cscope-setup)
@@ -280,7 +280,7 @@
 (setq ring-bell-function 'ignore)
 
 ;; oh my god shut up ECB
-(setq ecb-tip-of-the-day nil)
+(setq-default ecb-tip-of-the-day nil)
 
 ;; no backup files at all
 (setq make-backup-files nil)
@@ -372,8 +372,12 @@ tabbar.el v1.7."
 
 ;; HOOKS AND AUTO-MODES
 
-;; load ghc-mod and add hooks appropriately
-(add-hook 'haskell-mode-hook (lambda () (ghc-init)))
+(eval-after-load 'flycheck
+  '(require 'flycheck-ghcmod "~/.emacs.d/flycheck-ghcmod.el"))
+
+;; Load ghc-mod and add hooks appropriately
+(add-hook 'haskell-mode-hook (lambda ()
+                               (ghc-init)))
 (add-to-list 'company-backends 'company-ghc)
 
 ;; highlight indentation
@@ -386,6 +390,8 @@ tabbar.el v1.7."
 
 ;; execute erlang-mode when encountering .erl files
 (add-to-list 'auto-mode-alist '("\\.erl?$" . erlang-mode))
+
+
 
 ;; haskell
 (add-to-list 'auto-mode-alist '("\\.hs$" . haskell-mode))
