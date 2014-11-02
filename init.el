@@ -32,7 +32,7 @@
 (require 'diminish)
 
 ;; Smart modeline.
-(sml/setup)
+;; (sml/setup)
 
 ;; ECB.
 (require 'ecb)
@@ -41,6 +41,10 @@
 (require 'guide-key)
 (guide-key-mode)
 (diminish 'guide-key-mode)
+
+;; ghc-mod.
+(autoload 'ghc-init "ghc" nil t)
+(autoload 'ghc-debug "ghc" nil t)
 
 (require 'xcscope)
 (cscope-setup)
@@ -77,6 +81,9 @@
 (require 'git-gutter-fringe)
 (global-git-gutter-mode)
 (diminish 'git-gutter-mode)
+
+;; need company
+(require 'company)
 
 ;; highlight parentheses
 (show-paren-mode t)
@@ -117,6 +124,7 @@
   (display-battery-mode t))
 
 ;; Line numbers everywhere
+(require 'linum)
 (global-linum-mode t)
 (setq linum-format "%d ")
 
@@ -363,6 +371,10 @@ tabbar.el v1.7."
 (setq-default tabbar-buffer-groups-function 'my-tabbar-buffer-groups)
 
 ;; HOOKS AND AUTO-MODES
+
+;; load ghc-mod and add hooks appropriately
+(add-hook 'haskell-mode-hook (lambda () (ghc-init)))
+(add-to-list 'company-backends 'company-ghc)
 
 ;; highlight indentation
 ;; (add-hook 'prog-mode-hook '(lambda ()
