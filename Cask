@@ -1,5 +1,6 @@
 (source marmalade)
 (source melpa)
+(source gnu)
 
 (depends-on "ace-jump-mode")
 (depends-on "achievements")
@@ -60,6 +61,7 @@
 (depends-on "pos-tip")
 (depends-on "powerline")
 (depends-on "projectile")
+(depends-on "rainbow-mode")
 (depends-on "rich-minority")
 (depends-on "s")
 (depends-on "shut-up")

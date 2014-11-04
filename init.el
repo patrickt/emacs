@@ -21,7 +21,7 @@
 
 ;; Load per-machine settings.
 (setq custom-file "~/.emacs.d/custom.el")
-(load custom-file)
+(load custom-file 'noerror)
 
 ;; GLOBAL MODES
 
@@ -33,6 +33,10 @@
 
 ;; Smart modeline.
 (sml/setup)
+
+;; force zenburn on darwin
+(if (eql system-type 'darwin)
+    (load-theme 'zenburn))
 
 ;; Guide-key.
 (require 'guide-key)
@@ -131,10 +135,9 @@
 ;; Highlight the current line
 (global-hl-line-mode t)
 
-;; Screw you, Emacs
-(cua-mode t)
-
 (electric-indent-mode 1)
+
+(guru-global-mode 1)
 
 ;; Snippets
 (require 'yasnippet)
@@ -160,6 +163,9 @@
 
 ;; C-; is my namespace
 (global-set-key (kbd "C-;") nil)
+
+;; C-; a (mnemonic: auxiliary, per-buffer commands for language modes)
+(global-set-key (kbd "C-; a") nil)
 
 ;; the bs package provides a nicer buffer list
 (global-set-key (kbd "C-; b") 'bs-show)
@@ -300,6 +306,12 @@
 ;; NEVER TABS. NEVER
 (setq-default indent-tabs-mode nil)
 
+(if (eql system-type 'darwin)
+    (progn
+      (add-to-list 'default-frame-alist '(height . 130))
+      (add-to-list 'default-frame-alist '(width . 130)))
+  (add-to-list 'default-frame-alist '(fullscreen . fullboth)))
+
 ;; fullscreen plz
 (unless (eql system-type 'darwin)
   (add-to-list 'default-frame-alist '(fullscreen . fullboth)))
@@ -321,6 +333,8 @@
 
 ;; Modeline customization
 (setq-default rm-blacklist nil)
+
+(setq-default haskell-stylish-on-save t)
 
 (require 'linum)
 
@@ -391,12 +405,29 @@ tabbar.el v1.7."
 ;; execute erlang-mode when encountering .erl files
 (add-to-list 'auto-mode-alist '("\\.erl?$" . erlang-mode))
 
-
-
 ;; haskell
 (add-to-list 'auto-mode-alist '("\\.hs$" . haskell-mode))
-(add-hook 'haskell-mode-hook 'haskell-indent-mode)
-(add-hook 'haskell-mode-hook 'interactive-haskell-mode)
+
+;; use ido for YASnippet
+(setq-default yas-prompt-functions '(yas-ido-prompt yas-dropdown-prompt))
+
+(defun haskell-customizations ()
+  "My Haskell customizations."
+  (autopair-mode 0)
+  (electric-indent-mode 0)
+  (haskell-indentation-mode)
+  ;; Within Haskell C-;-a namespace:
+  ;; m = insert module
+  ;; s = search on hayoo
+  (local-set-key (kbd "C-; a a") 'shm/goto-parent)
+  (local-set-key (kbd "C-; a e") 'shm/goto-parent-end)
+  (local-set-key (kbd "C-; a m") 'ghc-insert-module)
+  (local-set-key (kbd "C-; a s") 'haskell-hayoo))
+
+(add-hook 'haskell-mode-hook 'haskell-customizations)
+
+;; heist templates
+(add-to-list 'auto-mode-alist '("\\.tpl$" . xml-mode))
 
 ;; ruby and gemfiles
 (add-to-list 'auto-mode-alist '("\\.gemspec$" . ruby-mode))
