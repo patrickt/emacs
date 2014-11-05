@@ -43,6 +43,9 @@
 (guide-key-mode)
 (diminish 'guide-key-mode)
 
+;; multi-term for zsh. sorry, eshell.
+(require 'multi-term)
+
 ;; ghc-mod.
 (autoload 'ghc-init "ghc" nil t)
 (autoload 'ghc-debug "ghc" nil t)
@@ -210,8 +213,9 @@
 ;; C-; l is goto-line
 (global-set-key (kbd "C-; l") 'goto-line)
 
-; C-; s spawns a shell
-(global-set-key (kbd "C-; s") 'eshell)
+;; C-; s spawns a shell
+(global-set-key (kbd "C-; S") 'multi-term-dedicated-open)
+(global-set-key (kbd "C-; s") 'multi-term-dedicated-select)
 
 ;; Compile current file
 (global-set-key (kbd "C-; c") 'projectile-compile-project)
@@ -284,6 +288,10 @@
 ;; SETTINGS
 
 (setq ring-bell-function 'ignore)
+
+(setq multi-term-program "/bin/zsh")
+
+(setq system-uses-terminfo nil)
 
 ;; oh my god shut up ECB
 (setq-default ecb-tip-of-the-day nil)

@@ -1,6 +1,6 @@
+(source gnu)
 (source marmalade)
 (source melpa)
-(source gnu)
 
 (depends-on "ace-jump-mode")
 (depends-on "achievements")
@@ -52,6 +52,8 @@
 (depends-on "keyfreq")
 (depends-on "magit")
 (depends-on "markdown-mode")
+(depends-on "multi-term")
+(depends-on "nlinum")
 (depends-on "package-build")
 (depends-on "pallet")
 (depends-on "pkg-info")
