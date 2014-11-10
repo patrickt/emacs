@@ -251,33 +251,6 @@
 (global-set-key (kbd "M-/") 'company-complete)
 (global-set-key (kbd "C-.") 'company-complete)
 
-(defun check-expansion ()
-  "No idea what this does."
-  (save-excursion
-    (if (looking-at "\\_>") t
-      (backward-char 1)
-      (if (looking-at "\\.") t
-        (backward-char 1)
-        (if (looking-at "->") t nil)))))
-
-(defun do-yas-expand ()
-  "Nor this."
-  (let ((yas-fallback-behavior 'return-nil))
-    (yas-expand)))
-
-(defun tab-indent-or-complete ()
-  "Indent or autocomplate."
-  (interactive)
-  (if (minibufferp)
-      (minibuffer-complete)
-    (if (or (not yas-minor-mode)
-            (null (do-yas-expand)))
-        (if (check-expansion)
-            (company-complete-common)
-          (indent-for-tab-command)))))
-
-(global-set-key [tab] 'tab-indent-or-complete)
-
 ;; Browse kill ring with C-; y (mnemonic: yank)
 (global-set-key (kbd "C-; y") 'popup-kill-ring)
 
