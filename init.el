@@ -32,11 +32,12 @@
 (require 'diminish)
 
 ;; Smart modeline.
-(sml/setup)
+;; (sml/setup)
+(powerline-default-theme)
 
 ;; force zenburn on darwin
-(if (eql system-type 'darwin)
-    (load-theme 'zenburn))
+; (if (eql system-type 'darwin)
+;    (load-theme 'zenburn))
 
 ;; Guide-key.
 (require 'guide-key)
@@ -69,7 +70,7 @@
 (recentf-mode t)
 
 ;; Tabs, please.
-(tabbar-mode t)
+; (tabbar-mode t)
 
 ;; Flycheck, where possible.
 (global-flycheck-mode t)
@@ -141,6 +142,7 @@
 (electric-indent-mode 1)
 
 (guru-global-mode 1)
+(diminish 'guru-mode)
 
 ;; Snippets
 (require 'yasnippet)
@@ -167,42 +169,42 @@
 ;; C-; is my namespace
 (global-set-key (kbd "C-;") nil)
 
-;; C-; a (mnemonic: auxiliary, per-buffer commands for language modes)
-(global-set-key (kbd "C-; a") nil)
+;; C-c a (mnemonic: auxiliary, per-buffer commands for language modes)
+(global-set-key (kbd "C-c a") nil)
 
 ;; the bs package provides a nicer buffer list
-(global-set-key (kbd "C-; b") 'bs-show)
+(global-set-key (kbd "C-c b") 'bs-show)
 
-;; C-; C-; is ESC-prefix
-(global-set-key (kbd "C-; C-;") 'ESC-prefix)
+;; C-c C-c is ESC-prefix
+(global-set-key (kbd "C-c C-c") 'ESC-prefix)
 
-;; C-; r is recentf
-(global-set-key (kbd "C-; r") 'recentf-open-files)
+;; C-c r is recentf
+(global-set-key (kbd "C-c r") 'recentf-open-files)
 
-;; C-; g is git
-(global-set-key (kbd "C-; g") 'magit-status)
+;; C-c g is git
+(global-set-key (kbd "C-c g") 'magit-status)
 
-(global-set-key (kbd "C-; /") 'comment-or-uncomment-region)
+(global-set-key (kbd "C-c /") 'comment-or-uncomment-region)
 
-;; C-; f is git-grep
+;; C-c f is git-grep
 (autoload 'magit-grep "magit" "Grep for files" t)
-(global-set-key (kbd "C-; f") 'magit-grep)
+(global-set-key (kbd "C-c f") 'magit-grep)
 
 (defun find-init-el ()
   "Open ~/.emacs.d/init.el."
   (interactive)
   (find-file "~/.emacs.d/init.el"))
 
-;; C-; e edits my .emacs setup
-(global-set-key (kbd "C-; e") 'find-init-el)
+;; C-c e edits my .emacs setup
+(global-set-key (kbd "C-c e") 'find-init-el)
 
 (defun find-zshrc ()
   "Open ~/.zshrc."
   (interactive)
   (find-file "~/.zshrc"))
 
-;; C-; z edits .zshrc
-(global-set-key (kbd "C-; z") 'find-zshrc)
+;; C-c z edits .zshrc
+(global-set-key (kbd "C-c z") 'find-zshrc)
 
 ;; I hate forward delete
 (global-set-key (kbd "<deletechar>") 'autopair-backspace)
@@ -210,49 +212,51 @@
 ;; And I hate Insert even more
 (global-unset-key (kbd "<insert>"))
 
-;; C-; l is goto-line
-(global-set-key (kbd "C-; l") 'goto-line)
+;; C-c l is goto-line
+(global-set-key (kbd "C-c l") 'goto-line)
 
-;; C-; s spawns a shell
-(global-set-key (kbd "C-; S") 'multi-term-dedicated-open)
-(global-set-key (kbd "C-; s") 'multi-term-dedicated-select)
+;; C-c s spawns a shell
+(global-set-key (kbd "C-c S") 'multi-term-dedicated-open)
+(global-set-key (kbd "C-c s") 'multi-term-dedicated-select)
 
 ;; Compile current file
-(global-set-key (kbd "C-; c") 'projectile-compile-project)
+(global-set-key (kbd "C-c c") 'projectile-compile-project)
 
 ;; Goto next error
-(global-set-key (kbd "C-; d") 'flycheck-tip-cycle)
+(global-set-key (kbd "C-c d") 'flycheck-tip-cycle)
 
 (global-set-key (kbd "C-,") 'other-window)
 
 ;; Find file in project
-(global-set-key (kbd "C-; p") 'projectile-find-file)
+(global-set-key (kbd "C-c p") 'projectile-find-file)
 
 ;; Projectile commander
-(global-set-key (kbd "C-; P") 'projectile-commander)
+(global-set-key (kbd "C-c P") 'projectile-commander)
 
 ;; Go to last change
-(global-set-key (kbd "C-; .") 'goto-last-change)
+(global-set-key (kbd "C-c .") 'goto-last-change)
 
 ;; Rebind everything to smex
 (global-set-key (kbd "M-x") 'smex)
-(global-set-key (kbd "C-; ;") 'smex)
+(global-set-key (kbd "C-c ;") 'smex)
 
 ;; Go to other related file
-(global-set-key (kbd "C-; o") 'ff-find-other-file)
+(global-set-key (kbd "C-c o") 'ff-find-other-file)
 
 ;; Keyspace for ace-jump
-(global-set-key (kbd "C-; j") nil)
-(global-set-key (kbd "C-; j j") 'ace-jump-word-mode)
-(global-set-key (kbd "C-; j c") 'ace-jump-char-mode)
-(global-set-key (kbd "C-; j l") 'ace-jump-line-mode)
+(global-set-key (kbd "C-c j") nil)
+(global-set-key (kbd "C-c j j") 'ace-jump-word-mode)
+(global-set-key (kbd "C-c j c") 'ace-jump-char-mode)
+(global-set-key (kbd "C-c j l") 'ace-jump-line-mode)
 
 ;; Use company instead of dabbrev-expand or hippie-expand
 (global-set-key (kbd "M-/") 'company-complete)
 (global-set-key (kbd "C-.") 'company-complete)
 
-;; Browse kill ring with C-; y (mnemonic: yank)
-(global-set-key (kbd "C-; y") 'popup-kill-ring)
+;; Browse kill ring with C-c y (mnemonic: yank)
+(global-set-key (kbd "C-c y") 'popup-kill-ring)
+
+(global-set-key (kbd "C-c \\") 'align-regexp)
 
 (defun insert-em-dash ()
   "Insert an em-dash."
@@ -267,7 +271,7 @@
   (ecb-deactivate)
   (mapc 'kill-buffer (buffer-list)))
 
-(global-set-key (kbd "C-; k") 'kill-all-buffers)
+(global-set-key (kbd "C-c k") 'kill-all-buffers)
 
 (defun switch-to-previous-buffer ()
   "Switch to previously open buffer.  Repeated invocations toggle between the two most recently open buffers."
@@ -275,8 +279,9 @@
   (switch-to-buffer (other-buffer (current-buffer) 1)))
 
 (global-set-key (kbd "C-'") 'switch-to-previous-buffer)
+(global-set-key (kbd "C-c '") 'switch-to-previous-buffer)
 
-(global-set-key (kbd "C-; SPC") 'yas-expand-from-trigger-key)
+(global-set-key (kbd "C-c SPC") 'yas-expand-from-trigger-key)
 
 
 (defun eol-then-newline ()
@@ -344,7 +349,7 @@
 ;; Modeline customization
 (setq-default rm-blacklist nil)
 
-(setq-default haskell-stylish-on-save t)
+;; (setq-default haskell-stylish-on-save 
 
 (require 'linum)
 
@@ -375,24 +380,12 @@
 (add-to-list 'recentf-exclude "\\.ido\\.last")
 
 ;; Enable guide-key mode for my namespace
-(setq guide-key/guide-key-sequence '("C-c" "C-;"))
+(setq guide-key/guide-key-sequence '("C-c" "C-c"))
 
 ;; Don't try to use graphical boxes, ever.
 ;; They don't work at all on OS X.
 (setq-default use-dialog-box nil)
 
-;; TABS
-
-(defun my-tabbar-buffer-groups ()
-  "Group tabs by whether they are Emacs-local or user-opened.
-There are two groups: Emacs buffers (those whose name starts with '*', plus
-dired buffers), and the rest.  This works at least with Emacs v24.2 using
-tabbar.el v1.7."
-   (list (cond ((string-equal "*" (substring (buffer-name) 0 1)) "emacs")
-               ((eq major-mode 'dired-mode) "emacs")
-               (t "user"))))
-
-(setq-default tabbar-buffer-groups-function 'my-tabbar-buffer-groups)
 
 ;; HOOKS AND AUTO-MODES
 
@@ -426,13 +419,13 @@ tabbar.el v1.7."
   (autopair-mode 0)
   (electric-indent-mode 0)
   (haskell-indentation-mode)
-  ;; Within Haskell C-;-a namespace:
+  ;; Within Haskell C-c-a namespace:
   ;; m = insert module
   ;; s = search on hayoo
-  (local-set-key (kbd "C-; a a") 'shm/goto-parent)
-  (local-set-key (kbd "C-; a e") 'shm/goto-parent-end)
-  (local-set-key (kbd "C-; a m") 'ghc-insert-module)
-  (local-set-key (kbd "C-; a s") 'haskell-hayoo))
+  (local-set-key (kbd "C-c a a") 'shm/goto-parent)
+  (local-set-key (kbd "C-c a e") 'shm/goto-parent-end)
+  (local-set-key (kbd "C-c a m") 'ghc-insert-module)
+  (local-set-key (kbd "C-c a s") 'haskell-hayoo))
 
 (add-hook 'haskell-mode-hook 'haskell-customizations)
 
