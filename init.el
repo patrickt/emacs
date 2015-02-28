@@ -263,7 +263,8 @@
   "Close all buffers."
   (interactive)
   (ecb-deactivate)
-  (mapc 'kill-buffer (buffer-list)))
+  (mapc 'kill-buffer (buffer-list))
+  (ecb-activate))
 
 (global-set-key (kbd "C-c k") 'kill-all-buffers)
 
