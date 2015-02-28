@@ -62,8 +62,8 @@
 (require 'recentf)
 (recentf-mode t)
 
-;; Tabs, please.
-; (tabbar-mode t)
+;; Turn off scrollbar mode since it screws performance.
+(scroll-bar-mode nil)
 
 ;; Flycheck, where possible.
 (global-flycheck-mode t)
@@ -135,8 +135,7 @@
 ;; Highlight the current line
 (global-hl-line-mode t)
 
-(electric-indent-mode 1)
-
+;; Guru-
 (guru-global-mode 1)
 (diminish 'guru-mode)
 
@@ -446,6 +445,13 @@
 
 ;; C eldoc mode
 (add-hook 'c-mode-hook 'c-turn-on-eldoc-mode)
+
+(add-hook 'before-save-hook 'delete-trailing-whitespace)
+
+(add-hook 'css-mode-hook 'rainbow-mode)
+(add-hook 'scss-mode-hook 'rainbow-mode)
+
+(add-hook 'rainbow-mode-hook (lambda () (diminish 'rainbow-mode)))
 
 ;; Word wrap when writing Markdown
 (add-hook 'markdown-mode-hook 'visual-line-mode)
