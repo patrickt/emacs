@@ -62,9 +62,6 @@
 (require 'recentf)
 (recentf-mode t)
 
-;; Turn off scrollbar mode since it screws performance.
-(scroll-bar-mode nil)
-
 ;; Flycheck, where possible.
 (global-flycheck-mode t)
 
@@ -210,7 +207,7 @@
 (global-unset-key (kbd "<insert>"))
 
 ;; C-c l is goto-line
-(global-set-key (kbd "C-c l") 'goto-line)
+(global-set-key (kbd "C-c L") 'goto-line)
 
 ;; C-c s spawns a shell
 (global-set-key (kbd "C-c S") 'multi-term-dedicated-open)
@@ -236,6 +233,7 @@
 ;; Rebind everything to smex
 (global-set-key (kbd "M-x") 'smex)
 (global-set-key (kbd "C-c ;") 'smex)
+(global-set-key (kbd "C-c :") 'smex-major-mode-commands)
 
 ;; Go to other related file
 (global-set-key (kbd "C-c o") 'ff-find-other-file)
@@ -244,10 +242,10 @@
 (global-set-key (kbd "C-c h") 'discover-my-major)
 
 ;; Keyspace for ace-jump
-(global-set-key (kbd "C-c j") nil)
-(global-set-key (kbd "C-c j j") 'ace-jump-word-mode)
-(global-set-key (kbd "C-c j c") 'ace-jump-char-mode)
-(global-set-key (kbd "C-c j l") 'ace-jump-line-mode)
+(global-set-key (kbd "C-c j") 'ace-jump-word-mode)
+
+;; Remapping C-c l to ace-jump-line-mode
+(global-set-key (kbd "C-c l") 'ace-jump-line-mode)
 
 ;; Use company instead of dabbrev-expand or hippie-expand
 (global-set-key (kbd "M-/") 'company-complete)
@@ -460,4 +458,7 @@
                                  (local-unset-key (kbd "M-<right>"))))
 
 (provide 'init)
+
+(recentf-open-files)
+
 ;;; init.el ends here
