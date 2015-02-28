@@ -1,0 +1,7 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: data-language = haskell
+# key: hask
+# --
+~~~ { data-language=haskell }
+$0
+~~~

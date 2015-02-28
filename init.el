@@ -32,12 +32,9 @@
 (require 'diminish)
 
 ;; Smart modeline.
-;; (sml/setup)
-(powerline-default-theme)
-
-;; force zenburn on darwin
-; (if (eql system-type 'darwin)
-;    (load-theme 'zenburn))
+(require 'smart-mode-line)
+(sml/setup)
+(setq sml/theme 'respectful)
 
 ;; Guide-key.
 (require 'guide-key)
@@ -59,11 +56,7 @@
 
 ;; Automatically indent and insert completing characters.
 (electric-indent-mode t)
-(autopair-global-mode t)
-(diminish 'autopair-mode)
-
-;; Electric indent.
-(electric-indent-mode t)
+(electric-pair-mode t)
 
 ;; Track recent files.
 (require 'recentf)
@@ -112,6 +105,9 @@
 ;; Company mode
 (global-company-mode t)
 (diminish 'company-mode)
+
+;; Discover
+(global-discover-mode)
 
 ;; Eldoc
 (eldoc-mode t)
@@ -186,9 +182,11 @@
 
 (global-set-key (kbd "C-c /") 'comment-or-uncomment-region)
 
+(global-set-key (kbd "C-c f") 'projectile-find-file)
+
 ;; C-c f is git-grep
 (autoload 'magit-grep "magit" "Grep for files" t)
-(global-set-key (kbd "C-c f") 'magit-grep)
+(global-set-key (kbd "C-c G") 'magit-grep)
 
 (defun find-init-el ()
   "Open ~/.emacs.d/init.el."
@@ -243,6 +241,9 @@
 ;; Go to other related file
 (global-set-key (kbd "C-c o") 'ff-find-other-file)
 
+;; Describe keybindings in this major mode
+(global-set-key (kbd "C-c h") 'discover-my-major)
+
 ;; Keyspace for ace-jump
 (global-set-key (kbd "C-c j") nil)
 (global-set-key (kbd "C-c j j") 'ace-jump-word-mode)
@@ -251,7 +252,7 @@
 
 ;; Use company instead of dabbrev-expand or hippie-expand
 (global-set-key (kbd "M-/") 'company-complete)
-(global-set-key (kbd "C-.") 'company-complete)
+(global-set-key (kbd "C-.") 'hippie-expand)
 
 ;; Browse kill ring with C-c y (mnemonic: yank)
 (global-set-key (kbd "C-c y") 'popup-kill-ring)
@@ -349,8 +350,6 @@
 ;; Modeline customization
 (setq-default rm-blacklist nil)
 
-;; (setq-default haskell-stylish-on-save 
-
 (require 'linum)
 
 ;; require a final newline because POSIX, motherfuckers
@@ -374,6 +373,9 @@
 
 ;; I don't care what version of Emacs this is.
 (setq inhibit-startup-screen t)
+
+;; And I don't care about the scratch message
+(setq initial-scratch-message nil)
 
 ;; Exclude all of emacs's garbage from the recentf list
 (add-to-list 'recentf-exclude "\\.emacs.d")
@@ -416,9 +418,7 @@
 
 (defun haskell-customizations ()
   "My Haskell customizations."
-  (autopair-mode 0)
-  (electric-indent-mode 0)
-  (haskell-indentation-mode)
+  (turn-on-haskell-indent)
   ;; Within Haskell C-c-a namespace:
   ;; m = insert module
   ;; s = search on hayoo
