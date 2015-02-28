@@ -44,15 +44,16 @@
 ;; multi-term for zsh. sorry, eshell.
 (require 'multi-term)
 
-;; ghc-mod.
-(autoload 'ghc-init "ghc" nil t)
-(autoload 'ghc-debug "ghc" nil t)
-
-(autoload 'ecb-deactivate "ecb" nil t)
-(autoload 'ecb-tip-of-the-day "ecb" nil t)
+;; ECB
+;; if the sizes are not to your liking, resize them and then call ecb-store-window-sizes.
+(require 'ecb)
+(setq ecb-tip-of-the-day nil)
+(ecb-activate)
 
 (require 'xcscope)
 (cscope-setup)
+
+(semantic-mode 1)
 
 ;; Automatically indent and insert completing characters.
 (electric-indent-mode t)
@@ -71,6 +72,7 @@
 
 ;; no toolbar please
 (tool-bar-mode -1)
+(scroll-bar-mode -1)
 
 ;; blinky blinky
 (blink-cursor-mode t)
@@ -109,9 +111,6 @@
 ;; Eldoc
 (eldoc-mode t)
 (diminish 'eldoc-mode)
-
-;; Semantic parsing for tags
-(semantic-mode t)
 
 ;; Column numbers in the gutter
 (column-number-mode 1)
@@ -157,9 +156,6 @@
 (defalias 'yes-or-no-p 'y-or-n-p)
 
 ;; KEYBOARD SHORTCUTS
-
-;; C-; is my namespace
-(global-set-key (kbd "C-;") nil)
 
 ;; C-c a (mnemonic: auxiliary, per-buffer commands for language modes)
 (global-set-key (kbd "C-c a") nil)
@@ -281,7 +277,6 @@
 
 (global-set-key (kbd "C-c SPC") 'yas-expand-from-trigger-key)
 
-
 (defun eol-then-newline ()
   "Move to EOL then insert a newline, a la Cmd-Ret in Textmate."
   (interactive)
@@ -319,15 +314,7 @@
 ;; NEVER TABS. NEVER
 (setq-default indent-tabs-mode nil)
 
-(if (eql system-type 'darwin)
-    (progn
-      (add-to-list 'default-frame-alist '(height . 130))
-      (add-to-list 'default-frame-alist '(width . 130)))
-  (add-to-list 'default-frame-alist '(fullscreen . fullboth)))
-
-;; fullscreen plz
-(unless (eql system-type 'darwin)
-  (add-to-list 'default-frame-alist '(fullscreen . fullboth)))
+(add-to-list 'default-frame-alist '(fullscreen . fullboth))
 
 ;; emacs kindly stop leaving your trash everywhere
 (setq create-lockfiles nil)
@@ -379,7 +366,7 @@
 (add-to-list 'recentf-exclude "\\.ido\\.last")
 
 ;; Enable guide-key mode for my namespace
-(setq guide-key/guide-key-sequence '("C-c" "C-c"))
+(setq guide-key/guide-key-sequence '("C-c" "C-c ,"))
 
 ;; Don't try to use graphical boxes, ever.
 ;; They don't work at all on OS X.
@@ -415,6 +402,8 @@
 
 (defun haskell-customizations ()
   "My Haskell customizations."
+  (autoload 'ghc-init "ghc" nil t)
+  (autoload 'ghc-debug "ghc" nil t)
   (turn-on-haskell-indent)
   ;; Within Haskell C-c-a namespace:
   ;; m = insert module
@@ -449,7 +438,7 @@
 (add-hook 'css-mode-hook 'rainbow-mode)
 (add-hook 'scss-mode-hook 'rainbow-mode)
 
-(add-hook 'rainbow-mode-hook (lambda () (diminish 'rainbow-mode)))
+(add-hook 'rainbow-mode-hook '(lambda () (diminish 'rainbow-mode)))
 
 ;; Word wrap when writing Markdown
 (add-hook 'markdown-mode-hook 'visual-line-mode)
