@@ -36,13 +36,6 @@
 (sml/setup)
 (setq sml/theme 'respectful)
 
-;; Guide-key.
-(require 'guide-key)
-(guide-key-mode)
-(diminish 'guide-key-mode)
-
-;; multi-term for zsh. sorry, eshell.
-(require 'multi-term)
 
 ;; ECB
 ;; if the sizes are not to your liking, resize them and then call ecb-store-window-sizes.
@@ -62,6 +55,9 @@
 ;; Track recent files.
 (require 'recentf)
 (recentf-mode t)
+
+;; Tabs, please.
+(tabbar-mode t)
 
 ;; Flycheck, where possible.
 (global-flycheck-mode t)
@@ -84,6 +80,9 @@
 
 ;; need company
 (require 'company)
+
+;; autocomplete aggressively, like Sublime does
+(setq company-minimum-prefix-length 2)
 
 ;; highlight parentheses
 (show-paren-mode t)
@@ -174,9 +173,9 @@
 
 (global-set-key (kbd "C-c /") 'comment-or-uncomment-region)
 
+;; C-c f is projectile-find-in-project
 (global-set-key (kbd "C-c f") 'projectile-find-file)
 
-;; C-c f is git-grep
 (autoload 'magit-grep "magit" "Grep for files" t)
 (global-set-key (kbd "C-c G") 'magit-grep)
 
@@ -204,10 +203,6 @@
 
 ;; C-c l is goto-line
 (global-set-key (kbd "C-c L") 'goto-line)
-
-;; C-c s spawns a shell
-(global-set-key (kbd "C-c S") 'multi-term-dedicated-open)
-(global-set-key (kbd "C-c s") 'multi-term-dedicated-select)
 
 ;; Compile current file
 (global-set-key (kbd "C-c c") 'projectile-compile-project)
@@ -246,6 +241,13 @@
 ;; Use company instead of dabbrev-expand or hippie-expand
 (global-set-key (kbd "M-/") 'company-complete)
 (global-set-key (kbd "C-.") 'hippie-expand)
+
+(global-set-key (kbd "C-c J") 'ace-jump-char-mode)
+(global-set-key (kbd "C-c L") 'ace-jump-line-mode)
+
+;; Use company instead of dabbrev-expand or hippie-expand
+(global-set-key (kbd "M-/") 'company-complete)
+(global-set-key (kbd "C-c x") 'hippie-expand)
 
 ;; Browse kill ring with C-c y (mnemonic: yank)
 (global-set-key (kbd "C-c y") 'popup-kill-ring)
@@ -289,8 +291,6 @@
 ;; SETTINGS
 
 (setq ring-bell-function 'ignore)
-
-(setq multi-term-program "/bin/zsh")
 
 (setq system-uses-terminfo nil)
 
@@ -373,7 +373,6 @@
 ;; They don't work at all on OS X.
 (setq-default use-dialog-box nil)
 
-
 ;; HOOKS AND AUTO-MODES
 
 (eval-after-load 'flycheck
@@ -405,7 +404,8 @@
   "My Haskell customizations."
   (autoload 'ghc-init "ghc" nil t)
   (autoload 'ghc-debug "ghc" nil t)
-  (turn-on-haskell-indent)
+  (electric-indent-mode 0)
+  (turn-on-haskell-indentation)
   ;; Within Haskell C-c-a namespace:
   ;; m = insert module
   ;; s = search on hayoo
@@ -440,6 +440,12 @@
 (add-hook 'scss-mode-hook 'rainbow-mode)
 
 (add-hook 'rainbow-mode-hook '(lambda () (diminish 'rainbow-mode)))
+
+(defun term-customizations ()
+  "terminal stuff"
+  (local-set-key (kbd "TAB") 'term-send-raw))
+
+(add-hook 'term-mode-hook 'term-customizations)
 
 ;; Word wrap when writing Markdown
 (add-hook 'markdown-mode-hook 'visual-line-mode)
