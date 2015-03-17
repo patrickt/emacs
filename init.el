@@ -315,6 +315,12 @@
 ;; NEVER TABS. NEVER
 (setq-default indent-tabs-mode nil)
 
+;; scroll compilation output
+(setq compilation-scroll-output t)
+
+;; don't prompt to kill compilation buffers
+(setq compilation-always-kill t)
+
 (add-to-list 'default-frame-alist '(fullscreen . fullboth))
 
 ;; emacs kindly stop leaving your trash everywhere
