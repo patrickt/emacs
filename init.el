@@ -127,6 +127,9 @@
 (global-linum-mode t)
 (setq linum-format "%d ")
 
+(require 'editorconfig)
+(load "editorconfig")
+
 ;; Highlight the current line
 (global-hl-line-mode t)
 
@@ -176,8 +179,11 @@
 ;; C-c f is projectile-find-in-project
 (global-set-key (kbd "C-c f") 'projectile-find-file)
 
-(autoload 'magit-grep "magit" "Grep for files" t)
-(global-set-key (kbd "C-c G") 'magit-grep)
+;; I don't care about fill columns and I always hit this key
+(global-set-key (kbd "C-x f") 'projectile-find-file)
+
+;; vc-git-grep is useless because it's not recursive
+(global-set-key (kbd "C-c G") 'projectile-grep)
 
 (defun find-init-el ()
   "Open ~/.emacs.d/init.el."
@@ -406,15 +412,20 @@
 ;; use ido for YASnippet
 (setq-default yas-prompt-functions '(yas-ido-prompt yas-dropdown-prompt))
 
+(autoload 'ghc-init "ghc" nil t)
+
 (defun haskell-customizations ()
   "My Haskell customizations."
   (autoload 'ghc-init "ghc" nil t)
   (autoload 'ghc-debug "ghc" nil t)
+  (ghc-init)
   (electric-indent-mode 0)
   (turn-on-haskell-indentation)
   ;; Within Haskell C-c-a namespace:
   ;; m = insert module
   ;; s = search on hayoo
+  ;; c = go to cabal file
+  (local-set-key (kbd "C-c a c") 'haskell-cabal-visit-file)
   (local-set-key (kbd "C-c a a") 'shm/goto-parent)
   (local-set-key (kbd "C-c a e") 'shm/goto-parent-end)
   (local-set-key (kbd "C-c a m") 'ghc-insert-module)
