@@ -185,13 +185,8 @@
 ;; vc-git-grep is useless because it's not recursive
 (global-set-key (kbd "C-c G") 'projectile-grep)
 
-(defun find-init-el ()
-  "Open ~/.emacs.d/init.el."
-  (interactive)
-  (find-file "~/.emacs.d/init.el"))
-
 ;; C-c e edits my .emacs setup
-(global-set-key (kbd "C-c e") 'find-init-el)
+(global-set-key (kbd "C-c e") '(lambda () (interactive) (find-file user-init-file)))
 
 (defun find-zshrc ()
   "Open ~/.zshrc."
@@ -378,9 +373,6 @@
 (add-to-list 'recentf-exclude "\\.emacs.d")
 (add-to-list 'recentf-exclude "\\.ido\\.last")
 
-;; Enable guide-key mode for my namespace
-(setq guide-key/guide-key-sequence '("C-c" "C-c ,"))
-
 ;; Don't try to use graphical boxes, ever.
 ;; They don't work at all on OS X.
 (setq-default use-dialog-box nil)
@@ -390,18 +382,7 @@
 (eval-after-load 'flycheck
   '(require 'flycheck-ghcmod "~/.emacs.d/flycheck-ghcmod.el"))
 
-;; Load ghc-mod and add hooks appropriately
-(add-hook 'haskell-mode-hook (lambda ()
-                               (ghc-init)))
 (add-to-list 'company-backends 'company-ghc)
-
-;; highlight indentation
-;; (add-hook 'prog-mode-hook '(lambda ()
-;;                              (highlight-indentation-mode +1)
-;;                              (diminish 'highlight-indentation-mode)
-;;                              (highlight-indentation-current-column-mode +1)
-;;                              (diminish 'highlight-indentation-current-column-mode)
-;;                              ))
 
 ;; execute erlang-mode when encountering .erl files
 (add-to-list 'auto-mode-alist '("\\.erl?$" . erlang-mode))
@@ -421,6 +402,7 @@
   (ghc-init)
   (electric-indent-mode 0)
   (turn-on-haskell-indentation)
+  (turn-on-haskell-doc-mode)
   ;; Within Haskell C-c-a namespace:
   ;; m = insert module
   ;; s = search on hayoo
