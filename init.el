@@ -147,6 +147,7 @@
 
 (require 'magit)
 (diminish 'magit-auto-revert-mode)
+(setq magit-last-seen-setup-instructions "1.4.0")
 
 ;; Load keychain
 (keychain-refresh-environment)
@@ -197,7 +198,7 @@
 (global-set-key (kbd "C-c z") 'find-zshrc)
 
 ;; I hate forward delete
-(global-set-key (kbd "<deletechar>") 'autopair-backspace)
+(global-set-key (kbd "<deletechar>") 'backward-delete-char-untabify)
 
 ;; And I hate Insert even more
 (global-unset-key (kbd "<insert>"))
@@ -396,17 +397,9 @@
 (autoload 'ghc-init "ghc" nil t)
 
 (defun haskell-customizations ()
-  "My Haskell customizations."
   (autoload 'ghc-init "ghc" nil t)
-  (autoload 'ghc-debug "ghc" nil t)
-  (ghc-init)
-  (electric-indent-mode 0)
-  (turn-on-haskell-indentation)
+  (haskell-indent-mode)
   (turn-on-haskell-doc-mode)
-  ;; Within Haskell C-c-a namespace:
-  ;; m = insert module
-  ;; s = search on hayoo
-  ;; c = go to cabal file
   (local-set-key (kbd "C-c a c") 'haskell-cabal-visit-file)
   (local-set-key (kbd "C-c a a") 'shm/goto-parent)
   (local-set-key (kbd "C-c a e") 'shm/goto-parent-end)
