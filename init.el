@@ -36,12 +36,13 @@
 (sml/setup)
 (setq sml/theme 'respectful)
 
+(helm-mode 1)
 
 ;; ECB
 ;; if the sizes are not to your liking, resize them and then call ecb-store-window-sizes.
 (require 'ecb)
 (setq ecb-tip-of-the-day nil)
-(ecb-activate)
+; (ecb-activate)
 
 (require 'xcscope)
 (cscope-setup)
@@ -170,7 +171,7 @@
 (global-set-key (kbd "C-c C-c") 'ESC-prefix)
 
 ;; C-c r is recentf
-(global-set-key (kbd "C-c r") 'recentf-open-files)
+(global-set-key (kbd "C-c r") 'helm-recentf)
 
 ;; C-c g is git
 (global-set-key (kbd "C-c g") 'magit-status)
@@ -222,11 +223,6 @@
 
 ;; Go to last change
 (global-set-key (kbd "C-c .") 'goto-last-change)
-
-;; Rebind everything to smex
-(global-set-key (kbd "M-x") 'smex)
-(global-set-key (kbd "C-c ;") 'smex)
-(global-set-key (kbd "C-c :") 'smex-major-mode-commands)
 
 ;; Go to other related file
 (global-set-key (kbd "C-c o") 'ff-find-other-file)
@@ -291,6 +287,9 @@
 (global-set-key (kbd "s-<return>") 'eol-then-newline)
 
 ;; SETTINGS
+
+(setq helm-quick-update t)
+(setq helm-split-window-in-side-p t)
 
 (setq ring-bell-function 'ignore)
 
@@ -445,8 +444,8 @@
                                  (local-unset-key (kbd "M-<left>"))
                                  (local-unset-key (kbd "M-<right>"))))
 
-(provide 'init)
-
 (recentf-open-files)
+
+(provide 'init)
 
 ;;; init.el ends here
