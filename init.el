@@ -164,6 +164,8 @@
 ;; C-c a (mnemonic: auxiliary, per-buffer commands for language modes)
 (global-set-key (kbd "C-c a") nil)
 
+(global-set-key (kbd "C-c s") 'helm-command)
+
 ;; the bs package provides a nicer buffer list
 (global-set-key (kbd "C-c b") 'bs-show)
 
@@ -206,6 +208,8 @@
 
 ;; C-c l is goto-line
 (global-set-key (kbd "C-c L") 'goto-line)
+
+(global-set-key (kbd "C-c ;") 'helm-M-x)
 
 ;; Compile current file
 (global-set-key (kbd "C-c c") 'projectile-compile-project)
@@ -401,7 +405,7 @@
   (turn-on-haskell-doc-mode)
   (local-set-key (kbd "C-c a c") 'haskell-cabal-visit-file)
   (local-set-key (kbd "C-c a a") 'shm/goto-parent)
-  (local-set-key (kbd "C-c a e") 'shm/goto-parent-end)
+c;h  (local-set-key (kbd "C-c a e") 'shm/goto-parent-end)
   (local-set-key (kbd "C-c a m") 'ghc-insert-module)
   (local-set-key (kbd "C-c a s") 'haskell-hayoo))
 
@@ -444,6 +448,7 @@
                                  (local-unset-key (kbd "M-<left>"))
                                  (local-unset-key (kbd "M-<right>"))))
 
+(ecb-activate)
 (recentf-open-files)
 
 (provide 'init)
