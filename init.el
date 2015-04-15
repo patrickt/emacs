@@ -36,13 +36,14 @@
 (sml/setup)
 (setq sml/theme 'respectful)
 
+(require 'helm)
 (helm-mode 1)
+(diminish 'helm-mode)
 
 ;; ECB
 ;; if the sizes are not to your liking, resize them and then call ecb-store-window-sizes.
 (require 'ecb)
 (setq ecb-tip-of-the-day nil)
-; (ecb-activate)
 
 (require 'xcscope)
 (cscope-setup)
@@ -163,8 +164,6 @@
 
 ;; C-c a (mnemonic: auxiliary, per-buffer commands for language modes)
 (global-set-key (kbd "C-c a") nil)
-
-(global-set-key (kbd "C-c s") 'helm-command)
 
 ;; the bs package provides a nicer buffer list
 (global-set-key (kbd "C-c b") 'bs-show)
@@ -400,12 +399,12 @@
 (autoload 'ghc-init "ghc" nil t)
 
 (defun haskell-customizations ()
-  (autoload 'ghc-init "ghc" nil t)
+  "My Haskell setup."
   (haskell-indent-mode)
   (turn-on-haskell-doc-mode)
   (local-set-key (kbd "C-c a c") 'haskell-cabal-visit-file)
   (local-set-key (kbd "C-c a a") 'shm/goto-parent)
-c;h  (local-set-key (kbd "C-c a e") 'shm/goto-parent-end)
+  (local-set-key (kbd "C-c a e") 'shm/goto-parent-end)
   (local-set-key (kbd "C-c a m") 'ghc-insert-module)
   (local-set-key (kbd "C-c a s") 'haskell-hayoo))
 
