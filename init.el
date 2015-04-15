@@ -40,6 +40,9 @@
 (helm-mode 1)
 (diminish 'helm-mode)
 
+(require 'annoying-arrows-mode)
+(global-annoying-arrows-mode)
+
 ;; ECB
 ;; if the sizes are not to your liking, resize them and then call ecb-store-window-sizes.
 (require 'ecb)
@@ -396,7 +399,8 @@
 ;; use ido for YASnippet
 (setq-default yas-prompt-functions '(yas-ido-prompt yas-dropdown-prompt))
 
-(autoload 'ghc-init "ghc" nil t)
+(aa-add-suggestion 'next-line 'ace-jump-line-mode)
+(aa-add-suggestion 'previous-line 'ace-jump-line-mode)
 
 (defun haskell-customizations ()
   "My Haskell setup."
