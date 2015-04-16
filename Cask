@@ -9,6 +9,7 @@
 (depends-on "ample-theme")
 (depends-on "ample-zen-theme")
 (depends-on "annoying-arrows-mode")
+(depends-on "anzu")
 (depends-on "assemblage-theme")
 (depends-on "async")
 (depends-on "auto-complete")

@@ -97,6 +97,9 @@
 ;; delete selections, like LITERALLY EVERYWHERE ELSE
 (delete-selection-mode t)
 
+(global-anzu-mode t)
+(diminish 'anzu-mode)
+
 ;; Highlight Fixmes and Todos.
 (fic-ext-mode t)
 (diminish 'fic-ext-mode)
@@ -157,7 +160,7 @@
 (keychain-refresh-environment)
 
 ;; Undo trees
-(undo-tree-mode +1)
+(global-undo-tree-mode +1)
 
 ;; y or n
 (defalias 'yes-or-no-p 'y-or-n-p)
@@ -317,8 +320,6 @@
 ;; no backup files at all
 (setq make-backup-files nil)
 
-(setq ecb-auto-activate t)
-
 ;; Bar cursor please
 (setq-default cursor-type 'bar)
 
@@ -426,7 +427,8 @@
   (local-set-key (kbd "C-c a a") 'shm/goto-parent)
   (local-set-key (kbd "C-c a e") 'shm/goto-parent-end)
   (local-set-key (kbd "C-c a m") 'ghc-insert-module)
-  (local-set-key (kbd "C-c a s") 'haskell-hayoo))
+  (local-set-key (kbd "C-c a s") 'haskell-hayoo)
+  (local-set-key (kbd "C-c a S") 'haskell-mode-stylish-buffer))
 
 (add-hook 'haskell-mode-hook 'haskell-customizations)
 
@@ -468,13 +470,15 @@
                                  (local-unset-key (kbd "M-<right>"))))
 
 (defun window-prelude ()
+  (ecb-activate)
   (toggle-frame-fullscreen)
   (split-window-horizontally)
   (other-window 1)
   (recentf-open-files)
   (other-window 1)
+  (eshell)
   (message "Welcome back, Commander.")
-  (eshell))
+  )
 
 ;; This appears to be the only reliable way to ensure a given
 ;; block of code is run whenever an emacsclient is started
