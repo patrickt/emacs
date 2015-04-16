@@ -40,7 +40,6 @@
 (helm-mode 1)
 (diminish 'helm-mode)
 
-(require 'annoying-arrows-mode)
 (global-annoying-arrows-mode)
 
 ;; ECB
@@ -168,8 +167,7 @@
 ;; C-c a (mnemonic: auxiliary, per-buffer commands for language modes)
 (global-set-key (kbd "C-c a") nil)
 
-;; the bs package provides a nicer buffer list
-(global-set-key (kbd "C-c b") 'bs-show)
+(global-set-key (kbd "C-c b") 'helm-buffer-list)
 
 ;; C-c C-c is ESC-prefix
 (global-set-key (kbd "C-c C-c") 'ESC-prefix)
@@ -219,6 +217,7 @@
 ;; Goto next error
 (global-set-key (kbd "C-c d") 'flycheck-tip-cycle)
 
+(global-set-key (kbd "C-x o") (lambda () (interactive) (message "Use C-, instead.")))
 (global-set-key (kbd "C-,") 'other-window)
 
 ;; Find file in project
@@ -237,7 +236,7 @@
 (global-set-key (kbd "C-c h") 'discover-my-major)
 
 ;; Keyspace for ace-jump
-(global-set-key (kbd "C-c j") 'ace-jump-word-mode)
+(global-set-key (kbd "C-c j") 'ace-jump-mode)
 
 ;; Remapping C-c l to ace-jump-line-mode
 (global-set-key (kbd "C-c l") 'ace-jump-line-mode)
@@ -274,6 +273,14 @@
 
 (global-set-key (kbd "C-c k") 'kill-all-buffers)
 
+(defun my-close ()
+  "Close emacs without stupid ecb warning."
+  (interactive)
+  (ecb-deactivate)
+  (save-buffers-kill-terminal))
+
+(global-set-key (kbd "C-x C-c") 'my-close)
+
 (defun switch-to-previous-buffer ()
   "Switch to previously open buffer.  Repeated invocations toggle between the two most recently open buffers."
   (interactive)
@@ -297,6 +304,9 @@
 (setq helm-quick-update t)
 (setq helm-split-window-in-side-p t)
 
+;; why this is not on by default is a damn mystery
+(setq load-prefer-newer t)
+
 (setq ring-bell-function 'ignore)
 
 (setq system-uses-terminfo nil)
@@ -306,6 +316,8 @@
 
 ;; no backup files at all
 (setq make-backup-files nil)
+
+(setq ecb-auto-activate t)
 
 ;; Bar cursor please
 (setq-default cursor-type 'bar)
@@ -326,9 +338,7 @@
 (setq compilation-scroll-output t)
 
 ;; don't prompt to kill compilation buffers
-(setq compilation-always-kill t)
-
-(add-to-list 'default-frame-alist '(fullscreen . fullboth))
+(setq compilation-always-kill t)`
 
 ;; emacs kindly stop leaving your trash everywhere
 (setq create-lockfiles nil)
@@ -402,6 +412,12 @@
 (aa-add-suggestion 'next-line 'ace-jump-line-mode)
 (aa-add-suggestion 'previous-line 'ace-jump-line-mode)
 
+(defun server-shutdown ()
+  "Save buffers, Quit, and Shutdown (kill) server."
+  (interactive)
+  (save-some-buffers)
+  (kill-emacs))
+
 (defun haskell-customizations ()
   "My Haskell setup."
   (haskell-indent-mode)
@@ -451,8 +467,22 @@
                                  (local-unset-key (kbd "M-<left>"))
                                  (local-unset-key (kbd "M-<right>"))))
 
-(ecb-activate)
-(recentf-open-files)
+(defun window-prelude ()
+  (toggle-frame-fullscreen)
+  (split-window-horizontally)
+  (other-window 1)
+  (recentf-open-files)
+  (other-window 1)
+  (message "Welcome back, Commander.")
+  (eshell))
+
+;; This appears to be the only reliable way to ensure a given
+;; block of code is run whenever an emacsclient is started
+(setq initial-buffer-choice '(lambda ()
+                               (if window-system
+                                 (window-prelude)
+                                 "*scratch*")))
+
 
 (provide 'init)
 
