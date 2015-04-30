@@ -440,6 +440,13 @@
 (add-to-list 'auto-mode-alist '("Gemfile" . ruby-mode))
 (add-to-list 'auto-mode-alist '("Rakefile" . ruby-mode))
 
+(defun stop-using-minibuffer ()
+  "Kill the minibuffer."
+  (when (and (>= (recursion-depth) 1) (active-minibuffer-window))
+    (abort-recursive-edit)))
+
+(add-hook 'mouse-leave-buffer-hook 'stop-using-minibuffer)
+
 ;; run go-fmt before saving go code
 (add-hook 'go-mode-hook '(lambda ()
                            (add-hook 'before-save-hook 'gofmt-before-save)))
@@ -468,6 +475,8 @@
 (add-hook 'markdown-mode-hook '(lambda ()
                                  (local-unset-key (kbd "M-<left>"))
                                  (local-unset-key (kbd "M-<right>"))))
+
+(toggle-frame-fullscreen)
 
 (defun window-prelude ()
   (ecb-activate)
