@@ -161,6 +161,7 @@
 
 ;; Undo trees
 (global-undo-tree-mode +1)
+(diminish 'undo-tree-mode)
 
 ;; y or n
 (defalias 'yes-or-no-p 'y-or-n-p)
@@ -180,6 +181,8 @@
 
 ;; C-c g is git
 (global-set-key (kbd "C-c g") 'magit-status)
+
+(global-set-key (kbd "C-c w") 'beginning-of-buffer)
 
 (global-set-key (kbd "C-c /") 'comment-or-uncomment-region)
 
@@ -242,6 +245,7 @@
 (global-set-key (kbd "C-c j") 'ace-jump-mode)
 
 ;; Remapping C-c l to ace-jump-line-mode
+(global-set-key (kbd "C-l") 'ace-jump-line-mode);
 (global-set-key (kbd "C-c l") 'ace-jump-line-mode)
 
 ;; Use company instead of dabbrev-expand or hippie-expand
@@ -277,7 +281,7 @@
 (global-set-key (kbd "C-c k") 'kill-all-buffers)
 
 (defun my-close ()
-  "Close emacs without stupid ecb warning."
+  "Close Emacs without stupid ecb warning."
   (interactive)
   (ecb-deactivate)
   (save-buffers-kill-terminal))
@@ -407,9 +411,6 @@
 ;; haskell
 (add-to-list 'auto-mode-alist '("\\.hs$" . haskell-mode))
 
-;; use ido for YASnippet
-(setq-default yas-prompt-functions '(yas-ido-prompt yas-dropdown-prompt))
-
 (aa-add-suggestion 'next-line 'ace-jump-line-mode)
 (aa-add-suggestion 'previous-line 'ace-jump-line-mode)
 
@@ -463,6 +464,14 @@
 (add-hook 'scss-mode-hook 'rainbow-mode)
 
 (add-hook 'rainbow-mode-hook '(lambda () (diminish 'rainbow-mode)))
+
+(defun split-window-right-and-enter ()
+  "Split the window right and switch to it."
+  (interactive)
+  (split-window-right)
+  (other-window 1))
+
+(global-set-key (kbd "C-c 3") 'split-window-right-and-enter)
 
 (defun term-customizations ()
   "terminal stuff"
