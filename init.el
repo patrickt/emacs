@@ -36,6 +36,8 @@
 (sml/setup)
 (setq sml/theme 'respectful)
 
+(require 'use-package)
+
 (require 'helm)
 (helm-mode 1)
 (diminish 'helm-mode)
@@ -66,9 +68,15 @@
 ;; Flycheck, where possible.
 (global-flycheck-mode t)
 
-;; Projectile, where possible.
-(projectile-global-mode t)
-(diminish 'projectile-mode)
+(use-package projectile
+  :bind (("C-c f" . projectile-find-file)
+         ("C-x f" . projectile-find-file) ; overwrites set-fill-column
+         ("C-c c" . projectile-compile-project)
+         ("C-c P" . projectile-commander))
+  :init (progn
+          (projectile-global-mode)
+          (setq projectile-completion-system 'helm))
+  :diminish projectile-mode)
 
 ;; no toolbar please
 (tool-bar-mode -1)
@@ -186,14 +194,7 @@
 
 (global-set-key (kbd "C-c /") 'comment-or-uncomment-region)
 
-;; C-c f is projectile-find-in-project
-(global-set-key (kbd "C-c f") 'projectile-find-file)
-
-;; I don't care about fill columns and I always hit this key
-(global-set-key (kbd "C-x f") 'projectile-find-file)
-
-;; vc-git-grep is useless because it's not recursive
-(global-set-key (kbd "C-c G") 'projectile-grep)
+(global-set-key (kbd "C-c G") 'rgrep)
 
 ;; C-c e edits my .emacs setup
 (global-set-key (kbd "C-c e") '(lambda () (interactive) (find-file user-init-file)))
@@ -217,20 +218,11 @@
 
 (global-set-key (kbd "C-c ;") 'helm-M-x)
 
-;; Compile current file
-(global-set-key (kbd "C-c c") 'projectile-compile-project)
-
 ;; Goto next error
 (global-set-key (kbd "C-c d") 'flycheck-tip-cycle)
 
 (global-set-key (kbd "C-x o") (lambda () (interactive) (message "Use C-, instead.")))
 (global-set-key (kbd "C-,") 'other-window)
-
-;; Find file in project
-(global-set-key (kbd "C-c p") 'projectile-find-file)
-
-;; Projectile commander
-(global-set-key (kbd "C-c P") 'projectile-commander)
 
 ;; Go to last change
 (global-set-key (kbd "C-c .") 'goto-last-change)
