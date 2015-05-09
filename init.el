@@ -463,6 +463,8 @@
                                (toggle-frame-fullscreen)
                                (recentf-open-files)))
 
+(setq yas-prompt-functions '(yas-completing-prompt))
+
 
 (provide 'init)
 
