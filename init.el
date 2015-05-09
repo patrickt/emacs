@@ -86,17 +86,20 @@
   :bind ("C-c h" . discover-my-major)
   :init (global-discover-mode))
 
+(use-package company
+  :bind ("M-/" . company-complete)
+  :init (global-company-mode t)
+  :config (progn
+            (setq company-minimum-prefix-length 2)
+            (add-to-list 'company-backends 'company-ghc))
+  :diminish company-mode)
+
 ;; no toolbar please
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
 
 ;; blinky blinky
 (blink-cursor-mode t)
-
-;; git gutter is neat as heck
-(require 'git-gutter-fringe)
-(global-git-gutter-mode)
-(diminish 'git-gutter-mode)
 
 ;; need company
 (require 'company)
@@ -122,10 +125,6 @@
 
 ;; Ido-mode
 (ido-mode t)
-
-;; Company mode
-(global-company-mode t)
-(diminish 'company-mode)
 
 ;; Discover
 (global-discover-mode)
@@ -245,8 +244,7 @@
 (global-set-key (kbd "M-/") 'company-complete)
 (global-set-key (kbd "C-.") 'hippie-expand)
 
-;; Use company instead of dabbrev-expand or hippie-expand
-(global-set-key (kbd "M-/") 'company-complete)
+;; Use hippie-expand
 (global-set-key (kbd "C-c x") 'hippie-expand)
 
 ;; Browse kill ring with C-c y (mnemonic: yank)
@@ -380,7 +378,6 @@
 (eval-after-load 'flycheck
   '(require 'flycheck-ghcmod "~/.emacs.d/flycheck-ghcmod.el"))
 
-(add-to-list 'company-backends 'company-ghc)
 
 ;; execute erlang-mode when encountering .erl files
 (add-to-list 'auto-mode-alist '("\\.erl?$" . erlang-mode))
