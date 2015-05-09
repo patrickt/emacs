@@ -55,6 +55,7 @@
 (depends-on "goto-chg")
 (depends-on "guru-mode")
 (depends-on "haskell-mode")
+(depends-on "haskell-snippets")
 (depends-on "helm")
 (depends-on "inf-ruby")
 (depends-on "json-reformat")

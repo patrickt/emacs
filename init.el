@@ -101,12 +101,6 @@
 ;; blinky blinky
 (blink-cursor-mode t)
 
-;; need company
-(require 'company)
-
-;; autocomplete aggressively, like Sublime does
-(setq company-minimum-prefix-length 2)
-
 ;; highlight parentheses
 (show-paren-mode t)
 
@@ -125,9 +119,6 @@
 
 ;; Ido-mode
 (ido-mode t)
-
-;; Discover
-(global-discover-mode)
 
 ;; Eldoc
 (eldoc-mode t)
@@ -273,8 +264,6 @@
 
 (global-set-key (kbd "C-'") 'switch-to-previous-buffer)
 (global-set-key (kbd "C-c '") 'switch-to-previous-buffer)
-
-(global-set-key (kbd "C-c SPC") 'yas-expand-from-trigger-key)
 
 (defun eol-then-newline ()
   "Move to EOL then insert a newline, a la Cmd-Ret in Textmate."
