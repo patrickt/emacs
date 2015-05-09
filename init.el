@@ -44,11 +44,6 @@
 
 (global-annoying-arrows-mode)
 
-;; ECB
-;; if the sizes are not to your liking, resize them and then call ecb-store-window-sizes.
-(require 'ecb)
-(setq ecb-tip-of-the-day nil)
-
 (require 'xcscope)
 (cscope-setup)
 
@@ -77,6 +72,19 @@
           (projectile-global-mode)
           (setq projectile-completion-system 'helm))
   :diminish projectile-mode)
+
+(use-package ace-jump-mode
+  :bind (("C-l"   . ace-jump-line-mode)
+         ("C-c j" . ace-jump-mode)
+         ("C-c J" . ace-jump-char-mode)))
+
+(use-package git-gutter-fringe
+  :init (global-git-gutter-mode)
+  :diminish git-gutter-mode)
+
+(use-package discover
+  :bind ("C-c h" . discover-my-major)
+  :init (global-discover-mode))
 
 ;; no toolbar please
 (tool-bar-mode -1)
@@ -233,19 +241,9 @@
 ;; Describe keybindings in this major mode
 (global-set-key (kbd "C-c h") 'discover-my-major)
 
-;; Keyspace for ace-jump
-(global-set-key (kbd "C-c j") 'ace-jump-mode)
-
-;; Remapping C-c l to ace-jump-line-mode
-(global-set-key (kbd "C-l") 'ace-jump-line-mode);
-(global-set-key (kbd "C-c l") 'ace-jump-line-mode)
-
 ;; Use company instead of dabbrev-expand or hippie-expand
 (global-set-key (kbd "M-/") 'company-complete)
 (global-set-key (kbd "C-.") 'hippie-expand)
-
-(global-set-key (kbd "C-c J") 'ace-jump-char-mode)
-(global-set-key (kbd "C-c L") 'ace-jump-line-mode)
 
 ;; Use company instead of dabbrev-expand or hippie-expand
 (global-set-key (kbd "M-/") 'company-complete)
@@ -266,19 +264,9 @@
 (defun kill-all-buffers ()
   "Close all buffers."
   (interactive)
-  (ecb-deactivate)
-  (mapc 'kill-buffer (buffer-list))
-  (ecb-activate))
+  (mapc 'kill-buffer (buffer-list)))
 
 (global-set-key (kbd "C-c k") 'kill-all-buffers)
-
-(defun my-close ()
-  "Close Emacs without stupid ecb warning."
-  (interactive)
-  (ecb-deactivate)
-  (save-buffers-kill-terminal))
-
-(global-set-key (kbd "C-x C-c") 'my-close)
 
 (defun switch-to-previous-buffer ()
   "Switch to previously open buffer.  Repeated invocations toggle between the two most recently open buffers."
@@ -309,9 +297,6 @@
 (setq ring-bell-function 'ignore)
 
 (setq system-uses-terminfo nil)
-
-;; oh my god shut up ECB
-(setq-default ecb-tip-of-the-day nil)
 
 ;; no backup files at all
 (setq make-backup-files nil)
@@ -477,25 +462,9 @@
                                  (local-unset-key (kbd "M-<left>"))
                                  (local-unset-key (kbd "M-<right>"))))
 
-(toggle-frame-fullscreen)
-
-(defun window-prelude ()
-  (ecb-activate)
-  (toggle-frame-fullscreen)
-  (split-window-horizontally)
-  (other-window 1)
-  (recentf-open-files)
-  (other-window 1)
-  (eshell)
-  (message "Welcome back, Commander.")
-  )
-
-;; This appears to be the only reliable way to ensure a given
-;; block of code is run whenever an emacsclient is started
 (setq initial-buffer-choice '(lambda ()
-                               (if window-system
-                                 (window-prelude)
-                                 "*scratch*")))
+                               (toggle-frame-fullscreen)
+                               (recentf-open-files)))
 
 
 (provide 'init)
