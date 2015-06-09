@@ -38,10 +38,6 @@
 
 (require 'use-package)
 
-(require 'helm)
-(helm-mode 1)
-(diminish 'helm-mode)
-
 (global-annoying-arrows-mode)
 
 (require 'xcscope)
@@ -67,7 +63,8 @@
   :bind (("C-c b" . helm-buffer-list)
          ("C-c r" . helm-recentf)
          ("C-c ;" . helm-M-x))
-  :init (setq
+  :init (helm-mode 1)
+  :config (setq
           helm-quick-update t
           helm-split-window-in-side-p t)
   :diminish helm-mode)
@@ -77,15 +74,18 @@
          ("C-x f" . projectile-find-file) ; overwrites set-fill-column
          ("C-c c" . projectile-compile-project)
          ("C-c P" . projectile-commander))
-  :init (progn
-          (projectile-global-mode)
-          (setq projectile-completion-system 'helm))
+  :init (projectile-global-mode)
+  :config (setq projectile-completion-system 'helm)
   :diminish projectile-mode)
 
 (use-package ace-jump-mode
   :bind (("C-l"   . ace-jump-line-mode)
          ("C-c j" . ace-jump-mode)
          ("C-c J" . ace-jump-char-mode)))
+
+(use-package eldoc-mode
+  :init (eldoc-mode t)
+  :diminish eldoc-mode)
 
 (use-package git-gutter-fringe
   :init (global-git-gutter-mode)
@@ -128,10 +128,6 @@
 
 ;; Ido-mode
 (ido-mode t)
-
-;; Eldoc
-(eldoc-mode t)
-(diminish 'eldoc-mode)
 
 ;; Column numbers in the gutter
 (column-number-mode 1)
