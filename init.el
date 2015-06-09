@@ -31,7 +31,8 @@
 ;; Import facilities to get crap out of the menu bar.
 (require 'diminish)
 
-(require 'use-package)
+(eval-when-compile
+  (require 'use-package))
 
 (global-annoying-arrows-mode)
 
@@ -111,6 +112,18 @@
   :init (setq magit-last-seen-setup-instructions "1.4.0")
   :diminish magit-auto-revert-mode)
 
+(use-package linum
+  :init (global-linum-mode t)
+  :config (setq linum-format "%d"))
+
+(use-package yasnippet
+  :init (yas-global-mode t)
+  (diminish 'yas-minor-mode))
+
+(use-package undo-tree
+  :init (global-undo-tree-mode +1)
+  :diminish undo-tree-mode)
+
 ;; no toolbar please
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
@@ -148,11 +161,6 @@
 (unless (eq system-type 'darwin)
   (display-battery-mode t))
 
-;; Line numbers everywhere
-(require 'linum)
-(global-linum-mode t)
-(setq linum-format "%d ")
-
 (require 'editorconfig)
 (load "editorconfig")
 
@@ -162,11 +170,6 @@
 ;; Guru-
 (guru-global-mode 1)
 (diminish 'guru-mode)
-
-;; Snippets
-(require 'yasnippet)
-(yas-global-mode t)
-(diminish 'yas-minor-mode)
 
 ;; Autorevert
 (global-auto-revert-mode t)
@@ -231,8 +234,6 @@
 ;; Describe keybindings in this major mode
 (global-set-key (kbd "C-c h") 'discover-my-major)
 
-;; Use company instead of dabbrev-expand or hippie-expand
-(global-set-key (kbd "M-/") 'company-complete)
 (global-set-key (kbd "C-.") 'hippie-expand)
 
 ;; Use hippie-expand
