@@ -63,6 +63,15 @@
 ;; Flycheck, where possible.
 (global-flycheck-mode t)
 
+(use-package helm
+  :bind (("C-c b" . helm-buffer-list)
+         ("C-c r" . helm-recentf)
+         ("C-c ;" . helm-M-x))
+  :init (setq
+          helm-quick-update t
+          helm-split-window-in-side-p t)
+  :diminish helm-mode)
+
 (use-package projectile
   :bind (("C-c f" . projectile-find-file)
          ("C-x f" . projectile-find-file) ; overwrites set-fill-column
@@ -114,8 +123,8 @@
 (diminish 'anzu-mode)
 
 ;; Highlight Fixmes and Todos.
-(fic-ext-mode t)
-(diminish 'fic-ext-mode)
+;; (fic-ext-mode t)
+;; (diminish 'fic-ext-mode)
 
 ;; Ido-mode
 (ido-mode t)
@@ -177,13 +186,8 @@
 ;; C-c a (mnemonic: auxiliary, per-buffer commands for language modes)
 (global-set-key (kbd "C-c a") nil)
 
-(global-set-key (kbd "C-c b") 'helm-buffer-list)
-
 ;; C-c C-c is ESC-prefix
 (global-set-key (kbd "C-c C-c") 'ESC-prefix)
-
-;; C-c r is recentf
-(global-set-key (kbd "C-c r") 'helm-recentf)
 
 ;; C-c g is git
 (global-set-key (kbd "C-c g") 'magit-status)
@@ -213,8 +217,6 @@
 
 ;; C-c l is goto-line
 (global-set-key (kbd "C-c L") 'goto-line)
-
-(global-set-key (kbd "C-c ;") 'helm-M-x)
 
 ;; Goto next error
 (global-set-key (kbd "C-c d") 'flycheck-tip-cycle)
@@ -274,9 +276,6 @@
 (global-set-key (kbd "s-<return>") 'eol-then-newline)
 
 ;; SETTINGS
-
-(setq helm-quick-update t)
-(setq helm-split-window-in-side-p t)
 
 ;; why this is not on by default is a damn mystery
 (setq load-prefer-newer t)
