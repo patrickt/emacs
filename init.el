@@ -31,11 +31,6 @@
 ;; Import facilities to get crap out of the menu bar.
 (require 'diminish)
 
-;; Smart modeline.
-(require 'smart-mode-line)
-(sml/setup)
-(setq sml/theme 'respectful)
-
 (require 'use-package)
 
 (global-annoying-arrows-mode)
@@ -58,6 +53,10 @@
 
 ;; Flycheck, where possible.
 (global-flycheck-mode t)
+
+(use-package smart-mode-line
+  :init (sml/setup)
+  :config (setq sml/theme 'respectful))
 
 (use-package helm
   :bind (("C-c b" . helm-buffer-list)
@@ -102,6 +101,15 @@
             (setq company-minimum-prefix-length 2)
             (add-to-list 'company-backends 'company-ghc))
   :diminish company-mode)
+
+(use-package anzu-mode
+  :init (global-anzu-mode t)
+  :diminish anzu-mode)
+
+(use-package magit
+  :bind (("C-c g" . magit-status))
+  :init (setq magit-last-seen-setup-instructions "1.4.0")
+  :diminish magit-auto-revert-mode)
 
 ;; no toolbar please
 (tool-bar-mode -1)
@@ -163,9 +171,6 @@
 ;; Autorevert
 (global-auto-revert-mode t)
 
-(require 'magit)
-(diminish 'magit-auto-revert-mode)
-(setq magit-last-seen-setup-instructions "1.4.0")
 
 ;; Load keychain
 (keychain-refresh-environment)
@@ -184,9 +189,6 @@
 
 ;; C-c C-c is ESC-prefix
 (global-set-key (kbd "C-c C-c") 'ESC-prefix)
-
-;; C-c g is git
-(global-set-key (kbd "C-c g") 'magit-status)
 
 (global-set-key (kbd "C-c w") 'beginning-of-buffer)
 
