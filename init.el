@@ -60,7 +60,8 @@
   :config (setq sml/theme 'respectful))
 
 (use-package helm
-  :bind (("C-c b" . helm-buffer-list)
+  :bind (("C-c b" . helm-buffers-list)
+         ("C-x b" . helm-buffers-list)
          ("C-c r" . helm-recentf)
          ("C-c ;" . helm-M-x))
   :init (helm-mode 1)
@@ -118,6 +119,8 @@
 
 (use-package yasnippet
   :init (yas-global-mode t)
+  :config (setq yas-verbosity 1
+                yas-prompt-functions '(yas-completing-prompt))
   (diminish 'yas-minor-mode))
 
 (use-package undo-tree
@@ -139,9 +142,6 @@
 
 ;; delete selections, like LITERALLY EVERYWHERE ELSE
 (delete-selection-mode t)
-
-(global-anzu-mode t)
-(diminish 'anzu-mode)
 
 ;; Highlight Fixmes and Todos.
 ;; (fic-ext-mode t)
@@ -289,9 +289,6 @@
 ;; Bar cursor please
 (setq-default cursor-type 'bar)
 
-;; yasnippet, please be quiet
-(setq yas-verbosity 1)
-
 ;; please don't scroll so hard
 (setq mouse-wheel-scroll-amount '(1 ((shift) . 1)))
 
@@ -310,9 +307,9 @@
 ;; emacs kindly stop leaving your trash everywhere
 (setq create-lockfiles nil)
 (setq backup-directory-alist
-      `((".*" . "~/.emacs.d/backups")))
+      `((".*" . ,temporary-file-directory)))
 (setq auto-save-file-name-transforms
-      `((".*" "~/.emacs.d/backups" t)))
+      `((".*" ,temporary-file-directory t)))
 
 ;; Ensuring Unicode compliance (may not be necessary)
 (set-terminal-coding-system 'utf-8)
@@ -383,8 +380,9 @@
 
 (defun haskell-customizations ()
   "My Haskell setup."
-  (haskell-indent-mode)
+  (haskell-indentation-mode)
   (turn-on-haskell-doc-mode)
+  (ghc-init)
   (local-set-key (kbd "C-c a c") 'haskell-cabal-visit-file)
   (local-set-key (kbd "C-c a a") 'shm/goto-parent)
   (local-set-key (kbd "C-c a e") 'shm/goto-parent-end)
@@ -450,7 +448,7 @@
                                (toggle-frame-fullscreen)
                                (recentf-open-files)))
 
-(setq yas-prompt-functions '(yas-completing-prompt))
+(setq yas-prompt-functions )
 
 
 (provide 'init)
