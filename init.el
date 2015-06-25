@@ -42,7 +42,6 @@
 (semantic-mode 1)
 
 ;; Automatically indent and insert completing characters.
-(electric-indent-mode t)
 (electric-pair-mode t)
 
 ;; Track recent files.
@@ -378,6 +377,9 @@
   (save-some-buffers)
   (kill-emacs))
 
+(autoload 'ghc-init "ghc" nil t)
+(autoload 'ghc-debug "ghc" nil t)
+
 (defun haskell-customizations ()
   "My Haskell setup."
   (haskell-indentation-mode)
@@ -410,9 +412,6 @@
 ;; run go-fmt before saving go code
 (add-hook 'go-mode-hook '(lambda ()
                            (add-hook 'before-save-hook 'gofmt-before-save)))
-
-;; erlang indentation is fucky so don't do that
-(add-hook 'erlang-mode-hook (lambda () (electric-indent-mode 0)))
 
 ;; C eldoc mode
 (add-hook 'c-mode-hook 'c-turn-on-eldoc-mode)
