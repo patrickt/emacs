@@ -53,7 +53,7 @@
   :init (progn
 	  (require 'helm-command)
 	  (helm-mode t))
-  
+
   :bind (("C-c ;" . helm-M-x)
 	 ("C-c r" . helm-recentf)
 	 ("C-c y" . helm-show-kill-ring))
@@ -101,15 +101,20 @@
   :bind (("C-c s" . eshell)
 	 ("C-r" . helm-eshell-history)))
 
+(use-package markdown-mode
+  :mode ("\\.md$" . markdown-mode)
+  :ensure t)
+
 (use-package haskell-mode
   :ensure t
   :init (progn
 	  (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
 	  (add-hook 'haskell-mode-hook 'turn-on-haskell-doc-mode))
-  
+
   :bind (("C-c c" . haskell-process-cabal-build)
 	 ("C-c a c" . haskell-cabal-visit-file)
-	 ("C-c '" . haskell-interactive-bring))
+	 ("C-c a f " . haskell-interactive-bring)
+	 ("C-c a F " . haskell-session-kill))
   :mode ("\\.hs$" . haskell-mode)
   :config (setq
 	   haskell-process-suggest-remove-import-lines t
@@ -141,6 +146,14 @@
 (add-hook 'emacs-lisp-mode 'eldoc-mode)
 (add-hook 'emacs-lisp-mode 'electric-pair-mode)
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
+
+(defadvice isearch-search (after isearch-no-fail activate)
+  (unless isearch-success
+    (ad-disable-advice 'isearch-search 'after 'isearch-no-fail)
+    (ad-activate 'isearch-search)
+    (isearch-repeat (if isearch-forward 'forward))
+    (ad-enable-advice 'isearch-search 'after 'isearch-no-fail)
+    (ad-activate 'isearch-search)))
 
 (defun open-init-file ()
   "Open this very file."
@@ -186,7 +199,7 @@
  compilation-always-kill t
  create-lockfiles nil
  require-final-newline t)
- 
+
 
 (setq-default
  cursor-type 'bar)
