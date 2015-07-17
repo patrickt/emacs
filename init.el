@@ -58,13 +58,15 @@
   :init (sml/setup)
   :config (setq sml/theme 'respectful))
 
+
 (use-package helm
+  :ensure t
   :bind (("C-c b" . helm-buffers-list)
          ("C-x b" . helm-buffers-list)
          ("C-c r" . helm-recentf)
          ("C-c ;" . helm-M-x))
-  :init (helm-mode 1)
   :config (setq
+          helm-M-x-fuzzy-match t
           helm-quick-update t
           helm-split-window-in-side-p t)
   :diminish helm-mode)
@@ -104,8 +106,9 @@
   :diminish company-mode)
 
 (use-package anzu-mode
-  :init (global-anzu-mode t)
-  :diminish anzu-mode)
+  :init (progn
+          (global-anzu-mode t)
+          (diminish 'anzu-mode)))
 
 (use-package magit
   :bind (("C-c g" . magit-status))
@@ -126,6 +129,17 @@
   :init (global-undo-tree-mode +1)
   :diminish undo-tree-mode)
 
+(use-package haskell-mode
+  :init (progn
+          (turn-on-haskell-indentation)
+          (turn-on-haskell-doc-mode))
+
+  :bind (("C-c c" . haskell-process-cabal-build)
+         ("C-c a" . nil)
+         ("C-c a s" . haskell-session-change)
+         ("C-c a r" . haskell-session-restart)
+         ("C-c a i" . haskell-add-import)))
+
 ;; no toolbar please
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
@@ -145,9 +159,6 @@
 ;; Highlight Fixmes and Todos.
 ;; (fic-ext-mode t)
 ;; (diminish 'fic-ext-mode)
-
-;; Ido-mode
-(ido-mode t)
 
 ;; Column numbers in the gutter
 (column-number-mode 1)
@@ -301,7 +312,7 @@
 (setq compilation-scroll-output t)
 
 ;; don't prompt to kill compilation buffers
-(setq compilation-always-kill t)`
+(setq compilation-always-kill t)
 
 ;; emacs kindly stop leaving your trash everywhere
 (setq create-lockfiles nil)
@@ -377,22 +388,7 @@
   (save-some-buffers)
   (kill-emacs))
 
-(autoload 'ghc-init "ghc" nil t)
-(autoload 'ghc-debug "ghc" nil t)
 
-(defun haskell-customizations ()
-  "My Haskell setup."
-  (haskell-indentation-mode)
-  (turn-on-haskell-doc-mode)
-  (ghc-init)
-  (local-set-key (kbd "C-c a c") 'haskell-cabal-visit-file)
-  (local-set-key (kbd "C-c a a") 'shm/goto-parent)
-  (local-set-key (kbd "C-c a e") 'shm/goto-parent-end)
-  (local-set-key (kbd "C-c a m") 'ghc-insert-module)
-  (local-set-key (kbd "C-c a s") 'haskell-hayoo)
-  (local-set-key (kbd "C-c a S") 'haskell-mode-stylish-buffer))
-
-(add-hook 'haskell-mode-hook 'haskell-customizations)
 
 ;; heist templates
 (add-to-list 'auto-mode-alist '("\\.tpl$" . xml-mode))
@@ -446,8 +442,6 @@
 (setq initial-buffer-choice '(lambda ()
                                (toggle-frame-fullscreen)
                                (recentf-open-files)))
-
-(setq yas-prompt-functions )
 
 
 (provide 'init)
