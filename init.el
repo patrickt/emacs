@@ -5,12 +5,11 @@
 
 ;;; Code:
 
-(add-to-list 'default-frame-alist '(height . 55))
-(add-to-list 'default-frame-alist '(width . 188))
-
 (require 'package)
 
-(add-to-list 'package-archives '("melpa" . "http://melpa-stable.milkbox.net/packages/") t)
+(add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
+
+(add-to-list 'default-frame-alist '(fullscreen . maximized))
 
 (package-initialize)
 
@@ -19,8 +18,9 @@
 (setq custom-file "~/.emacs.d/custom.el")
 (load custom-file 'noerror)
 
-(unless (package-installed-p 'use-package)
-  (package-install 'use-package))
+(package-install 'use-package)
+
+(setq load-prefer-newer t)
 
 (eval-when-compile
   (require 'use-package))
@@ -29,6 +29,9 @@
 (require 'diminish)
 
 (load-theme 'deeper-blue)
+
+(setq warning-minimum-level :debug)
+(setq warning-minimum-log-level :debug)
 
 (use-package smart-mode-line
   :ensure t
@@ -73,7 +76,7 @@
 (use-package company
   :ensure t
   :init (global-company-mode 1)
-  :bind (("M-/" . company-complete))
+  :bind (("C-." . company-complete))
   :config (setq company-minimum-prefix-length 2)
   :diminish company-mode)
 
@@ -94,8 +97,7 @@
 (use-package magit
   :ensure t
   :bind (("C-c g" . magit-status))
-  :init (setq-default magit-last-seen-setup-instructions "1.4.0")
-  :diminish magit-auto-revert-mode)
+  :init (setq-default magit-last-seen-setup-instructions "1.4.0"))
 
 (use-package eshell
   :bind (("C-c s" . eshell)
@@ -105,42 +107,27 @@
   :mode ("\\.md$" . markdown-mode)
   :ensure t)
 
+
 (use-package haskell-mode
   :ensure t
   :init (progn
 	  (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
-	  (add-hook 'haskell-mode-hook 'turn-on-haskell-doc-mode))
-
-  :bind (("C-c c" . haskell-process-cabal-build)
+	  (add-hook 'haskell-mode-hook 'turn-on-haskell-indent))
+  :bind (("C-c a t" . haskell-process-do-type)
+	 ("C-c a i" . haskell-process-do-info)
 	 ("C-c a c" . haskell-cabal-visit-file)
-	 ("C-c a f " . haskell-interactive-bring)
-	 ("C-c a F " . haskell-session-kill))
+	 ("C-c a f" . haskell-interactive-bring)
+         ("C-c a i" . haskell-add-import)
+	 ("C-c a F" . haskell-session-kill)
+	 ("SPC" . haskell-mode-contextual-space))
   :mode ("\\.hs$" . haskell-mode)
   :config (setq
+           haskell-mode-contextual-import-completion nil
+	   haskell-process-type 'stack-ghci
+	   haskell-process-load-or-reload-prompt t
+	   haskell-process-show-debug-tips nil
 	   haskell-process-suggest-remove-import-lines t
-	   haskell-ask-also-kill-buffers nil
-	   haskell-process-log t)
-  (flycheck-mode nil))
-
-(use-package hi2
-  :ensure t
-  :init
-  (add-hook 'haskell-mode-hook 'turn-on-hi2))
-
-(use-package ghc
-  :ensure t)
-
-;; NOTE THAT ghc DOES NOT WORK WITH use-package.
-(require 'ghc)
-(defvar ghc-interactive-command "ghc-modi")
-(autoload 'ghc-init "ghc" nil t)
-(autoload 'ghc-debug "ghc" nil t)
-(add-hook 'haskell-mode-hook 'ghc-init)
-(setq ghc-debug t)
-
-(use-package company-ghc
-  :ensure t
-  :init (add-to-list 'company-backends 'company-ghc))
+	   haskell-process-log t))
 
 (add-hook 'emacs-lisp-mode 'flycheck-mode)
 (add-hook 'emacs-lisp-mode 'eldoc-mode)
@@ -162,6 +149,13 @@
 
 (bind-key "C-c e" 'open-init-file)
 
+(defun kill-all-buffers ()
+  "Close all buffers."
+  (interactive)
+  (mapc 'kill-buffer (buffer-list)))
+
+(bind-key "C-c k" 'kill-all-buffers)
+
 (defun split-right-and-enter ()
   "Split the window to the right and enter it."
   (interactive)
@@ -176,11 +170,16 @@
   (switch-to-buffer (other-buffer (current-buffer) 1)))
 
 (bind-key "C-c '" 'switch-to-previous-buffer)
+(bind-key "M-/" 'hippie-expand)
+(bind-key "C-c \\" 'align-regexp)
+(bind-key "C-," 'other-window)
 
 (global-hl-line-mode t)
 (show-paren-mode t)
 (delete-selection-mode t)
 (column-number-mode t)
+(tool-bar-mode -1)
+(scroll-bar-mode -1)
 
 (setq mouse-wheel-scroll-amount '(1 ((shift) . 1)))
 
@@ -195,14 +194,14 @@
  ring-bell-function 'ignore
  use-dialog-box nil
  make-backup-files nil
- indent-tabs-mode nil
  compilation-always-kill t
  create-lockfiles nil
  require-final-newline t)
 
 
 (setq-default
- cursor-type 'bar)
+ cursor-type 'bar
+ indent-tabs-mode nil)
 
 (provide 'init)
 
