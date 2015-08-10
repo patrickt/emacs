@@ -20,7 +20,9 @@
 
 (package-install 'use-package)
 
-(setq load-prefer-newer t)
+(setq load-prefer-newer t
+      warning-minimum-level :debug
+      warning-minimum-log-level :debug)
 
 (eval-when-compile
   (require 'use-package))
@@ -29,9 +31,6 @@
 (require 'diminish)
 
 (load-theme 'deeper-blue)
-
-(setq warning-minimum-level :debug)
-(setq warning-minimum-log-level :debug)
 
 (use-package smart-mode-line
   :ensure t
@@ -111,6 +110,17 @@
   :init (global-git-gutter-mode)
   :diminish git-gutter-mode)
 
+(use-package yasnippet
+  :ensure t
+  :config (yas-global-mode +1)
+  :defer 1)
+
+(use-package undo-tree
+  :ensure t
+  :bind (("C-c _" . undo-tree-visualize))
+  :init (global-undo-tree-mode +1)
+  :diminish undo-tree-mode)
+
 (use-package eshell
   :bind (("C-c s" . eshell)
 	 ("C-r" . helm-eshell-history)))
@@ -118,7 +128,6 @@
 (use-package markdown-mode
   :mode ("\\.md$" . markdown-mode)
   :ensure t)
-
 
 (use-package haskell-mode
   :ensure t
@@ -180,6 +189,13 @@
 
 (bind-key "C-c 3" 'split-right-and-enter)
 
+(defun stop-using-minibuffer ()
+  "Kill the minibuffer."
+  (when (and (>= (recursion-depth) 1) (active-minibuffer-window))
+    (abort-recursive-edit)))
+
+(add-hook 'mouse-leave-buffer-hook 'stop-using-minibuffer)
+
 (defun switch-to-previous-buffer ()
   "Switch to previously open buffer.  Repeated invocations toggle between the two most recently open buffers."
   (interactive)
@@ -204,13 +220,9 @@
 
 (setq
  compilation-scroll-input t
- warning-minimum-level :debug
- warning-minimum-log-level :debug
- make-backup-files nil
  inhibit-startup-screen t
  initial-scratch-message nil
  blink-matching-paren t
- require-final-newline t
  ring-bell-function 'ignore
  use-dialog-box nil
  make-backup-files nil
