@@ -63,6 +63,29 @@
   :config (setq-default helm-M-x-fuzzy-match t)
   :diminish helm-mode)
 
+(use-package company
+  :ensure t
+  :init (global-company-mode 1)
+  :bind (("C-." . company-complete))
+  :config (setq company-minimum-prefix-length 2)
+  :diminish company-mode)
+
+(use-package prodigy
+  :ensure t
+  :bind (("C-c q" . prodigy))
+  :config
+  (progn
+    (prodigy-define-service
+      :name "snapboard"
+      :command "stack"
+      :args '("exec" "snapboard")
+      :stop-signal 'kill
+      :cwd "~/src/snapboard/snapboard")
+    (prodigy-define-service
+      :name "PostgreSQL"
+      :command "postgres"
+      :args '("-D" "/usr/local/var/postgres"))))
+
 (use-package projectile
   :ensure t
   :bind (("C-c f" . projectile-find-file)
@@ -73,23 +96,6 @@
 		projectile-enable-caching t)
   :diminish projectile-mode)
 
-(use-package company
-  :ensure t
-  :init (global-company-mode 1)
-  :bind (("C-." . company-complete))
-  :config (setq company-minimum-prefix-length 2)
-  :diminish company-mode)
-
-(use-package prodigy
-  :ensure t
-  :bind (("C-c p" . prodigy))
-  :config
-  (progn
-    (prodigy-define-service
-      :name "PostgreSQL"
-      :command "postgres"
-      :args '("-D" "/usr/local/var/postgres"))))
-
 (use-package linum
   :init (global-linum-mode t)
   :config (setq linum-format "%d"))
@@ -97,7 +103,13 @@
 (use-package magit
   :ensure t
   :bind (("C-c g" . magit-status))
-  :init (setq-default magit-last-seen-setup-instructions "1.4.0"))
+  :init (global-auto-revert-mode t)
+  :config (setq-default magit-last-seen-setup-instructions "1.4.0"))
+
+(use-package git-gutter
+  :ensure t
+  :init (global-git-gutter-mode)
+  :diminish git-gutter-mode)
 
 (use-package eshell
   :bind (("C-c s" . eshell)
@@ -128,6 +140,10 @@
 	   haskell-process-show-debug-tips nil
 	   haskell-process-suggest-remove-import-lines t
 	   haskell-process-log t))
+
+(use-package xml-mode
+  :config (setq nxml-child-indent 4)
+  :mode ("\\.tpl$" . xml-mode))
 
 (add-hook 'emacs-lisp-mode 'flycheck-mode)
 (add-hook 'emacs-lisp-mode 'eldoc-mode)
@@ -173,6 +189,7 @@
 (bind-key "M-/" 'hippie-expand)
 (bind-key "C-c \\" 'align-regexp)
 (bind-key "C-," 'other-window)
+(bind-key "C-c /" 'comment-or-uncomment-region)
 
 (global-hl-line-mode t)
 (show-paren-mode t)
@@ -186,6 +203,9 @@
 (defalias 'yes-or-no-p 'y-or-n-p)
 
 (setq
+ compilation-scroll-input t
+ warning-minimum-level :debug
+ warning-minimum-log-level :debug
  make-backup-files nil
  inhibit-startup-screen t
  initial-scratch-message nil
@@ -197,7 +217,6 @@
  compilation-always-kill t
  create-lockfiles nil
  require-final-newline t)
-
 
 (setq-default
  cursor-type 'bar
