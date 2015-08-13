@@ -12,6 +12,7 @@
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
 (package-initialize)
+(package-refresh-contents)
 
 (global-set-key (kbd "C-c a") 'nil)
 
@@ -23,6 +24,9 @@
 (setq load-prefer-newer t
       warning-minimum-level :debug
       warning-minimum-log-level :debug)
+
+(tool-bar-mode -1)
+(scroll-bar-mode -1)
 
 (eval-when-compile
   (require 'use-package))
@@ -58,7 +62,9 @@
 
   :bind (("C-c ;" . helm-M-x)
 	 ("C-c r" . helm-recentf)
-	 ("C-c y" . helm-show-kill-ring))
+	 ("C-c y" . helm-show-kill-ring)
+         ("C-c b" . helm-buffers-list)
+         ("C-x b" . helm-buffers-list))
   :config (setq-default helm-M-x-fuzzy-match t)
   :diminish helm-mode)
 
@@ -112,8 +118,15 @@
 
 (use-package yasnippet
   :ensure t
-  :config (yas-global-mode +1)
-  :defer 1)
+  :defer 1
+  :diminish yas-minor-mode
+  :config
+  (yas-global-mode +1)
+  (setq yas-verbosity +1
+        yas-prompt-functions '(yas-completing-prompt)))
+
+(use-package haskell-snippets
+  :ensure t)
 
 (use-package undo-tree
   :ensure t
@@ -143,6 +156,7 @@
 	 ("SPC" . haskell-mode-contextual-space))
   :mode ("\\.hs$" . haskell-mode)
   :config (setq
+           haskell-notify-p t
            haskell-mode-contextual-import-completion nil
 	   haskell-process-type 'stack-ghci
 	   haskell-process-load-or-reload-prompt t
@@ -207,19 +221,15 @@
 (bind-key "C-," 'other-window)
 (bind-key "C-c /" 'comment-or-uncomment-region)
 
+(defalias 'yes-or-no-p 'y-or-n-p)
+
 (global-hl-line-mode t)
 (show-paren-mode t)
 (delete-selection-mode t)
 (column-number-mode t)
-(tool-bar-mode -1)
-(scroll-bar-mode -1)
-
-(setq mouse-wheel-scroll-amount '(1 ((shift) . 1)))
-
-(defalias 'yes-or-no-p 'y-or-n-p)
 
 (setq
- compilation-scroll-input t
+ compilation-scroll-output t
  inhibit-startup-screen t
  initial-scratch-message nil
  blink-matching-paren t
@@ -228,6 +238,7 @@
  make-backup-files nil
  compilation-always-kill t
  create-lockfiles nil
+ mouse-wheel-scroll-amount '(1 ((shift) . 1))
  require-final-newline t)
 
 (setq-default
