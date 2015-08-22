@@ -58,6 +58,7 @@
   :ensure t
   :init (progn
 	  (require 'helm-command)
+          (helm-autoresize-mode t)
 	  (helm-mode t))
 
   :bind (("C-c ;" . helm-M-x)
@@ -142,11 +143,15 @@
   :mode ("\\.md$" . markdown-mode)
   :ensure t)
 
+(use-package scss-mode
+  :ensure t)
+
 (use-package haskell-mode
   :ensure t
   :init (progn
 	  (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
-	  (add-hook 'haskell-mode-hook 'turn-on-haskell-indent))
+	  (add-hook 'haskell-mode-hook 'turn-on-haskell-indent)
+          (add-hook 'haskell-mode-hook 'turn-on-haskell-decl-scan))
   :bind (("C-c a t" . haskell-process-do-type)
 	 ("C-c a i" . haskell-process-do-info)
 	 ("C-c a c" . haskell-cabal-visit-file)
@@ -157,9 +162,11 @@
   :mode ("\\.hs$" . haskell-mode)
   :config (setq
            haskell-notify-p t
+           haskell-ask-also-kill-buffers nil
+           haskell-font-lock-symbols t
            haskell-mode-contextual-import-completion nil
 	   haskell-process-type 'stack-ghci
-	   haskell-process-load-or-reload-prompt t
+	   haskell-process-load-or-reload-prompt nil
 	   haskell-process-show-debug-tips nil
 	   haskell-process-suggest-remove-import-lines t
 	   haskell-process-log t))
@@ -220,6 +227,7 @@
 (bind-key "C-c \\" 'align-regexp)
 (bind-key "C-," 'other-window)
 (bind-key "C-c /" 'comment-or-uncomment-region)
+(bind-key "C-c G" 'rgrep)
 
 (defalias 'yes-or-no-p 'y-or-n-p)
 
@@ -229,6 +237,7 @@
 (column-number-mode t)
 
 (setq
+ kill-whole-line t
  compilation-scroll-output t
  inhibit-startup-screen t
  initial-scratch-message nil
