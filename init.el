@@ -64,6 +64,7 @@
   :bind (("C-c ;" . helm-M-x)
 	 ("C-c r" . helm-recentf)
 	 ("C-c y" . helm-show-kill-ring)
+         ("C-c G" . helm-do-grep)
          ("C-c b" . helm-buffers-list)
          ("C-x b" . helm-buffers-list))
   :config (setq-default helm-M-x-fuzzy-match t)
@@ -72,7 +73,7 @@
 (use-package company
   :ensure t
   :init (global-company-mode 1)
-  :bind (("C-." . company-complete))
+  :bind (("M-/" . company-complete))
   :config (setq company-minimum-prefix-length 2)
   :diminish company-mode)
 
@@ -81,6 +82,11 @@
   :bind (("C-c q" . prodigy))
   :config
   (progn
+    (prodigy-define-service
+      :name "snapboard: gulp watch"
+      :command "gulp"
+      :args '("watch")
+      :cwd "~/src/snapboard/snapboard")
     (prodigy-define-service
       :name "snapboard"
       :command "stack"
@@ -126,6 +132,9 @@
   (setq yas-verbosity +1
         yas-prompt-functions '(yas-completing-prompt)))
 
+(use-package saveplace
+  :config (setq-default save-place t))
+
 (use-package haskell-snippets
   :ensure t)
 
@@ -146,10 +155,16 @@
 (use-package scss-mode
   :ensure t)
 
+(use-package ace-jump-mode
+  :ensure t
+  :bind (("C-l"   . ace-jump-line-mode)
+         ("C-c l" . ace-jump-mode)))
+
 (use-package haskell-mode
   :ensure t
   :init (progn
 	  (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
+          (add-hook 'haskell-mode-hook 'haskell-doc-mode)
 	  (add-hook 'haskell-mode-hook 'turn-on-haskell-indent)
           (add-hook 'haskell-mode-hook 'turn-on-haskell-decl-scan))
   :bind (("C-c a t" . haskell-process-do-type)
@@ -169,7 +184,10 @@
 	   haskell-process-load-or-reload-prompt nil
 	   haskell-process-show-debug-tips nil
 	   haskell-process-suggest-remove-import-lines t
-	   haskell-process-log t))
+	   haskell-process-log t
+           haskell-doc-show-reserved nil
+           haskell-doc-show-global-types t)
+  (defalias 'haskell-complete-module-read 'helm--completing-read-default))
 
 (use-package xml-mode
   :config (setq nxml-child-indent 4)
@@ -223,11 +241,9 @@
   (switch-to-buffer (other-buffer (current-buffer) 1)))
 
 (bind-key "C-c '" 'switch-to-previous-buffer)
-(bind-key "M-/" 'hippie-expand)
 (bind-key "C-c \\" 'align-regexp)
 (bind-key "C-," 'other-window)
 (bind-key "C-c /" 'comment-or-uncomment-region)
-(bind-key "C-c G" 'rgrep)
 
 (defalias 'yes-or-no-p 'y-or-n-p)
 
@@ -235,6 +251,7 @@
 (show-paren-mode t)
 (delete-selection-mode t)
 (column-number-mode t)
+(display-time-mode t)
 
 (setq
  kill-whole-line t
