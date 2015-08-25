@@ -246,10 +246,10 @@
   (interactive)
   (switch-to-buffer (other-buffer (current-buffer) 1)))
 
-(bind-key "C-c '" 'switch-to-previous-buffer)
+(bind-key "C-c '"  'switch-to-previous-buffer)
 (bind-key "C-c \\" 'align-regexp)
-(bind-key "C-," 'other-window)
-(bind-key "C-c /" 'comment-or-uncomment-region)
+(bind-key "C-,"    'other-window)
+(bind-key "C-c /"  'comment-or-uncomment-region)
 
 (defalias 'yes-or-no-p 'y-or-n-p)
 
@@ -258,9 +258,9 @@
 (delete-selection-mode t)
 (column-number-mode t)
 (display-time-mode t)
+(auto-save-mode -1)
 
 (setq
- auto-save-file-name-transforms '((".*" "~/.emacs.d/auto-save/" t))
  blink-matching-paren t
  compilation-always-kill t
  compilation-scroll-output t
