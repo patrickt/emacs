@@ -2,6 +2,7 @@
 
 ;;; Commentary:
 ;; seriously, fuck computers
+;; to investigate: helm-swoop
 
 ;;; Code:
 
@@ -27,6 +28,7 @@
 
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
+(tooltip-mode -1)
 
 (eval-when-compile
   (require 'use-package))
@@ -76,8 +78,10 @@
   :ensure t
   :init (global-company-mode 1)
   :bind (("M-/" . company-complete))
-  :config (setq company-minimum-prefix-length 2)
-  :diminish company-mode)
+  :diminish company-mode
+  :config
+  (setq company-minimum-prefix-length 2)
+  (define-key company-active-map (kbd "C-n") #'company-select-next))
 
 (use-package prodigy
   :ensure t
@@ -256,20 +260,20 @@
 (display-time-mode t)
 
 (setq
- kill-whole-line t
+ auto-save-file-name-transforms '((".*" "~/.emacs.d/auto-save/" t))
+ blink-matching-paren t
+ compilation-always-kill t
  compilation-scroll-output t
+ create-lockfiles nil
+ default-directory "~/src"
  inhibit-startup-screen t
  initial-scratch-message nil
- blink-matching-paren t
- ring-bell-function 'ignore
- use-dialog-box nil
+ kill-whole-line t
  make-backup-files nil
- compilation-always-kill t
- create-lockfiles nil
  mouse-wheel-scroll-amount '(1 ((shift) . 1))
- auto-save-file-name-transforms '((".*" "~/.emacs.d/auto-save/" t))
  require-final-newline t
- )
+ ring-bell-function 'ignore
+ use-dialog-box nil)
 
 (setq-default
  cursor-type 'bar
