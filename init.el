@@ -66,6 +66,8 @@
 	 ("C-c y" . helm-show-kill-ring)
          ("C-c G" . helm-do-grep)
          ("C-c b" . helm-buffers-list)
+         ("C-c S" . helm-occur)
+         ("C-c i" . helm-imenu)
          ("C-x b" . helm-buffers-list))
   :config (setq-default helm-M-x-fuzzy-match t)
   :diminish helm-mode)
@@ -265,7 +267,9 @@
  compilation-always-kill t
  create-lockfiles nil
  mouse-wheel-scroll-amount '(1 ((shift) . 1))
- require-final-newline t)
+ auto-save-file-name-transforms '((".*" "~/.emacs.d/auto-save/" t))
+ require-final-newline t
+ )
 
 (setq-default
  cursor-type 'bar

@@ -1,0 +1,6 @@
+custom.el
+elpa
+eshell
+projectile*
+.DS_Store
+auto-save*
