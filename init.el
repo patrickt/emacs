@@ -7,7 +7,7 @@
 
 (require 'package)
 
-(add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
+(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
 
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
@@ -18,12 +18,9 @@
 
 (load-theme 'deeper-blue)
 
-;; Ensure use-package is loaded, as everything depends on it.
-(condition-case nil
-    (package-install 'use-package)
-  (error
-   (package-refresh-contents)
-   (package-install 'use-package)))
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
 
 (setq load-prefer-newer t
       warning-minimum-level :debug
@@ -34,15 +31,13 @@
 (tooltip-mode -1)
 
 (eval-when-compile
-  (require 'use-package))
-
-(require 'bind-key)
-(require 'diminish)
+  (require 'use-package)
+  (require 'bind-key)
+  (require 'diminish))
 
 (use-package smart-mode-line
   :ensure t
-  :init (sml/setup)
-  :config (setq sml/theme 'respectful))
+  :init (sml/setup))
 
 (use-package exec-path-from-shell
   :ensure t
@@ -60,11 +55,11 @@
 (use-package helm
   :ensure t
   :config (progn
-          (helm-autoresize-mode t)
-	  (helm-mode t))
+            (helm-autoresize-mode t)
+            (helm-mode t))
   :bind (("C-c ;" . helm-M-x)
-	 ("C-c r" . helm-recentf)
-	 ("C-c y" . helm-show-kill-ring)
+         ("C-c r" . helm-recentf)
+         ("C-c y" . helm-show-kill-ring)
          ("C-c G" . helm-do-grep)
          ("C-c b" . helm-buffers-list)
          ("C-c S" . helm-occur)
@@ -110,7 +105,7 @@
          ("C-c c" . projectile-compile-project))
   :init (projectile-global-mode)
   :config (setq projectile-completion-system 'helm
-		projectile-enable-caching t)
+                projectile-enable-caching t)
   :diminish projectile-mode)
 
 (use-package linum
@@ -156,7 +151,7 @@
 
 (use-package eshell
   :bind (("C-c s" . eshell)
-	 ("C-r" . helm-eshell-history)))
+         ("C-r" . helm-eshell-history)))
 
 (use-package markdown-mode
   :ensure t
@@ -177,27 +172,27 @@
 (use-package haskell-mode
   :ensure t
   :init (progn
-	  (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
+          (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
           (add-hook 'haskell-mode-hook 'haskell-decl-scan-mode)
           (add-hook 'haskell-mode-hook 'haskell-doc-mode)
-	  (add-hook 'haskell-mode-hook 'turn-on-haskell-indent))
+          (add-hook 'haskell-mode-hook 'turn-on-haskell-indent))
   :bind (("C-c a t" . haskell-process-do-type)
-	 ("C-c a i" . haskell-process-do-info)
-	 ("C-c a c" . haskell-cabal-visit-file)
-	 ("C-c a f" . haskell-interactive-bring)
+         ("C-c a i" . haskell-process-do-info)
+         ("C-c a c" . haskell-cabal-visit-file)
+         ("C-c a f" . haskell-interactive-bring)
          ("C-c a i" . haskell-add-import)
-	 ("C-c a F" . haskell-session-kill)
-	 ("SPC" . haskell-mode-contextual-space))
+         ("C-c a F" . haskell-session-kill)
+         ("SPC" . haskell-mode-contextual-space))
   :mode ("\\.hs$" . haskell-mode)
   :config (setq
            haskell-notify-p t
            haskell-ask-also-kill-buffers nil
            haskell-font-lock-symbols t
            haskell-mode-contextual-import-completion nil
-	   haskell-process-type 'stack-ghci
-	   haskell-process-show-debug-tips nil
-	   haskell-process-suggest-remove-import-lines t
-	   haskell-process-log t
+           haskell-process-type 'stack-ghci
+           haskell-process-show-debug-tips nil
+           haskell-process-suggest-remove-import-lines t
+           haskell-process-log t
            haskell-doc-show-reserved nil
            haskell-doc-show-global-types t)
   (defalias 'haskell-complete-module-read 'helm--completing-read-default))
@@ -206,10 +201,11 @@
   :config (setq nxml-child-indent 4)
   :mode ("\\.tpl$" . xml-mode))
 
-(add-hook 'emacs-lisp-mode 'flycheck-mode)
-(add-hook 'emacs-lisp-mode 'eldoc-mode)
-(add-hook 'emacs-lisp-mode 'electric-pair-mode)
-(add-hook 'before-save-hook 'delete-trailing-whitespace)
+(use-package emacs-lisp-mode
+  :config
+  (add-hook 'emacs-lisp-mode 'flycheck-mode)
+  (add-hook 'emacs-lisp-mode 'eldoc-mode)
+  (add-hook 'emacs-lisp-mode 'electric-pair-mode))
 
 ;; Automatically wrap around in isearch results.
 (defadvice isearch-search (after isearch-no-fail activate)
@@ -258,6 +254,7 @@
 (bind-key "C-c \\" 'align-regexp)
 (bind-key "C-,"    'other-window)
 (bind-key "C-c /"  'comment-or-uncomment-region)
+(bind-key "C-c x"  'ESC-prefix)
 (bind-key "s-+"    'text-scale-increase)
 (bind-key "s-_"    'text-scale-decrease)
 
@@ -284,6 +281,8 @@
  require-final-newline t
  ring-bell-function 'ignore
  use-dialog-box nil)
+
+(add-hook 'before-save-hook 'delete-trailing-whitespace)
 
 (setq-default
  cursor-type 'bar
