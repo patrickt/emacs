@@ -1,8 +1,7 @@
 ;;; init.el -- NixOS-specific init file
 
 ;;; Commentary:
-;; seriously, fuck computers
-;; to investigate: helm-swoop
+;; Should work out-of-the-box on OS X.
 
 ;;; Code:
 
@@ -13,14 +12,18 @@
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
 (package-initialize)
-(package-refresh-contents)
-
-(global-set-key (kbd "C-c a") 'nil)
 
 (setq custom-file "~/.emacs.d/custom.el")
 (load custom-file 'noerror)
 
-(package-install 'use-package)
+(load-theme 'deeper-blue)
+
+;; Ensure use-package is loaded, as everything depends on it.
+(condition-case nil
+    (package-install 'use-package)
+  (error
+   (package-refresh-contents)
+   (package-install 'use-package)))
 
 (setq load-prefer-newer t
       warning-minimum-level :debug
@@ -35,8 +38,6 @@
 
 (require 'bind-key)
 (require 'diminish)
-
-(load-theme 'deeper-blue)
 
 (use-package smart-mode-line
   :ensure t
@@ -58,11 +59,9 @@
 
 (use-package helm
   :ensure t
-  :init (progn
-	  (require 'helm-command)
+  :config (progn
           (helm-autoresize-mode t)
 	  (helm-mode t))
-
   :bind (("C-c ;" . helm-M-x)
 	 ("C-c r" . helm-recentf)
 	 ("C-c y" . helm-show-kill-ring)
@@ -141,7 +140,12 @@
 (use-package saveplace
   :config (setq-default save-place t))
 
+(use-package rainbow-delimiters
+  :ensure t
+  :config (add-hook 'prog-mode-hook 'rainbow-delimiters-mode))
+
 (use-package haskell-snippets
+  :defer 3
   :ensure t)
 
 (use-package undo-tree
@@ -155,8 +159,8 @@
 	 ("C-r" . helm-eshell-history)))
 
 (use-package markdown-mode
-  :mode ("\\.md$" . markdown-mode)
-  :ensure t)
+  :ensure t
+  :mode ("\\.md$" . markdown-mode))
 
 (use-package scss-mode
   :ensure t)
@@ -166,13 +170,17 @@
   :bind (("C-l"   . ace-jump-line-mode)
          ("C-c l" . ace-jump-mode)))
 
+(use-package duplicate-thing
+  :ensure t
+  :bind (("C-c u" . duplicate-thing)))
+
 (use-package haskell-mode
   :ensure t
   :init (progn
 	  (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
+          (add-hook 'haskell-mode-hook 'haskell-decl-scan-mode)
           (add-hook 'haskell-mode-hook 'haskell-doc-mode)
-	  (add-hook 'haskell-mode-hook 'turn-on-haskell-indent)
-          (add-hook 'haskell-mode-hook 'turn-on-haskell-decl-scan))
+	  (add-hook 'haskell-mode-hook 'turn-on-haskell-indent))
   :bind (("C-c a t" . haskell-process-do-type)
 	 ("C-c a i" . haskell-process-do-info)
 	 ("C-c a c" . haskell-cabal-visit-file)
@@ -187,7 +195,6 @@
            haskell-font-lock-symbols t
            haskell-mode-contextual-import-completion nil
 	   haskell-process-type 'stack-ghci
-	   haskell-process-load-or-reload-prompt nil
 	   haskell-process-show-debug-tips nil
 	   haskell-process-suggest-remove-import-lines t
 	   haskell-process-log t
@@ -204,6 +211,7 @@
 (add-hook 'emacs-lisp-mode 'electric-pair-mode)
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
+;; Automatically wrap around in isearch results.
 (defadvice isearch-search (after isearch-no-fail activate)
   (unless isearch-success
     (ad-disable-advice 'isearch-search 'after 'isearch-no-fail)
@@ -250,6 +258,8 @@
 (bind-key "C-c \\" 'align-regexp)
 (bind-key "C-,"    'other-window)
 (bind-key "C-c /"  'comment-or-uncomment-region)
+(bind-key "s-+"    'text-scale-increase)
+(bind-key "s-_"    'text-scale-decrease)
 
 (defalias 'yes-or-no-p 'y-or-n-p)
 
