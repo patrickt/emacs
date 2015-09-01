@@ -1,7 +1,7 @@
-;;; init.el -- NixOS-specific init file
+;;; init.el -- Patrick Thomson's emacs config
 
 ;;; Commentary:
-;; Should work out-of-the-box on OS X.
+;; This file is in the public domain.
 
 ;;; Code:
 
