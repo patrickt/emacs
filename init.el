@@ -1,402 +1,242 @@
-;;; init.el --- Patrick Thomson's .emacs file
-
-;;; This file is in the public domain.
+;;; init.el -- NixOS-specific init file
 
 ;;; Commentary:
-;; This should be portable between OS X and sane Linux distros.
-;; Cask and Pallet must be installed first.
+;; Should work out-of-the-box on OS X.
 
 ;;; Code:
 
-;; global requirements
 (require 'package)
-(require 'cask "~/.cask/cask.el")
-(cask-initialize)
 
-;; load melpa and marmalade to start
-(add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
-(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/") t)
+(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
+
+(add-to-list 'default-frame-alist '(fullscreen . maximized))
 
 (package-initialize)
 
-;; Load per-machine settings.
 (setq custom-file "~/.emacs.d/custom.el")
 (load custom-file 'noerror)
 
-;; GLOBAL MODES
+(load-theme 'deeper-blue)
 
-;; Load paths from shell
-(exec-path-from-shell-initialize)
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
 
-;; Import facilities to get crap out of the menu bar.
-(require 'diminish)
+(setq load-prefer-newer t
+      warning-minimum-level :debug
+      warning-minimum-log-level :debug)
+
+(tool-bar-mode -1)
+(scroll-bar-mode -1)
+(tooltip-mode -1)
 
 (eval-when-compile
-  (require 'use-package))
-
-(global-annoying-arrows-mode)
-
-(require 'xcscope)
-(cscope-setup)
-
-(semantic-mode 1)
-
-;; Automatically indent and insert completing characters.
-(electric-pair-mode t)
-
-;; Track recent files.
-(require 'recentf)
-(recentf-mode t)
-
-;; Tabs, please.
-(tabbar-mode t)
-
-;; Flycheck, where possible.
-(global-flycheck-mode t)
+  (require 'use-package)
+  (require 'bind-key)
+  (require 'diminish))
 
 (use-package smart-mode-line
-  :init (sml/setup)
-  :config (setq sml/theme 'respectful))
+  :ensure t
+  :init (sml/setup))
 
+(use-package exec-path-from-shell
+  :ensure t
+  :init (exec-path-from-shell-initialize))
+
+(use-package recentf
+  :init (recentf-mode t)
+  :config
+  (add-to-list 'recentf-exclude "\\.emacs.d"))
+
+(use-package nix-mode
+  :ensure t
+  :mode ("\\.nix$" . nix-mode))
 
 (use-package helm
   :ensure t
-  :bind (("C-c b" . helm-buffers-list)
-         ("C-x b" . helm-buffers-list)
+  :config (progn
+            (helm-autoresize-mode t)
+            (helm-mode t))
+  :bind (("C-c ;" . helm-M-x)
          ("C-c r" . helm-recentf)
-         ("C-c ;" . helm-M-x))
-  :config (setq
-          helm-M-x-fuzzy-match t
-          helm-quick-update t
-          helm-split-window-in-side-p t)
+         ("C-c y" . helm-show-kill-ring)
+         ("C-c G" . helm-do-grep)
+         ("C-c b" . helm-buffers-list)
+         ("C-c S" . helm-occur)
+         ("C-c i" . helm-imenu)
+         ("C-x b" . helm-buffers-list))
+  :config (setq-default helm-M-x-fuzzy-match t)
   :diminish helm-mode)
 
+(use-package company
+  :ensure t
+  :init (global-company-mode 1)
+  :bind (("M-/" . company-complete))
+  :diminish company-mode
+  :config
+  (setq company-minimum-prefix-length 2)
+  (define-key company-active-map (kbd "C-n") #'company-select-next))
+
+(use-package prodigy
+  :ensure t
+  :bind (("C-c q" . prodigy))
+  :config
+  (progn
+    (prodigy-define-service
+      :name "snapboard: gulp watch"
+      :command "gulp"
+      :args '("watch")
+      :cwd "~/src/snapboard/snapboard")
+    (prodigy-define-service
+      :name "snapboard"
+      :command "stack"
+      :args '("exec" "snapboard")
+      :stop-signal 'kill
+      :cwd "~/src/snapboard/snapboard")
+    (prodigy-define-service
+      :name "PostgreSQL"
+      :command "postgres"
+      :args '("-D" "/usr/local/var/postgres"))))
+
 (use-package projectile
+  :ensure t
   :bind (("C-c f" . projectile-find-file)
          ("C-x f" . projectile-find-file) ; overwrites set-fill-column
-         ("C-c c" . projectile-compile-project)
-         ("C-c P" . projectile-commander))
+         ("C-c c" . projectile-compile-project))
   :init (projectile-global-mode)
-  :config (setq projectile-completion-system 'helm)
+  :config (setq projectile-completion-system 'helm
+                projectile-enable-caching t)
   :diminish projectile-mode)
-
-(use-package ace-jump-mode
-  :bind (("C-l"   . ace-jump-line-mode)
-         ("C-c j" . ace-jump-mode)
-         ("C-c J" . ace-jump-char-mode)))
-
-(use-package eldoc-mode
-  :init (eldoc-mode t)
-  :diminish eldoc-mode)
-
-(use-package git-gutter-fringe
-  :init (global-git-gutter-mode)
-  :diminish git-gutter-mode)
-
-(use-package discover
-  :bind ("C-c h" . discover-my-major)
-  :init (global-discover-mode))
-
-(use-package company
-  :bind ("M-/" . company-complete)
-  :init (global-company-mode t)
-  :config (progn
-            (setq company-minimum-prefix-length 2)
-            (add-to-list 'company-backends 'company-ghc))
-  :diminish company-mode)
-
-(use-package anzu-mode
-  :init (progn
-          (global-anzu-mode t)
-          (diminish 'anzu-mode)))
-
-(use-package magit
-  :bind (("C-c g" . magit-status))
-  :init (setq magit-last-seen-setup-instructions "1.4.0")
-  :diminish magit-auto-revert-mode)
 
 (use-package linum
   :init (global-linum-mode t)
   :config (setq linum-format "%d"))
 
+(use-package magit
+  :ensure t
+  :bind (("C-c g" . magit-status))
+  :init (global-auto-revert-mode t)
+  :config (setq-default magit-last-seen-setup-instructions "1.4.0"))
+
+(use-package git-gutter
+  :ensure t
+  :init (global-git-gutter-mode)
+  :diminish git-gutter-mode)
+
 (use-package yasnippet
-  :init (yas-global-mode t)
-  :config (setq yas-verbosity 1
-                yas-prompt-functions '(yas-completing-prompt))
-  (diminish 'yas-minor-mode))
+  :ensure t
+  :defer 1
+  :diminish yas-minor-mode
+  :config
+  (yas-global-mode +1)
+  (setq yas-verbosity +1
+        yas-prompt-functions '(yas-completing-prompt)))
+
+(use-package saveplace
+  :config (setq-default save-place t))
+
+(use-package rainbow-delimiters
+  :ensure t
+  :config (add-hook 'prog-mode-hook 'rainbow-delimiters-mode))
+
+(use-package haskell-snippets
+  :defer 3
+  :ensure t)
 
 (use-package undo-tree
+  :ensure t
+  :bind (("C-c _" . undo-tree-visualize))
   :init (global-undo-tree-mode +1)
   :diminish undo-tree-mode)
 
+(use-package eshell
+  :bind (("C-c s" . eshell)
+         ("C-r" . helm-eshell-history)))
+
+(use-package markdown-mode
+  :ensure t
+  :mode ("\\.md$" . markdown-mode))
+
+(use-package scss-mode
+  :ensure t)
+
+(use-package ace-jump-mode
+  :ensure t
+  :bind (("C-l"   . ace-jump-line-mode)
+         ("C-c l" . ace-jump-mode)))
+
+(use-package duplicate-thing
+  :ensure t
+  :bind (("C-c u" . duplicate-thing)))
+
 (use-package haskell-mode
+  :ensure t
   :init (progn
-          (turn-on-haskell-indentation)
-          (turn-on-haskell-doc-mode))
+          (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
+          (add-hook 'haskell-mode-hook 'haskell-decl-scan-mode)
+          (add-hook 'haskell-mode-hook 'haskell-doc-mode)
+          (add-hook 'haskell-mode-hook 'turn-on-haskell-indent))
+  :bind (("C-c a t" . haskell-process-do-type)
+         ("C-c a i" . haskell-process-do-info)
+         ("C-c a c" . haskell-cabal-visit-file)
+         ("C-c a f" . haskell-interactive-bring)
+         ("C-c a i" . haskell-add-import)
+         ("C-c a F" . haskell-session-kill)
+         ("SPC" . haskell-mode-contextual-space))
+  :mode ("\\.hs$" . haskell-mode)
+  :config (setq
+           haskell-notify-p t
+           haskell-ask-also-kill-buffers nil
+           haskell-font-lock-symbols t
+           haskell-mode-contextual-import-completion nil
+           haskell-process-type 'stack-ghci
+           haskell-process-show-debug-tips nil
+           haskell-process-suggest-remove-import-lines t
+           haskell-process-log t
+           haskell-doc-show-reserved nil
+           haskell-doc-show-global-types t)
+  (defalias 'haskell-complete-module-read 'helm--completing-read-default))
 
-  :bind (("C-c c" . haskell-process-cabal-build)
-         ("C-c a" . nil)
-         ("C-c a s" . haskell-session-change)
-         ("C-c a r" . haskell-session-restart)
-         ("C-c a i" . haskell-add-import)))
+(use-package xml-mode
+  :config (setq nxml-child-indent 4)
+  :mode ("\\.tpl$" . xml-mode))
 
-;; no toolbar please
-(tool-bar-mode -1)
-(scroll-bar-mode -1)
+(use-package emacs-lisp-mode
+  :config
+  (add-hook 'emacs-lisp-mode 'flycheck-mode)
+  (add-hook 'emacs-lisp-mode 'eldoc-mode)
+  (add-hook 'emacs-lisp-mode 'electric-pair-mode))
 
-;; blinky blinky
-(blink-cursor-mode t)
+;; Automatically wrap around in isearch results.
+(defadvice isearch-search (after isearch-no-fail activate)
+  (unless isearch-success
+    (ad-disable-advice 'isearch-search 'after 'isearch-no-fail)
+    (ad-activate 'isearch-search)
+    (isearch-repeat (if isearch-forward 'forward))
+    (ad-enable-advice 'isearch-search 'after 'isearch-no-fail)
+    (ad-activate 'isearch-search)))
 
-;; highlight parentheses
-(show-paren-mode t)
-
-;; autocomplete in minibuffers
-(icomplete-mode 99)
-
-;; delete selections, like LITERALLY EVERYWHERE ELSE
-(delete-selection-mode t)
-
-;; Highlight Fixmes and Todos.
-;; (fic-ext-mode t)
-;; (diminish 'fic-ext-mode)
-
-;; Column numbers in the gutter
-(column-number-mode 1)
-
-;; Display time mode
-(display-time-mode t)
-
-;; Show the battery
-;; This doesn't work on OSX for reasons that are still unclear
-(unless (eq system-type 'darwin)
-  (display-battery-mode t))
-
-(require 'editorconfig)
-(load "editorconfig")
-
-;; Highlight the current line
-(global-hl-line-mode t)
-
-;; Guru-
-(guru-global-mode 1)
-(diminish 'guru-mode)
-
-;; Autorevert
-(global-auto-revert-mode t)
-
-
-;; Load keychain
-(keychain-refresh-environment)
-
-;; Undo trees
-(global-undo-tree-mode +1)
-(diminish 'undo-tree-mode)
-
-;; y or n
-(defalias 'yes-or-no-p 'y-or-n-p)
-
-;; KEYBOARD SHORTCUTS
-
-;; C-c a (mnemonic: auxiliary, per-buffer commands for language modes)
-(global-set-key (kbd "C-c a") nil)
-
-;; C-c C-c is ESC-prefix
-(global-set-key (kbd "C-c C-c") 'ESC-prefix)
-
-(global-set-key (kbd "C-c w") 'beginning-of-buffer)
-
-(global-set-key (kbd "C-c /") 'comment-or-uncomment-region)
-
-(global-set-key (kbd "C-c G") 'rgrep)
-
-;; C-c e edits my .emacs setup
-(global-set-key (kbd "C-c e") '(lambda () (interactive) (find-file user-init-file)))
-
-(defun find-zshrc ()
-  "Open ~/.zshrc."
+(defun open-init-file ()
+  "Open this very file."
   (interactive)
-  (find-file "~/.zshrc"))
+  (find-file user-init-file))
 
-;; C-c z edits .zshrc
-(global-set-key (kbd "C-c z") 'find-zshrc)
-
-;; I hate forward delete
-(global-set-key (kbd "<deletechar>") 'backward-delete-char-untabify)
-
-;; And I hate Insert even more
-(global-unset-key (kbd "<insert>"))
-
-;; C-c l is goto-line
-(global-set-key (kbd "C-c L") 'goto-line)
-
-;; Goto next error
-(global-set-key (kbd "C-c d") 'flycheck-tip-cycle)
-
-(global-set-key (kbd "C-x o") (lambda () (interactive) (message "Use C-, instead.")))
-(global-set-key (kbd "C-,") 'other-window)
-
-;; Go to last change
-(global-set-key (kbd "C-c .") 'goto-last-change)
-
-;; Go to other related file
-(global-set-key (kbd "C-c o") 'ff-find-other-file)
-
-;; Describe keybindings in this major mode
-(global-set-key (kbd "C-c h") 'discover-my-major)
-
-(global-set-key (kbd "C-.") 'hippie-expand)
-
-;; Use hippie-expand
-(global-set-key (kbd "C-c x") 'hippie-expand)
-
-;; Browse kill ring with C-c y (mnemonic: yank)
-(global-set-key (kbd "C-c y") 'popup-kill-ring)
-
-(global-set-key (kbd "C-c \\") 'align-regexp)
-
-(defun insert-em-dash ()
-  "Insert an em-dash."
-  (interactive)
-  (insert-char ?—))
-
-(global-set-key (kbd "M-_") 'insert-em-dash)
+(bind-key "C-c e" 'open-init-file)
 
 (defun kill-all-buffers ()
   "Close all buffers."
   (interactive)
   (mapc 'kill-buffer (buffer-list)))
 
-(global-set-key (kbd "C-c k") 'kill-all-buffers)
+(bind-key "C-c k" 'kill-all-buffers)
 
-(defun switch-to-previous-buffer ()
-  "Switch to previously open buffer.  Repeated invocations toggle between the two most recently open buffers."
+(defun split-right-and-enter ()
+  "Split the window to the right and enter it."
   (interactive)
-  (switch-to-buffer (other-buffer (current-buffer) 1)))
+  (split-window-right)
+  (other-window 1))
 
-(global-set-key (kbd "C-'") 'switch-to-previous-buffer)
-(global-set-key (kbd "C-c '") 'switch-to-previous-buffer)
-
-(defun eol-then-newline ()
-  "Move to EOL then insert a newline, a la Cmd-Ret in Textmate."
-  (interactive)
-  (move-end-of-line nil)
-  (newline-and-indent))
-
-(global-set-key (kbd "s-<return>") 'eol-then-newline)
-
-;; SETTINGS
-
-;; why this is not on by default is a damn mystery
-(setq load-prefer-newer t)
-
-(setq ring-bell-function 'ignore)
-
-(setq system-uses-terminfo nil)
-
-;; no backup files at all
-(setq make-backup-files nil)
-
-;; Bar cursor please
-(setq-default cursor-type 'bar)
-
-;; please don't scroll so hard
-(setq mouse-wheel-scroll-amount '(1 ((shift) . 1)))
-
-;; no dinging please
-(setq-default visual-bell t)
-
-;; NEVER TABS. NEVER
-(setq-default indent-tabs-mode nil)
-
-;; scroll compilation output
-(setq compilation-scroll-output t)
-
-;; don't prompt to kill compilation buffers
-(setq compilation-always-kill t)
-
-;; emacs kindly stop leaving your trash everywhere
-(setq create-lockfiles nil)
-(setq backup-directory-alist
-      `((".*" . ,temporary-file-directory)))
-(setq auto-save-file-name-transforms
-      `((".*" ,temporary-file-directory t)))
-
-;; Ensuring Unicode compliance (may not be necessary)
-(set-terminal-coding-system 'utf-8)
-(set-keyboard-coding-system 'utf-8)
-(prefer-coding-system 'utf-8)
-
-;; point erlang flycheck in the right direction
-(setq-default flycheck-erlang-executable "/usr/local/erl/bin/erlc")
-
-;; Modeline customization
-(setq-default rm-blacklist nil)
-
-(require 'linum)
-
-;; require a final newline because POSIX, motherfuckers
-(setq require-final-newline t)
-
-;; avoid the silly buffer<2> things
-(require 'uniquify)
-(setq uniquify-buffer-name-style 'forward)
-
-(require 'saveplace)
-(setq-default save-place t)
-
-; default directory for minibuffer
-(setq default-directory "~/src")
-
-;; blink matching parens please
-(setq blink-matching-paren t)
-
-;; Save place in the file
-(setq-default save-place t)
-
-;; I don't care what version of Emacs this is.
-(setq inhibit-startup-screen t)
-
-;; And I don't care about the scratch message
-(setq initial-scratch-message nil)
-
-;; Exclude all of emacs's garbage from the recentf list
-(add-to-list 'recentf-exclude "\\.emacs.d")
-(add-to-list 'recentf-exclude "\\.ido\\.last")
-
-;; Don't try to use graphical boxes, ever.
-;; They don't work at all on OS X.
-(setq-default use-dialog-box nil)
-
-;; HOOKS AND AUTO-MODES
-
-(eval-after-load 'flycheck
-  '(require 'flycheck-ghcmod "~/.emacs.d/flycheck-ghcmod.el"))
-
-
-;; execute erlang-mode when encountering .erl files
-(add-to-list 'auto-mode-alist '("\\.erl?$" . erlang-mode))
-
-;; haskell
-(add-to-list 'auto-mode-alist '("\\.hs$" . haskell-mode))
-
-(aa-add-suggestion 'next-line 'ace-jump-line-mode)
-(aa-add-suggestion 'previous-line 'ace-jump-line-mode)
-
-(defun server-shutdown ()
-  "Save buffers, Quit, and Shutdown (kill) server."
-  (interactive)
-  (save-some-buffers)
-  (kill-emacs))
-
-
-
-;; heist templates
-(add-to-list 'auto-mode-alist '("\\.tpl$" . xml-mode))
-
-;; ruby and gemfiles
-(add-to-list 'auto-mode-alist '("\\.gemspec$" . ruby-mode))
-(add-to-list 'auto-mode-alist '("Gemfile" . ruby-mode))
-(add-to-list 'auto-mode-alist '("Rakefile" . ruby-mode))
+(bind-key "C-c 3" 'split-right-and-enter)
 
 (defun stop-using-minibuffer ()
   "Kill the minibuffer."
@@ -405,44 +245,48 @@
 
 (add-hook 'mouse-leave-buffer-hook 'stop-using-minibuffer)
 
-;; run go-fmt before saving go code
-(add-hook 'go-mode-hook '(lambda ()
-                           (add-hook 'before-save-hook 'gofmt-before-save)))
+(defun switch-to-previous-buffer ()
+  "Switch to previously open buffer.  Repeated invocations toggle between the two most recently open buffers."
+  (interactive)
+  (switch-to-buffer (other-buffer (current-buffer) 1)))
 
-;; C eldoc mode
-(add-hook 'c-mode-hook 'c-turn-on-eldoc-mode)
+(bind-key "C-c '"  'switch-to-previous-buffer)
+(bind-key "C-c \\" 'align-regexp)
+(bind-key "C-,"    'other-window)
+(bind-key "C-c /"  'comment-or-uncomment-region)
+(bind-key "C-c x"  'ESC-prefix)
+(bind-key "s-+"    'text-scale-increase)
+(bind-key "s-_"    'text-scale-decrease)
+
+(defalias 'yes-or-no-p 'y-or-n-p)
+
+(global-hl-line-mode t)
+(show-paren-mode t)
+(delete-selection-mode t)
+(column-number-mode t)
+(display-time-mode t)
+(auto-save-mode -1)
+
+(setq
+ blink-matching-paren t
+ compilation-always-kill t
+ compilation-scroll-output t
+ create-lockfiles nil
+ default-directory "~/src"
+ inhibit-startup-screen t
+ initial-scratch-message nil
+ kill-whole-line t
+ make-backup-files nil
+ mouse-wheel-scroll-amount '(1 ((shift) . 1))
+ require-final-newline t
+ ring-bell-function 'ignore
+ use-dialog-box nil)
 
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
-(add-hook 'css-mode-hook 'rainbow-mode)
-(add-hook 'scss-mode-hook 'rainbow-mode)
-
-(add-hook 'rainbow-mode-hook '(lambda () (diminish 'rainbow-mode)))
-
-(defun split-window-right-and-enter ()
-  "Split the window right and switch to it."
-  (interactive)
-  (split-window-right)
-  (other-window 1))
-
-(global-set-key (kbd "C-c 3") 'split-window-right-and-enter)
-
-(defun term-customizations ()
-  "terminal stuff"
-  (local-set-key (kbd "TAB") 'term-send-raw))
-
-(add-hook 'term-mode-hook 'term-customizations)
-
-;; Word wrap when writing Markdown
-(add-hook 'markdown-mode-hook 'visual-line-mode)
-(add-hook 'markdown-mode-hook '(lambda ()
-                                 (local-unset-key (kbd "M-<left>"))
-                                 (local-unset-key (kbd "M-<right>"))))
-
-(setq initial-buffer-choice '(lambda ()
-                               (toggle-frame-fullscreen)
-                               (recentf-open-files)))
-
+(setq-default
+ cursor-type 'bar
+ indent-tabs-mode nil)
 
 (provide 'init)
 
