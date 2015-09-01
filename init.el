@@ -155,6 +155,7 @@
 
 (use-package markdown-mode
   :ensure t
+  :config (remove-hook 'before-save-hook 'delete-trailing-whitespace)
   :mode ("\\.md$" . markdown-mode))
 
 (use-package scss-mode
