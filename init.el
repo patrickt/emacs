@@ -16,8 +16,6 @@
 (setq custom-file "~/.emacs.d/custom.el")
 (load custom-file 'noerror)
 
-(load-theme 'deeper-blue)
-
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
   (package-install 'use-package))
@@ -35,9 +33,15 @@
   (require 'bind-key)
   (require 'diminish))
 
-(use-package smart-mode-line
+ (use-package noctilux-theme
   :ensure t
-  :init (sml/setup))
+  :init (load-theme 'noctilux))
+
+(use-package powerline
+  :ensure t
+  :init (powerline-default-theme)
+  :config (setq powerline-display-hud nil
+                powerline-default-separator nil))
 
 (use-package exec-path-from-shell
   :ensure t
@@ -98,6 +102,10 @@
       :command "postgres"
       :args '("-D" "/usr/local/var/postgres"))))
 
+(use-package helm-make
+  :ensure t
+  :bind ("C-c m" . helm-make))
+
 (use-package projectile
   :ensure t
   :bind (("C-c f" . projectile-find-file)
@@ -129,8 +137,7 @@
   :diminish yas-minor-mode
   :config
   (yas-global-mode +1)
-  (setq yas-verbosity +1
-        yas-prompt-functions '(yas-completing-prompt)))
+  (setq yas-prompt-functions '(yas-completing-prompt)))
 
 (use-package saveplace
   :config (setq-default save-place t))
@@ -170,13 +177,19 @@
   :ensure t
   :bind (("C-c u" . duplicate-thing)))
 
+(defun my-haskell-mode-hook ()
+  (haskell-decl-scan-mode)
+  (turn-on-haskell-indent)
+  (interactive-haskell-mode)
+  (haskell-doc-mode)
+
+  (mapcar 'diminish '(interactive-haskell-mode
+                      haskell-doc-mode
+                      haskell-indent-mode)))
+
 (use-package haskell-mode
   :ensure t
-  :init (progn
-          (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
-          (add-hook 'haskell-mode-hook 'haskell-decl-scan-mode)
-          (add-hook 'haskell-mode-hook 'haskell-doc-mode)
-          (add-hook 'haskell-mode-hook 'turn-on-haskell-indent))
+  :init (add-hook 'haskell-mode-hook 'my-haskell-mode-hook)
   :bind (("C-c a t" . haskell-process-do-type)
          ("C-c a i" . haskell-process-do-info)
          ("C-c a c" . haskell-cabal-visit-file)
@@ -202,11 +215,9 @@
   :config (setq nxml-child-indent 4)
   :mode ("\\.tpl$" . xml-mode))
 
-(use-package emacs-lisp-mode
-  :config
-  (add-hook 'emacs-lisp-mode 'flycheck-mode)
-  (add-hook 'emacs-lisp-mode 'eldoc-mode)
-  (add-hook 'emacs-lisp-mode 'electric-pair-mode))
+(add-hook 'emacs-lisp-mode 'flycheck-mode)
+(add-hook 'emacs-lisp-mode 'eldoc-mode)
+(add-hook 'emacs-lisp-mode 'electric-pair-mode)
 
 ;; Automatically wrap around in isearch results.
 (defadvice isearch-search (after isearch-no-fail activate)
