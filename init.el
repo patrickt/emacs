@@ -49,8 +49,7 @@
 
 (use-package recentf
   :init (recentf-mode t)
-  :config
-  (add-to-list 'recentf-exclude "\\.emacs.d"))
+  :config (add-to-list 'recentf-exclude "\\.emacs.d"))
 
 (use-package nix-mode
   :ensure t
@@ -58,9 +57,7 @@
 
 (use-package helm
   :ensure t
-  :config (progn
-            (helm-autoresize-mode t)
-            (helm-mode t))
+  :diminish helm-mode  
   :bind (("C-c ;" . helm-M-x)
          ("C-c r" . helm-recentf)
          ("C-c y" . helm-show-kill-ring)
@@ -69,8 +66,10 @@
          ("C-c S" . helm-occur)
          ("C-c i" . helm-imenu)
          ("C-x b" . helm-buffers-list))
-  :config (setq-default helm-M-x-fuzzy-match t)
-  :diminish helm-mode)
+  :config
+  (helm-autoresize-mode t)
+  (helm-mode t)
+  (setq-default helm-M-x-fuzzy-match t))
 
 (use-package company
   :ensure t
