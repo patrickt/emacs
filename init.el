@@ -120,6 +120,7 @@
   :config (setq linum-format "%d"))
 
 (use-package magit
+  :defer t
   :ensure t
   :bind (("C-c g" . magit-status))
   :init (global-auto-revert-mode t)
