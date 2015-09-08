@@ -4,3 +4,4 @@ eshell
 projectile*
 .DS_Store
 auto-save*
+helm-adaptive-history

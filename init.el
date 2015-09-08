@@ -20,9 +20,9 @@
   (package-refresh-contents)
   (package-install 'use-package))
 
-(setq load-prefer-newer t
-      warning-minimum-level :debug
-      warning-minimum-log-level :debug)
+(setq
+ lexical-binding t
+ load-prefer-newer t)
 
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
@@ -57,7 +57,7 @@
 
 (use-package helm
   :ensure t
-  :diminish helm-mode  
+  :diminish helm-mode
   :bind (("C-c ;" . helm-M-x)
          ("C-c r" . helm-recentf)
          ("C-c y" . helm-show-kill-ring)
@@ -67,8 +67,9 @@
          ("C-c i" . helm-imenu)
          ("C-x b" . helm-buffers-list))
   :config
-  (helm-autoresize-mode t)
   (helm-mode t)
+  (helm-autoresize-mode t)
+  (helm-adaptive-mode t)
   (setq-default helm-M-x-fuzzy-match t))
 
 (use-package company
@@ -78,7 +79,7 @@
   :diminish company-mode
   :config
   (setq company-minimum-prefix-length 2)
-  (define-key company-active-map (kbd "C-n") #'company-select-next))
+  (define-key company-active-map (kbd "C-n") 'company-select-next))
 
 (use-package prodigy
   :ensure t
@@ -178,14 +179,25 @@
   :bind (("C-c u" . duplicate-thing)))
 
 (defun my-haskell-mode-hook ()
+  "My haskell-mode configuration."
+  (interactive-haskell-mode)
   (haskell-decl-scan-mode)
   (turn-on-haskell-indent)
-  (interactive-haskell-mode)
   (haskell-doc-mode)
 
   (mapcar 'diminish '(interactive-haskell-mode
                       haskell-doc-mode
                       haskell-indent-mode)))
+
+(use-package flycheck
+  :ensure t
+  :bind ("C-c n" . flycheck-next-error)
+  :init (global-flycheck-mode))
+
+(use-package helm-flycheck
+  :defer flycheck
+  :ensure t
+  :bind ("C-c N" . helm-flycheck))
 
 (use-package haskell-mode
   :ensure t
@@ -211,16 +223,24 @@
            haskell-doc-show-global-types t)
   (defalias 'haskell-complete-module-read 'helm--completing-read-default))
 
+(use-package flycheck-haskell
+  :ensure t
+  :config (add-hook 'flycheck-mode-hook #'flycheck-haskell-setup))
+
 (use-package xml-mode
-  :config (setq nxml-child-indent 4)
+  :config (setq-default nxml-child-indent 4)
   :mode ("\\.tpl$" . xml-mode))
 
-(add-hook 'emacs-lisp-mode 'flycheck-mode)
-(add-hook 'emacs-lisp-mode 'eldoc-mode)
-(add-hook 'emacs-lisp-mode 'electric-pair-mode)
+(defun my-elisp-mode-hook ()
+  "My elisp customizations."
+  (electric-pair-mode)
+  (eldoc-mode t)
+  (diminish 'eldoc-mode))
 
-;; Automatically wrap around in isearch results.
+(add-hook 'emacs-lisp-mode-hook 'my-elisp-mode-hook)
+
 (defadvice isearch-search (after isearch-no-fail activate)
+  "Automatically wrap around in search results."
   (unless isearch-success
     (ad-disable-advice 'isearch-search 'after 'isearch-no-fail)
     (ad-activate 'isearch-search)
