@@ -5,6 +5,8 @@
 
 ;;; Code:
 
+(setq gc-cons-threshold 100000000)
+
 (require 'package)
 
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
@@ -62,10 +64,10 @@
          ("C-c r" . helm-recentf)
          ("C-c y" . helm-show-kill-ring)
          ("C-c G" . helm-do-grep)
-         ("C-c b" . helm-buffers-list)
+         ("C-c b" . helm-mini)
          ("C-c S" . helm-occur)
          ("C-c i" . helm-imenu)
-         ("C-x b" . helm-buffers-list))
+         ("C-x b" . helm-mini))
   :config
   (helm-mode t)
   (helm-autoresize-mode t)
@@ -130,6 +132,7 @@
 (use-package git-gutter
   :ensure t
   :init (global-git-gutter-mode)
+  :config (setq git-gutter:update-interval 1)
   :diminish git-gutter-mode)
 
 (use-package yasnippet
@@ -172,7 +175,11 @@
 (use-package ace-jump-mode
   :ensure t
   :bind (("C-l"   . ace-jump-line-mode)
-         ("C-c l" . ace-jump-mode)))
+         ("C-c j" . ace-jump-mode)))
+
+(use-package ace-jump-helm-line
+  :defer helm
+  :config (define-key helm-map (kbd "C-j") 'ace-jump-helm-line))
 
 (use-package duplicate-thing
   :ensure t
@@ -185,29 +192,35 @@
   (turn-on-haskell-indent)
   (haskell-doc-mode)
 
-  (mapcar 'diminish '(interactive-haskell-mode
-                      haskell-doc-mode
-                      haskell-indent-mode)))
+  (mapc 'diminish '(interactive-haskell-mode
+                    haskell-doc-mode
+                    haskell-indent-mode)))
 
-(use-package flycheck
-  :ensure t
-  :bind ("C-c n" . flycheck-next-error)
-  :init (global-flycheck-mode))
+(defun my-cabal-mode-hook ()
+  "My cabal configuration."
+  (electric-indent-local-mode -1))
 
-(use-package helm-flycheck
-  :defer flycheck
-  :ensure t
-  :bind ("C-c N" . helm-flycheck))
+(defun haskell-bring-and-compile ()
+  "Bring the compilation window to front and compile."
+  (interactive)
+  (haskell-interactive-bring)
+  (haskell-process-cabal-build))
 
 (use-package haskell-mode
   :ensure t
-  :init (add-hook 'haskell-mode-hook 'my-haskell-mode-hook)
+  :init
+  (add-hook 'haskell-mode-hook 'my-haskell-mode-hook)
+  (add-hook 'haskell-cabal-mode-hook 'my-cabal-mode-hook)
   :bind (("C-c a t" . haskell-process-do-type)
          ("C-c a i" . haskell-process-do-info)
          ("C-c a c" . haskell-cabal-visit-file)
          ("C-c a f" . haskell-interactive-bring)
+         ("C-c a b" . haskell-mode-stylish-buffer)
+         ("C-c c"   . haskell-bring-and-compile)
+         ("C-c C-c" . haskell-bring-and-compile)
          ("C-c a i" . haskell-add-import)
          ("C-c a F" . haskell-session-kill)
+         ("C-c a s" . haskell-hayoo)
          ("SPC" . haskell-mode-contextual-space))
   :mode ("\\.hs$" . haskell-mode)
   :config (setq
@@ -215,17 +228,23 @@
            haskell-ask-also-kill-buffers nil
            haskell-font-lock-symbols t
            haskell-mode-contextual-import-completion nil
+           haskell-process-load-or-reload-prompt t
+           haskell-interactive-mode-scroll-to-bottom t
            haskell-process-type 'stack-ghci
            haskell-process-show-debug-tips nil
            haskell-process-suggest-remove-import-lines t
            haskell-process-log t
            haskell-doc-show-reserved nil
-           haskell-doc-show-global-types t)
+           haskell-doc-show-global-types t
+           haskell-indent-after-keywords '(("where" 4 0)
+                                           ("of" 4)
+                                           ("do" 4)
+                                           ("in" 4)
+                                           "if"
+                                           "then"
+                                           "else"
+                                           "let"))
   (defalias 'haskell-complete-module-read 'helm--completing-read-default))
-
-(use-package flycheck-haskell
-  :ensure t
-  :config (add-hook 'flycheck-mode-hook #'flycheck-haskell-setup))
 
 (use-package xml-mode
   :config (setq-default nxml-child-indent 4)
@@ -281,6 +300,15 @@
   "Switch to previously open buffer.  Repeated invocations toggle between the two most recently open buffers."
   (interactive)
   (switch-to-buffer (other-buffer (current-buffer) 1)))
+
+(defun eol-then-newline ()
+  "Go to end of line then return."
+  (interactive)
+  (move-end-of-line nil)
+  (newline)
+  (indent-for-tab-command))
+
+(bind-key "s-<return>" 'eol-then-newline)
 
 (bind-key "C-c '"  'switch-to-previous-buffer)
 (bind-key "C-c \\" 'align-regexp)
