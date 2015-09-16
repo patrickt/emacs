@@ -317,6 +317,7 @@
 (bind-key "C-c x"  'ESC-prefix)
 (bind-key "s-+"    'text-scale-increase)
 (bind-key "s-_"    'text-scale-decrease)
+(bind-key "s-?"    'hippie-expand)
 
 (defalias 'yes-or-no-p 'y-or-n-p)
 
