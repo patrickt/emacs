@@ -100,6 +100,12 @@
       :stop-signal 'kill
       :cwd "~/src/snapboard/snapboard")
     (prodigy-define-service
+      :name "conn"
+      :command "stack"
+      :args '("exec" "conn")
+      :stop-signal 'kill
+      :cwd "~/src/snapboard/conn")
+    (prodigy-define-service
       :name "PostgreSQL"
       :command "postgres"
       :args '("-D" "/usr/local/var/postgres"))))
