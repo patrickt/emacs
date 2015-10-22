@@ -191,6 +191,12 @@
   :ensure t
   :bind (("C-c u" . duplicate-thing)))
 
+(use-package guide-key
+  :ensure t
+  :init (guide-key-mode +1)
+  :config (setq guide-key/guide-key-sequence '("C-x v"))
+  :diminish guide-key-mode)
+
 (defun my-haskell-mode-hook ()
   "My haskell-mode configuration."
   (interactive-haskell-mode)
@@ -212,6 +218,13 @@
   (haskell-interactive-bring)
   (haskell-process-cabal-build))
 
+(use-package org
+  :init
+  (defun my-org-mode-hook ()
+    (setq org-src-fontify-natively t)
+    (local-unset-key (kbd "C-c ;")))
+  (add-hook 'org-mode-hook 'my-org-mode-hook))
+
 (use-package haskell-mode
   :ensure t
   :init
@@ -220,6 +233,7 @@
   :bind (("C-c a t" . haskell-process-do-type)
          ("C-c a i" . haskell-process-do-info)
          ("C-c a c" . haskell-cabal-visit-file)
+         ("C-c a d" . haskell-mode-jump-to-def)
          ("C-c a f" . haskell-interactive-bring)
          ("C-c a b" . haskell-mode-stylish-buffer)
          ("C-c c"   . haskell-bring-and-compile)
@@ -255,6 +269,9 @@
 (use-package xml-mode
   :config (setq-default nxml-child-indent 4)
   :mode ("\\.tpl$" . xml-mode))
+
+
+;;; End use-package invocations
 
 (defun my-elisp-mode-hook ()
   "My elisp customizations."
@@ -294,13 +311,6 @@
   (other-window 1))
 
 (bind-key "C-c 3" 'split-right-and-enter)
-
-(defun stop-using-minibuffer ()
-  "Kill the minibuffer."
-  (when (and (>= (recursion-depth) 1) (active-minibuffer-window))
-    (abort-recursive-edit)))
-
-(add-hook 'mouse-leave-buffer-hook 'stop-using-minibuffer)
 
 (defun switch-to-previous-buffer ()
   "Switch to previously open buffer.  Repeated invocations toggle between the two most recently open buffers."
@@ -348,6 +358,7 @@
  require-final-newline t
  ring-bell-function 'ignore
  use-dialog-box nil)
+
 
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
