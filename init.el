@@ -185,7 +185,7 @@
 
 (use-package ace-jump-helm-line
   :defer helm
-  :config (define-key helm-map (kbd "C-j") 'ace-jump-helm-line))
+  :bind (("C-'" . ace-jump-helm-line)))
 
 (use-package duplicate-thing
   :ensure t
