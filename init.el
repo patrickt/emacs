@@ -63,7 +63,6 @@
   :bind (("C-c ;" . helm-M-x)
          ("C-c r" . helm-recentf)
          ("C-c y" . helm-show-kill-ring)
-         ("C-c G" . helm-do-grep)
          ("C-c b" . helm-mini)
          ("C-c S" . helm-occur)
          ("C-c i" . helm-imenu)
@@ -113,6 +112,10 @@
 (use-package helm-make
   :ensure t
   :bind ("C-c m" . helm-make))
+
+(use-package helm-git-grep
+  :ensure t
+  :bind ("C-c G" . helm-git-grep))
 
 (use-package projectile
   :ensure t
@@ -184,6 +187,7 @@
          ("C-c j" . ace-jump-mode)))
 
 (use-package ace-jump-helm-line
+  :ensure t
   :defer helm
   :bind (("C-'" . ace-jump-helm-line)))
 
@@ -354,9 +358,10 @@
  initial-scratch-message nil
  kill-whole-line t
  make-backup-files nil
- mouse-wheel-scroll-amount '(1 ((shift) . 1))
+ mac-option-modifier 'meta
  require-final-newline t
  ring-bell-function 'ignore
+ linum-delay t
  use-dialog-box nil)
 
 
