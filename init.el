@@ -115,7 +115,8 @@
 
 (use-package helm-git-grep
   :ensure t
-  :bind ("C-c G" . helm-git-grep))
+  :bind (("C-c G" . helm-git-grep)
+         ("C-c h" . helm-git-grep-at-point)))
 
 (use-package projectile
   :ensure t
