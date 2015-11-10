@@ -202,6 +202,10 @@
   :config (setq guide-key/guide-key-sequence '("C-x v"))
   :diminish guide-key-mode)
 
+(use-package dash-at-point
+  :ensure t
+  :bind ("C-c d" . dash-at-point))
+
 (defun my-haskell-mode-hook ()
   "My haskell-mode configuration."
   (interactive-haskell-mode)
