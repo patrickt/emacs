@@ -111,7 +111,7 @@
 
 (use-package helm-make
   :ensure t
-  :bind ("C-c m" . helm-make))
+  :bind ("C-c m" . helm-make-projectile))
 
 (use-package helm-git-grep
   :ensure t
