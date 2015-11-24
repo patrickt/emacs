@@ -41,9 +41,7 @@
 
 (use-package powerline
   :ensure t
-  :init (powerline-default-theme)
-  :config (setq powerline-display-hud nil
-                powerline-default-separator nil))
+  :init (powerline-default-theme))
 
 (use-package exec-path-from-shell
   :ensure t
@@ -210,12 +208,12 @@
   "My haskell-mode configuration."
   (interactive-haskell-mode)
   (haskell-decl-scan-mode)
-  (turn-on-haskell-indent)
+  (haskell-indentation-mode)
   (haskell-doc-mode)
-
+  (setq haskell-indent-spaces 4
+        haskell-indent-offset 4)
   (mapc 'diminish '(interactive-haskell-mode
-                    haskell-doc-mode
-                    haskell-indent-mode)))
+                    haskell-doc-mode)))
 
 (defun my-cabal-mode-hook ()
   "My cabal configuration."
@@ -226,6 +224,9 @@
   (interactive)
   (haskell-interactive-bring)
   (haskell-process-cabal-build))
+
+(use-package elm-mode
+  :ensure t)
 
 (use-package org
   :init
@@ -254,26 +255,17 @@
   :mode ("\\.hs$" . haskell-mode)
   :config (setq
            haskell-notify-p t
-           haskell-ask-also-kill-buffers nil
            haskell-font-lock-symbols t
-           haskell-mode-contextual-import-completion nil
            haskell-process-load-or-reload-prompt t
            haskell-interactive-mode-scroll-to-bottom t
            haskell-process-type 'stack-ghci
-           haskell-process-show-debug-tips nil
            haskell-process-suggest-remove-import-lines t
            haskell-process-log t
            haskell-doc-show-reserved nil
-           haskell-doc-show-global-types t
-           haskell-indent-after-keywords '(("where" 4 0)
-                                           ("of" 4)
-                                           ("do" 4)
-                                           ("in" 4)
-                                           "if"
-                                           "then"
-                                           "else"
-                                           "let"))
-  (defalias 'haskell-complete-module-read 'helm--completing-read-default))
+           haskell-indent-spaces 4
+           haskell-indent-offset 4
+           haskell-doc-show-global-types t)
+  (defalias 'haskell-completing-read-function 'helm--completing-read-default))
 
 (use-package xml-mode
   :config (setq-default nxml-child-indent 4)
