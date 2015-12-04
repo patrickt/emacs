@@ -180,6 +180,9 @@
 (use-package scss-mode
   :ensure t)
 
+(use-package yaml-mode
+  :ensure t)
+
 (use-package ace-jump-mode
   :ensure t
   :bind (("C-l"   . ace-jump-line-mode)
@@ -214,6 +217,12 @@
         haskell-indent-offset 4)
   (mapc 'diminish '(interactive-haskell-mode
                     haskell-doc-mode)))
+
+;; (use-package highlight-tail
+;;   :config
+;;   (setq highlight-tail-timer 0.005)
+;;   (setq highlight-tail-steps 30)
+;;   (highlight-tail-reload))
 
 (defun my-cabal-mode-hook ()
   "My cabal configuration."
@@ -259,13 +268,13 @@
            haskell-process-load-or-reload-prompt t
            haskell-interactive-mode-scroll-to-bottom t
            haskell-process-type 'stack-ghci
-           haskell-process-suggest-remove-import-lines t
            haskell-process-log t
            haskell-doc-show-reserved nil
            haskell-indent-spaces 4
            haskell-indent-offset 4
            haskell-doc-show-global-types t)
-  (defalias 'haskell-completing-read-function 'helm--completing-read-default))
+  (defalias 'haskell-completing-read-function 'helm--completing-read-default)
+  (defalias 'haskell-complete-module-read 'helm--completing-read-default))
 
 (use-package xml-mode
   :config (setq-default nxml-child-indent 4)
