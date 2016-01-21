@@ -10,6 +10,7 @@
 (require 'package)
 
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
+(add-to-list 'package-archives '("melpa-stable" . "http://stable.melpa.org/packages/") t)
 
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
@@ -246,11 +247,11 @@
 
 (use-package haskell-mode
   :ensure t
+  :pin melpa-stable
   :init
   (add-hook 'haskell-mode-hook 'my-haskell-mode-hook)
   (add-hook 'haskell-cabal-mode-hook 'my-cabal-mode-hook)
-  :bind (("C-c a t" . haskell-process-do-type)
-         ("C-c a i" . haskell-process-do-info)
+  :bind (("C-c a i" . haskell-process-do-info)
          ("C-c a c" . haskell-cabal-visit-file)
          ("C-c a d" . haskell-mode-jump-to-def)
          ("C-c a f" . haskell-interactive-bring)
@@ -268,6 +269,7 @@
            haskell-process-load-or-reload-prompt t
            haskell-interactive-mode-scroll-to-bottom t
            haskell-process-type 'stack-ghci
+           haskell-stylish-on-save t
            haskell-process-log t
            haskell-doc-show-reserved nil
            haskell-indent-spaces 4
@@ -275,6 +277,20 @@
            haskell-doc-show-global-types t)
   (defalias 'haskell-completing-read-function 'helm--completing-read-default)
   (defalias 'haskell-complete-module-read 'helm--completing-read-default))
+
+(load "~/.emacs.d/terminal-notifier.el")
+(require 'terminal-notifier)
+
+(defun notifications-notify-osx (:title title :body body :app-name ignored :app-icon also-ignored)
+  (tn-notify body title))
+
+(defalias 'notifications-notify 'notifications-notify-osx)
+
+(use-package ghc
+  :pin melpa-stable
+  :commands ghc-init ghc-debug
+  :bind (("C-c a t" . ghc-show-type))
+  :ensure t)
 
 (use-package xml-mode
   :config (setq-default nxml-child-indent 4)
