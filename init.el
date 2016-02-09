@@ -5,6 +5,7 @@
 
 ;;; Code:
 
+(defvar old-cons-threshold gc-cons-threshold)
 (setq gc-cons-threshold 100000000)
 
 (require 'package)
@@ -39,6 +40,12 @@
  (use-package noctilux-theme
   :ensure t
   :init (load-theme 'noctilux))
+
+(use-package darkroom)
+
+(use-package ace-window
+  :ensure t
+  :bind (("C-," . ace-window)))
 
 (use-package powerline
   :ensure t
@@ -81,6 +88,27 @@
   (setq company-minimum-prefix-length 2)
   (define-key company-active-map (kbd "C-n") 'company-select-next))
 
+(use-package restclient
+  :ensure t)
+
+(use-package sql
+  :ensure t
+  :config
+  (setq
+   sql-user "dashboard"
+   sql-database "dashboard"
+   sql-server "localhost"))
+
+(use-package company-restclient
+  :ensure t
+  :defer restclient
+  :config
+  (add-to-list 'company-backends 'company-restclient))
+
+(use-package company-statistics
+  :ensure t
+  :init (company-statistics-mode +1))
+
 (use-package prodigy
   :ensure t
   :bind (("C-c q" . prodigy))
@@ -92,12 +120,6 @@
       :args '("watch")
       :cwd "~/src/snapboard/snapboard")
     (prodigy-define-service
-      :name "snapboard"
-      :command "stack"
-      :args '("exec" "snapboard")
-      :stop-signal 'kill
-      :cwd "~/src/snapboard/snapboard")
-    (prodigy-define-service
       :name "conn"
       :command "stack"
       :args '("exec" "conn")
@@ -106,11 +128,26 @@
     (prodigy-define-service
       :name "PostgreSQL"
       :command "postgres"
-      :args '("-D" "/usr/local/var/postgres"))))
+      :args '("-D" "/usr/local/var/postgres"))
+    (prodigy-define-service
+      :name "graf"
+      :command "stack"
+      :args '("exec" "graf" "dev.conf")
+      :cwd "~/src/snapboard/graf")
+    (prodigy-define-service
+      :name "snapboard"
+      :command "stack"
+      :args '("exec" "snapboard")
+      :stop-signal 'kill
+      :cwd "~/src/snapboard/snapboard")))
 
 (use-package helm-make
   :ensure t
   :bind ("C-c m" . helm-make-projectile))
+
+(use-package god-mode
+  :ensure t
+  :bind ("C-c <SPC>" . god-mode-all))
 
 (use-package helm-git-grep
   :ensure t
@@ -198,6 +235,9 @@
   :ensure t
   :bind (("C-c u" . duplicate-thing)))
 
+(use-package memory-usage
+  :ensure t)
+
 (use-package guide-key
   :ensure t
   :init (guide-key-mode +1)
@@ -219,9 +259,13 @@
   (mapc 'diminish '(interactive-haskell-mode
                     haskell-doc-mode)))
 
+;; Highlight-tail mode creates problems with Helm
 ;; (use-package highlight-tail
+;;   :ensure t
+;;   :init (highlight-tail-mode)
+;;   :diminish highlight-tail-mode
 ;;   :config
-;;   (setq highlight-tail-timer 0.005)
+;;   (setq highlight-tail-timer 0.003)
 ;;   (setq highlight-tail-steps 30)
 ;;   (highlight-tail-reload))
 
@@ -354,7 +398,6 @@
 
 (bind-key "C-c '"  'switch-to-previous-buffer)
 (bind-key "C-c \\" 'align-regexp)
-(bind-key "C-,"    'other-window)
 (bind-key "C-c /"  'comment-or-uncomment-region)
 (bind-key "C-c x"  'ESC-prefix)
 (bind-key "s-+"    'text-scale-increase)
@@ -392,6 +435,9 @@
 (setq-default
  cursor-type 'bar
  indent-tabs-mode nil)
+
+(setq gc-cons-threshold old-cons-threshold)
+(makunbound 'old-cons-threshold)
 
 (provide 'init)
 
