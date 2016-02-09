@@ -7,3 +7,5 @@ auto-save*
 helm-adaptive-history
 url
 .last-package-update-day
+/company-statistics-cache.el
+/elpa25
