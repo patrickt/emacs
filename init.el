@@ -60,8 +60,13 @@
   :config (add-to-list 'recentf-exclude "\\.emacs.d"))
 
 (use-package nix-mode
-  :ensure t
   :mode ("\\.nix$" . nix-mode))
+
+(use-package anzu
+  :defer
+  :ensure t
+  :diminish anzu-mode
+  :init (global-anzu-mode +1))
 
 (use-package helm
   :ensure t
@@ -85,11 +90,13 @@
   :bind (("M-/" . company-complete))
   :diminish company-mode
   :config
-  (setq company-minimum-prefix-length 2)
+  (setq company-minimum-prefix-length 4
+        company-idle-delay 0.05)
   (define-key company-active-map (kbd "C-n") 'company-select-next))
 
 (use-package restclient
-  :ensure t)
+  :ensure t
+  :mode ("\\.restclient" . restclient-mode))
 
 (use-package sql
   :ensure t
@@ -135,6 +142,11 @@
       :args '("exec" "graf" "dev.conf")
       :cwd "~/src/snapboard/graf")
     (prodigy-define-service
+      :name "sarlacc"
+      :command "stack"
+      :args '("exec" "sarlacc" "dev.conf")
+      :cwd "~/src/snapboard/sarlacc")
+    (prodigy-define-service
       :name "snapboard"
       :command "stack"
       :args '("exec" "snapboard")
@@ -143,7 +155,7 @@
 
 (use-package helm-make
   :ensure t
-  :bind ("C-c m" . helm-make-projectile))
+  :bind (("C-c m" . helm-make-projectile)))
 
 (use-package god-mode
   :ensure t
