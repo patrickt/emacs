@@ -142,6 +142,11 @@
       :args '("exec" "graf" "dev.conf")
       :cwd "~/src/snapboard/graf")
     (prodigy-define-service
+      :name "kitchensink"
+      :command "stack"
+      :args '("exec" "kitchensink")
+      :cwd "~/src/snapboard")
+    (prodigy-define-service
       :name "sarlacc"
       :command "stack"
       :args '("exec" "sarlacc" "dev.conf")
