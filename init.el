@@ -17,6 +17,8 @@
 
 (package-initialize)
 
+(set-default-font "Operator Mono-15")
+
 (setq custom-file "~/.emacs.d/custom.el")
 (load custom-file 'noerror)
 
@@ -37,9 +39,10 @@
   (require 'bind-key)
   (require 'diminish))
 
- (use-package noctilux-theme
+(use-package apropospriate-theme
   :ensure t
-  :init (load-theme 'noctilux))
+  :init
+  (load-theme 'apropospriate-dark))
 
 (use-package darkroom)
 
@@ -160,11 +163,20 @@
 
 (use-package helm-make
   :ensure t
-  :bind (("C-c m" . helm-make-projectile)))
+  :bind (("C-c m" . helm-make-projectile))
+  :config (setq helm-make-sort-targets t))
 
 (use-package god-mode
   :ensure t
-  :bind ("C-c <SPC>" . god-mode-all))
+  :bind ("C-c <SPC>" . god-mode-all)
+  :config
+  (add-hook 'god-mode-enabled-hook 'my-update-cursor)
+  (add-hook 'god-mode-disabled-hook 'my-update-cursor))
+
+(defun my-update-cursor ()
+  (setq cursor-type (if (or god-local-mode buffer-read-only)
+                        'box
+                      'bar)))
 
 (use-package helm-git-grep
   :ensure t
@@ -217,6 +229,18 @@
   :defer 3
   :ensure t)
 
+(use-package hi2
+  :defer haskell-mode
+  :ensure t
+  :diminish hi2-mode
+  :config
+  (setq hi2-show-indentations t
+        hi2-layout-offset 4
+        hi2-starter-offset 4
+        hi2-left-offset 4
+        hi2-show-indentations t
+        hi2-show-indentations-after-eol t))
+
 (use-package undo-tree
   :ensure t
   :bind (("C-c _" . undo-tree-visualize))
@@ -265,14 +289,18 @@
   :ensure t
   :bind ("C-c d" . dash-at-point))
 
+(use-package lua-mode
+  :ensure t)
+
 (defun my-haskell-mode-hook ()
   "My haskell-mode configuration."
   (interactive-haskell-mode)
   (haskell-decl-scan-mode)
-  (haskell-indentation-mode)
+  (turn-on-hi2)
+  ;; (turn-on-haskell-indent)
+  ;; (flycheck-select-checker 'haskell-stack-ghc)
+
   (haskell-doc-mode)
-  (setq haskell-indent-spaces 4
-        haskell-indent-offset 4)
   (mapc 'diminish '(interactive-haskell-mode
                     haskell-doc-mode)))
 
@@ -306,9 +334,30 @@
     (local-unset-key (kbd "C-c ;")))
   (add-hook 'org-mode-hook 'my-org-mode-hook))
 
+(use-package flycheck
+  :ensure t
+  :init (global-flycheck-mode)
+  :bind ("C-c n" . flycheck-next-error)
+  :config
+  (setq flycheck-ghc-language-extensions (append
+                                          flycheck-ghc-language-extensions
+                                          '("TemplateHaskell"
+                                          "OverloadedStrings"
+                                          "QuasiQuotes"
+                                          "FlexibleContexts"
+                                          "NoImplicitPrelude"
+                                          "GeneralizedNewtypeDeriving"
+                                          "DeriveGeneric"
+                                          "MultiParamTypeClasses"
+                                          "FunctionalDependencies"
+                                          "FlexibleInstances"
+                                          "RecordWildCards"
+                                          "ScopedTypeVariables"
+                                          "TypeFamilies"
+                                          "DeriveDataTypeable"))))
+
 (use-package haskell-mode
   :ensure t
-  :pin melpa-stable
   :init
   (add-hook 'haskell-mode-hook 'my-haskell-mode-hook)
   (add-hook 'haskell-cabal-mode-hook 'my-cabal-mode-hook)
@@ -321,21 +370,22 @@
          ("C-c C-c" . haskell-bring-and-compile)
          ("C-c a i" . haskell-add-import)
          ("C-c a F" . haskell-session-kill)
-         ("C-c a s" . haskell-hayoo)
-         ("SPC" . haskell-mode-contextual-space))
+         ("C-c a s" . haskell-hayoo))
+         ;;("SPC" . haskell-mode-contextual-space))
   :mode ("\\.hs$" . haskell-mode)
-  :config (setq
-           haskell-notify-p t
-           haskell-font-lock-symbols t
-           haskell-process-load-or-reload-prompt t
-           haskell-interactive-mode-scroll-to-bottom t
-           haskell-process-type 'stack-ghci
-           haskell-stylish-on-save t
-           haskell-process-log t
-           haskell-doc-show-reserved nil
-           haskell-indent-spaces 4
-           haskell-indent-offset 4
-           haskell-doc-show-global-types t)
+  :config
+  (setq
+   haskell-notify-p t
+   haskell-font-lock-symbols t
+   haskell-process-load-or-reload-prompt t
+   haskell-interactive-mode-scroll-to-bottom t
+   haskell-process-type 'stack-ghci
+   haskell-stylish-on-save t
+   haskell-process-log t
+   haskell-doc-show-reserved nil
+   haskell-indent-spaces 4
+   haskell-indent-offset 4
+   haskell-doc-show-global-types t)
   (defalias 'haskell-completing-read-function 'helm--completing-read-default)
   (defalias 'haskell-complete-module-read 'helm--completing-read-default))
 
@@ -429,6 +479,7 @@
 (column-number-mode t)
 (display-time-mode t)
 (auto-save-mode -1)
+(prettify-symbols-mode)
 
 (setq
  blink-matching-paren t
