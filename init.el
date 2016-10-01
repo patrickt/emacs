@@ -17,7 +17,7 @@
 
 (package-initialize)
 
-(set-default-font "Operator Mono-15")
+(set-default-font "Operator Mono-11")
 
 (setq custom-file "~/.emacs.d/custom.el")
 (load custom-file 'noerror)
@@ -45,6 +45,9 @@
   (load-theme 'apropospriate-dark))
 
 (use-package darkroom)
+
+(use-package wc-goal-mode
+  :ensure t)
 
 (use-package ace-window
   :ensure t
@@ -121,45 +124,7 @@
 
 (use-package prodigy
   :ensure t
-  :bind (("C-c q" . prodigy))
-  :config
-  (progn
-    (prodigy-define-service
-      :name "snapboard: gulp watch"
-      :command "gulp"
-      :args '("watch")
-      :cwd "~/src/snapboard/snapboard")
-    (prodigy-define-service
-      :name "conn"
-      :command "stack"
-      :args '("exec" "conn")
-      :stop-signal 'kill
-      :cwd "~/src/snapboard/conn")
-    (prodigy-define-service
-      :name "PostgreSQL"
-      :command "postgres"
-      :args '("-D" "/usr/local/var/postgres"))
-    (prodigy-define-service
-      :name "graf"
-      :command "stack"
-      :args '("exec" "graf" "dev.conf")
-      :cwd "~/src/snapboard/graf")
-    (prodigy-define-service
-      :name "kitchensink"
-      :command "stack"
-      :args '("exec" "kitchensink")
-      :cwd "~/src/snapboard")
-    (prodigy-define-service
-      :name "sarlacc"
-      :command "stack"
-      :args '("exec" "sarlacc" "dev.conf")
-      :cwd "~/src/snapboard/sarlacc")
-    (prodigy-define-service
-      :name "snapboard"
-      :command "stack"
-      :args '("exec" "snapboard")
-      :stop-signal 'kill
-      :cwd "~/src/snapboard/snapboard")))
+  :bind (("C-c q" . prodigy)))
 
 (use-package helm-make
   :ensure t
@@ -327,9 +292,23 @@
 (use-package elm-mode
   :ensure t)
 
+(defun em-dash ()
+  "Insert an em-dash."
+  (interactive)
+  (insert "—"))
+
+(defun ellipsis ()
+  "Insert an ellipsis."
+  (interactive)
+  (insert "…"))
+
 (use-package org
+  :bind (("M--" . em-dash)
+         ("M-;" . ellipsis))
   :init
   (defun my-org-mode-hook ()
+    (visual-line-mode)
+    (wc-goal-mode)
     (setq org-src-fontify-natively t)
     (local-unset-key (kbd "C-c ;")))
   (add-hook 'org-mode-hook 'my-org-mode-hook))
@@ -388,14 +367,6 @@
    haskell-doc-show-global-types t)
   (defalias 'haskell-completing-read-function 'helm--completing-read-default)
   (defalias 'haskell-complete-module-read 'helm--completing-read-default))
-
-(load "~/.emacs.d/terminal-notifier.el")
-(require 'terminal-notifier)
-
-(defun notifications-notify-osx (:title title :body body :app-name ignored :app-icon also-ignored)
-  (tn-notify body title))
-
-(defalias 'notifications-notify 'notifications-notify-osx)
 
 (use-package ghc
   :pin melpa-stable
@@ -470,6 +441,9 @@
 (bind-key "s-+"    'text-scale-increase)
 (bind-key "s-_"    'text-scale-decrease)
 (bind-key "s-?"    'hippie-expand)
+(bind-key "s-c"    'kill-ring-save)
+(bind-key "s-v"    'yank)
+(bind-key "s-z"    'undo)
 
 (defalias 'yes-or-no-p 'y-or-n-p)
 
@@ -489,14 +463,18 @@
  default-directory "~/src"
  inhibit-startup-screen t
  initial-scratch-message nil
+ mac-mouse-wheel-smooth-scroll nil
  kill-whole-line t
  make-backup-files nil
- mac-option-modifier 'meta
+ mac-command-modifier 'super
  require-final-newline t
  ring-bell-function 'ignore
  linum-delay t
  use-dialog-box nil)
 
+(require 'mac-key-mode)
+
+(split-window-horizontally)
 
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
