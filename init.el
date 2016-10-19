@@ -541,44 +541,49 @@
 
 (defalias 'yes-or-no-p 'y-or-n-p)
 
-(global-hl-line-mode t)
-(show-paren-mode t)
-(delete-selection-mode t)
-(column-number-mode t)
-(display-time-mode t)
-(auto-save-mode -1)
-(prettify-symbols-mode)
+(global-hl-line-mode t)   ; Always highlight the current line.
+(show-paren-mode t)       ; And point out matching parentheses.
+(delete-selection-mode t) ; Behave like any other sensible text editor would.
+(column-number-mode t)    ; Show column information in the modeline.
+(display-time-mode t)     ; Show the current time, though I never use this.
+(auto-save-mode -1)       ; Don't litter everywhere with backups.
+(prettify-symbols-mode)   ; Use pretty Unicode symbols where possible.
 
 (setq
- blink-matching-paren t
- compilation-always-kill t
- compilation-scroll-output t
- create-lockfiles nil
- default-directory "~/src"
- inhibit-startup-screen t
- initial-scratch-message nil
- mac-mouse-wheel-smooth-scroll nil
- kill-whole-line t
- make-backup-files nil
- mac-command-modifier 'super
- require-final-newline t
- ring-bell-function 'ignore
- linum-delay t
- use-dialog-box nil
- indent-tabs-mode nil
+ blink-matching-paren t            ; Flash the opening paren when a closer is inserted.
+ compilation-always-kill t         ; Never prompt to kill a compilation session.
+ compilation-scroll-output t       ; Always scroll to the bottom.
+ create-lockfiles nil              ; Emacs sure loves to put lockfiles everywhere.
+ default-directory "~/src"         ; My code lives here.
+ inhibit-startup-screen t          ; No need to see GNU agitprop.
+ initial-scratch-message nil       ; I should change this to something inspirational.
+ mac-mouse-wheel-smooth-scroll nil ; Smooth-scrolling is way too slow.
+ kill-whole-line t                 ; Delete the whole line if C-k is hit at the beginning of a line.
+ make-backup-files nil             ; No backups, thanks.
+ mac-command-modifier 'super       ; I'm not sure this is the right toggle, but whatever.
+ require-final-newline t           ; Auto-insert trailing newlines.
+ ring-bell-function 'ignore        ; Do not ding. Ever.
+ linum-delay t                     ; No need to slow down emacs when recalculating line numbers.
+ use-dialog-box nil                ; Dialogues always go in the modeline.
+ indent-tabs-mode nil              ; Fuck tabs.
+ cursor-type 'bar                  ; Always use a bar cursor.
+ ;; Scroll amounts are way too high on mac. This does something to ameliorate the situation.
  mouse-wheel-scroll-amount '(2 ((shift) . 5)))
+
+;; Start with split windows.
 
 (split-window-horizontally)
 
+;; Always trim trailing whitespace.
+
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
-(setq-default
- cursor-type 'bar
- indent-tabs-mode nil)
-
+;; Restore original GC threshold.
 (setq gc-cons-threshold old-cons-threshold)
 (makunbound 'old-cons-threshold)
 
 (provide 'init)
+
+;; goodbye, thanks for reading
 
 ;;; init.el ends here
