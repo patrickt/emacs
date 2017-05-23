@@ -23,10 +23,21 @@
 
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
-;; Use Operator Mono, my favorite monospaced font.
-;; TODO: handle its absence gratefully.
+;; Start with split windows
 
-(set-frame-font "Operator Mono-11")
+(split-window-horizontally)
+(other-window 1)
+
+;; Open my TODO on Mac
+
+(when (eq system-type 'darwin)
+  (find-file "~/Dropbox/todo.org")
+  (other-window 1))
+
+;; Use Operator Mono, my favorite monospaced font, handling its absence gracefully.
+
+(ignore-errors
+  (set-frame-font "Operator Mono-11"))
 
 ;; Any Customize-based settings should live in custom.el, not here.
 
@@ -69,11 +80,13 @@
 ;; I use this for prose writing to ensure I hit a minimum goal for the day.
 
 (use-package wc-goal-mode
+  :defer t
   :ensure t)
 
 ;; Ace-window is a nice way to switch between frames quickly.
 
 (use-package ace-window
+  :defer t
   :ensure t
   :bind (("C-," . ace-window)))
 
@@ -97,15 +110,6 @@
   :init (recentf-mode t)
   :config (add-to-list 'recentf-exclude "\\.emacs.d"))
 
-;; Anzu is small but very nice: during searches, it shows how many matches
-;; are found in the current buffer.
-
-(use-package anzu
-  :defer
-  :ensure t
-  :diminish anzu-mode
-  :init (global-anzu-mode +1))
-
 ;; Some people object to helm, but I love it like a family member.
 ;; TODO: bind C-s to helm-occur.
 
@@ -116,7 +120,7 @@
          ("C-c r" . helm-recentf)
          ("C-c y" . helm-show-kill-ring)
          ("C-c b" . helm-mini)
-         ("C-c S" . helm-occur)
+         ("C-s"   . helm-occur)
          ("C-c i" . helm-imenu)
          ("C-x b" . helm-mini))
   :config
@@ -130,6 +134,7 @@
 
 (use-package company
   :ensure t
+  :defer t
   :init (global-company-mode 1)
   :bind (("M-/" . company-complete))
   :diminish company-mode
@@ -162,27 +167,23 @@
   :config
   (add-to-list 'company-backends 'company-restclient))
 
-;; Intelligently sort company predictions based on buffer statistics. This can
-;; make load-time a little slow, so be sure to :defer it.
-
-(use-package company-statistics
-  :defer t
-  :ensure t
-  :init (company-statistics-mode +1))
-
 ;; Prodigy is an amazing process manager. I used to have a lot more here for
 ;; stuff at my last job, but I'm sure I'll fill this out more in the future.
 
 (use-package prodigy
   :ensure t
+  :defer t
   :bind (("C-c q" . prodigy)))
 
 ;; helm can look inside makefiles if you have helm-make enabled.
+;; turning this off for now, though.
 
-(use-package helm-make
-  :ensure t
-  :bind (("C-c m" . helm-make-projectile))
-  :config (setq helm-make-sort-targets t))
+;; (use-package helm-make
+;;   :ensure t
+;;   :bind (("C-c m" . helm-make-projectile))
+;;   :config (setq helm-make-sort-targets t))
+
+(bind-key "C-c m" 'compile)
 
 ;; I should use god-mode more often, but I tend to forget it exists.
 
@@ -206,6 +207,13 @@
   :ensure t
   :bind (("C-c G" . helm-git-grep)
          ("C-c h" . helm-git-grep-at-point)))
+
+;; I don't always write Go… but when I do, I complain mightily.
+
+(use-package go-mode
+  :ensure t
+  :config
+  (add-hook 'before-save-hook #'gofmt-before-save))
 
 ;; Projectile comes with Emacs, and is pretty essential. All these functions
 ;; hook into helm for their UI.
@@ -250,7 +258,7 @@
 
 (use-package yasnippet
   :ensure t
-  :defer 1
+  :defer 3
   :diminish yas-minor-mode
   :config
   (yas-global-mode +1)
@@ -270,28 +278,23 @@
 ;; Common Haskell snippets. These take a while to load, so no need to block on startup.
 
 (use-package haskell-snippets
-  :defer 3
+  :defer haskell-mode
   :ensure t)
 
 ;; I'm still not happy with my Haskell indentation setup, but hi2 is nice and reasonably
 ;; customizable, so I'll take it for now.
 
-(use-package hi2
+(use-package hindent
   :defer haskell-mode
   :ensure t
-  :diminish hi2-mode
   :config
-  (setq hi2-show-indentations t
-        hi2-layout-offset 4
-        hi2-starter-offset 4
-        hi2-left-offset 4
-        hi2-show-indentations t
-        hi2-show-indentations-after-eol t))
+  (setq hindent-reformat-buffer-on-save t))
 
 ;; The beauty of undo-tree is that it means that, once you've typed something into
 ;; a buffer, you'll always be able to get it back. That is crucial.
 
 (use-package undo-tree
+  :defer t
   :ensure t
   :bind (("C-c _" . undo-tree-visualize))
   :init (global-undo-tree-mode +1)
@@ -301,7 +304,8 @@
 
 (use-package eshell
   :bind (("C-c s" . eshell)
-         ("C-r" . helm-eshell-history)))
+         ("C-r" . helm-eshell-history))
+  )
 
 ;; I do all of my writing in either org-mode or markdown-mode.
 
@@ -313,10 +317,28 @@
   (unbind-key "M-<left>" markdown-mode-map)
   (unbind-key "M-<right>" markdown-mode-map))
 
+(use-package pandoc-mode
+  :ensure t
+  :defer markdown-mode
+  :config
+  (add-hook 'markdown-mode-hook 'pandoc-mode)
+  (add-hook 'markdown-mode-hook 'toggle-word-wrap))
+
 ;; YAML is underappreciated.
 
 (use-package yaml-mode
+  :defer t
   :ensure t)
+
+(use-package slime
+  :ensure t
+  :config
+  (setq inferior-lisp-program "/usr/local/bin/sbcl")
+  (add-hook 'lisp-mode-hook 'slime-setup)
+  (add-to-list 'slime-contribs 'slime-repl))
+
+(use-package slime-company
+  :defer slime)
 
 ;; Ace-jump is much nicer than goto-line (which you can get to with M-g g), so
 ;; I overwrite the C-l binding.
@@ -340,6 +362,10 @@
 (use-package duplicate-thing
   :ensure t
   :bind (("C-c u" . duplicate-thing)))
+
+(use-package purescript-mode
+  :defer t
+  :ensure t)
 
 ;; I also forget that this exists a lot, but it's nice when asking "why is emacs slow".
 
@@ -385,6 +411,7 @@
          ("C-c w" . wc-goal-mode))
   :config
   (defun my-org-mode-hook ()
+    (wc-goal-mode)
     (visual-line-mode)
     (setq org-src-fontify-natively t))
   (unbind-key "C-c ;" org-mode-map)
@@ -405,7 +432,6 @@
                                           "OverloadedStrings"
                                           "QuasiQuotes"
                                           "FlexibleContexts"
-                                          "NoImplicitPrelude"
                                           "GeneralizedNewtypeDeriving"
                                           "DeriveGeneric"
                                           "MultiParamTypeClasses"
@@ -517,6 +543,10 @@
   (interactive)
   (switch-to-buffer (other-buffer (current-buffer) 1)))
 
+(defun display-startup-echo-area-message ()
+  "Overrides the normally tedious error message."
+  (message "Welcome back."))
+
 (bind-key "C-c '"  'switch-to-previous-buffer)
 
 (defun eol-then-newline ()
@@ -549,6 +579,8 @@
 (auto-save-mode -1)       ; Don't litter everywhere with backups.
 (prettify-symbols-mode)   ; Use pretty Unicode symbols where possible.
 
+
+
 (setq
  blink-matching-paren t            ; Flash the opening paren when a closer is inserted.
  compilation-always-kill t         ; Never prompt to kill a compilation session.
@@ -556,7 +588,6 @@
  create-lockfiles nil              ; Emacs sure loves to put lockfiles everywhere.
  default-directory "~/src"         ; My code lives here.
  inhibit-startup-screen t          ; No need to see GNU agitprop.
- initial-scratch-message nil       ; I should change this to something inspirational.
  mac-mouse-wheel-smooth-scroll nil ; Smooth-scrolling is way too slow.
  kill-whole-line t                 ; Delete the whole line if C-k is hit at the beginning of a line.
  make-backup-files nil             ; No backups, thanks.
@@ -566,13 +597,20 @@
  linum-delay t                     ; No need to slow down emacs when recalculating line numbers.
  use-dialog-box nil                ; Dialogues always go in the modeline.
  indent-tabs-mode nil              ; Fuck tabs.
- cursor-type 'bar                  ; Always use a bar cursor.
+ frame-title-format "emacs – %b"   ; Put something useful in the status bar.
+ initial-scratch-message nil       ; SHUT UP SHUT UP SHUT UP
+ mac-option-modifier 'meta
  ;; Scroll amounts are way too high on mac. This does something to ameliorate the situation.
- mouse-wheel-scroll-amount '(2 ((shift) . 5)))
+ mouse-wheel-scroll-amount '(3 ((shift) . 5))
+ ;; Save system copy/paste commands to the kill ring.
+ save-interprogram-paste-before-kill t)
 
-;; Start with split windows.
+(when (string= system-type "darwin")
+  (setq dired-use-ls-dired nil))
 
-(split-window-horizontally)
+;; Bar cursors everywhere.
+
+(setq-default cursor-type 'bar)
 
 ;; Always trim trailing whitespace.
 
