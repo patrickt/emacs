@@ -31,8 +31,9 @@
 ;; Open my TODO on Mac
 
 (when (eq system-type 'darwin)
-  (find-file "~/Dropbox/todo.org")
-  (other-window 1))
+  (find-file "~/Dropbox/todo.org"))
+
+(other-window 1)
 
 ;; Use Operator Mono, my favorite monospaced font, handling its absence gracefully.
 
@@ -278,17 +279,8 @@
 ;; Common Haskell snippets. These take a while to load, so no need to block on startup.
 
 (use-package haskell-snippets
-  :defer haskell-mode
+  :defer yasnippet
   :ensure t)
-
-;; I'm still not happy with my Haskell indentation setup, but hi2 is nice and reasonably
-;; customizable, so I'll take it for now.
-
-(use-package hindent
-  :defer haskell-mode
-  :ensure t
-  :config
-  (setq hindent-reformat-buffer-on-save t))
 
 ;; The beauty of undo-tree is that it means that, once you've typed something into
 ;; a buffer, you'll always be able to get it back. That is crucial.
@@ -304,8 +296,7 @@
 
 (use-package eshell
   :bind (("C-c s" . eshell)
-         ("C-r" . helm-eshell-history))
-  )
+         ("C-r" . helm-eshell-history)))
 
 ;; I do all of my writing in either org-mode or markdown-mode.
 
@@ -442,62 +433,16 @@
                                           "TypeFamilies"
                                           "DeriveDataTypeable"))))
 
-(defun my-haskell-mode-hook ()
-  "My haskell-mode configuration."
-  (interactive-haskell-mode)
-  (haskell-decl-scan-mode)
-  (turn-on-hi2)
-  ;; (turn-on-haskell-indent)
-  ;; (flycheck-select-checker 'haskell-stack-ghc)
-
-  (haskell-doc-mode)
-  (mapc 'diminish '(interactive-haskell-mode
-                    haskell-doc-mode)))
-
-(defun my-cabal-mode-hook ()
-  "My cabal configuration."
-  (electric-indent-local-mode -1))
-
-(defun haskell-bring-and-compile ()
-  "Bring the compilation window to front and compile."
-  (interactive)
-  (haskell-interactive-bring)
-  (haskell-process-cabal-build))
-
-;; My Haskell configuration is SUPER-crufty and needs to be torn down
-;; and reassembled from first principles. But it will do for now.
 
 (use-package haskell-mode
   :ensure t
-  :init
-  (add-hook 'haskell-mode-hook 'my-haskell-mode-hook)
-  (add-hook 'haskell-cabal-mode-hook 'my-cabal-mode-hook)
-  :bind (("C-c a i" . haskell-process-do-info)
-         ("C-c a c" . haskell-cabal-visit-file)
-         ("C-c a d" . haskell-mode-jump-to-def)
-         ("C-c a f" . haskell-interactive-bring)
-         ("C-c a b" . haskell-mode-stylish-buffer)
-         ("C-c c"   . haskell-bring-and-compile)
-         ("C-c C-c" . haskell-bring-and-compile)
-         ("C-c a i" . haskell-add-import)
-         ("C-c a F" . haskell-session-kill)
-         ("C-c a s" . haskell-hayoo))
-         ;;("SPC" . haskell-mode-contextual-space))
-  :mode ("\\.hs$" . haskell-mode)
+  :bind (("C-c a c" . haskell-cabal-visit-file)
+	 ("C-c a b" . haskell-mode-stylish-buffer))
+
   :config
-  (setq
-   haskell-notify-p t
-   haskell-font-lock-symbols t
-   haskell-process-load-or-reload-prompt t
-   haskell-interactive-mode-scroll-to-bottom t
-   haskell-process-type 'stack-ghci
-   haskell-stylish-on-save t
-   haskell-process-log t
-   haskell-indent-spaces 4)
   (defalias 'haskell-completing-read-function 'helm--completing-read-default)
   (defalias 'haskell-complete-module-read 'helm--completing-read-default))
 
-;;; End use-package invocations
 
 (defun my-elisp-mode-hook ()
   "My elisp customizations."
@@ -557,7 +502,7 @@
   (indent-for-tab-command))
 
 (bind-key "s-<return>" 'eol-then-newline)
-
+(bind-key "C-c l"  'goto-line)
 (bind-key "C-c \\" 'align-regexp)
 (bind-key "C-c /"  'comment-or-uncomment-region)
 (bind-key "C-c x"  'ESC-prefix)
