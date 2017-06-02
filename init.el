@@ -503,6 +503,7 @@
 
 (bind-key "s-<return>" 'eol-then-newline)
 (bind-key "C-c l"  'goto-line)
+(bind-key "C-c 5"  'query-replace-regexp)
 (bind-key "C-c \\" 'align-regexp)
 (bind-key "C-c /"  'comment-or-uncomment-region)
 (bind-key "C-c x"  'ESC-prefix)
