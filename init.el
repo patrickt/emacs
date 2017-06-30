@@ -117,13 +117,14 @@
 (use-package helm
   :ensure t
   :diminish helm-mode
-  :bind (("C-c ;" . helm-M-x)
-         ("C-c r" . helm-recentf)
-         ("C-c y" . helm-show-kill-ring)
-         ("C-c b" . helm-mini)
-         ("C-s"   . helm-occur)
-         ("C-c i" . helm-imenu)
-         ("C-x b" . helm-mini))
+  :bind (("C-c ;"   . helm-M-x)
+         ("C-c r"   . helm-recentf)
+         ("C-c y"   . helm-show-kill-ring)
+         ("C-c b"   . helm-mini)
+         ("C-s"     . helm-occur)
+ 	 ("C-x C-f" . helm-find-files)
+         ("C-c i"   . helm-imenu)
+         ("C-x b"   . helm-mini))
   :config
   (helm-mode t)
   (helm-autoresize-mode t)
@@ -201,13 +202,25 @@
                         'box
                         'bar)))
 
-;; Quick access to git-grep is a must. Helm's support for it is nice.
-;; Though helm-git-grep-at-point is annoyingly buggy.
+;; Ripgrep is fast as heck.
+
+(use-package helm-ag
+  :ensure t
+  :defer helm
+  :bind (("C-c G" . helm-do-ag-project-root)
+	 ("C-c h" . helm-do-ag-project-root))
+  :config
+  (setq helm-ag-base-command "rg --no-heading"
+	helm-ag-insert-at-point 'symbol
+	helm-ag-fuzzy-match t))
+
+;; Keeping helm-git-grep around for when I need case-insensitive search.
 
 (use-package helm-git-grep
   :ensure t
-  :bind (("C-c G" . helm-git-grep)
-         ("C-c h" . helm-git-grep-at-point)))
+  :bind (("C-c H" . helm-git-grep)))
+
+
 
 ;; I don't always write Go… but when I do, I complain mightily.
 
