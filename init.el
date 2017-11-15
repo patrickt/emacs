@@ -143,7 +143,9 @@
   :config
   ;; It completes a little too aggressively out of the box. Slow down, champ.
   (setq company-minimum-prefix-length 4
-        company-idle-delay 0.05)
+        company-idle-delay 0.05
+	company-dabbrev-ignore-case nil
+	company-dabbrev-downcase nil)
   (define-key company-active-map (kbd "C-n") 'company-select-next))
 
 ;; restclient-mode is an essential tool for interacting with HTTP APIs.
@@ -427,6 +429,7 @@
 
 (use-package flycheck
   :ensure t
+  :disabled
   :init (global-flycheck-mode)
   :bind ("C-c n" . flycheck-next-error)
   :config
@@ -527,6 +530,9 @@
 (bind-key "s-v"    'yank)
 (bind-key "s-z"    'undo)
 (bind-key "s-a"    'mark-whole-buffer)
+
+(unbind-key (kbd "<prior>"))
+(unbind-key (kbd "<next>"))
 
 (defalias 'yes-or-no-p 'y-or-n-p)
 
