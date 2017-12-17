@@ -416,11 +416,12 @@
   :config
   (defun my-org-mode-hook ()
     (wc-goal-mode)
-    (visual-line-mode)
-    (setq org-src-fontify-natively t))
+    (visual-line-mode))
   (unbind-key "C-c ;" org-mode-map)
   (unbind-key "C-,"   org-mode-map)
-  (add-hook 'org-mode-hook 'my-org-mode-hook))
+  (add-hook 'org-mode-hook 'my-org-mode-hook)
+  (setq org-src-fontify-natively t
+	org-agenda-files (list "~/Dropbox/todo.org")))
 
 ;; Flycheck is very useful, though in order for it to work properly in a lot of
 ;; Haskell files we need to enable a bunch of default extensions.
