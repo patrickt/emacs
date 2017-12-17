@@ -89,7 +89,7 @@
 (use-package ace-window
   :defer t
   :ensure t
-  :bind (("C-," . ace-window)))
+  :bind (("C-." . ace-window)))
 
 ;; The default modeline is ugly. Until spacemakes makes their modeline into a
 ;; package that the rest of use can use, powerline will suffice.
@@ -138,7 +138,7 @@
   :ensure t
   :defer t
   :init (global-company-mode 1)
-  :bind (("M-/" . company-complete))
+  :bind (("M-/" . company-dabbrev))
   :diminish company-mode
   :config
   ;; It completes a little too aggressively out of the box. Slow down, champ.
@@ -182,10 +182,10 @@
 ;; helm can look inside makefiles if you have helm-make enabled.
 ;; turning this off for now, though.
 
-;; (use-package helm-make
-;;   :ensure t
-;;   :bind (("C-c m" . helm-make-projectile))
-;;   :config (setq helm-make-sort-targets t))
+(use-package helm-make
+  :disabled
+  :bind (("C-c m" . helm-make-projectile))
+  :config (setq helm-make-sort-targets t))
 
 (bind-key "C-c m" 'compile)
 
@@ -221,8 +221,6 @@
 (use-package helm-git-grep
   :ensure t
   :bind (("C-c H" . helm-git-grep)))
-
-
 
 ;; I don't always write Go… but when I do, I complain mightily.
 
