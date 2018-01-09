@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: ignore-code
+# key: ignore
+# --
+\ignore{
+\begin{code}
+$1
+\end{code}
+}

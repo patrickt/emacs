@@ -418,7 +418,8 @@
   :config
   (defun my-org-mode-hook ()
     (wc-goal-mode)
-    (visual-line-mode))
+    (visual-line-mode)
+    (electric-pair-mode nil))
   (unbind-key "C-c ;" org-mode-map)
   (unbind-key "C-,"   org-mode-map)
   (add-hook 'org-mode-hook 'my-org-mode-hook)
@@ -457,9 +458,16 @@
 	 ("C-c a b" . haskell-mode-stylish-buffer))
 
   :config
+  (defun my-lithaskell-mode-hook ()
+    "Turn off auto-indent for Literate Haskell snippets."
+    (setq-local yas-indent-line nil))
+  (add-hook 'literate-haskell-mode-hook 'my-lithaskell-mode-hook)
   (defalias 'haskell-completing-read-function 'helm--completing-read-default)
   (defalias 'haskell-complete-module-read 'helm--completing-read-default))
 
+(use-package idris-mode
+  :ensure t
+  :bind (("C-c C-v" . idris-case-split)))
 
 (defun my-elisp-mode-hook ()
   "My elisp customizations."

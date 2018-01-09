@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: emph
+# binding: s-i
+# --
+\emph{$1}

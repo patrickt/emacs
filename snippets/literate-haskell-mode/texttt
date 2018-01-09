@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: texttt
+# binding: s-t
+# --
+\texttt{$1}
