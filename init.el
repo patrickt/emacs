@@ -404,7 +404,8 @@
 (use-package dumb-jump
   :ensure t
   :bind (("C-c d" . dumb-jump-go)
-	 ("C-c D" . dumb-jump-go-prompt)))
+	 ("C-c D" . dumb-jump-go-prompt))
+  :config (setq dumb-jump-selector 'helm))
 
 ;; I rarely have to edit Lua anymore.
 
