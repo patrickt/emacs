@@ -38,7 +38,8 @@
 ;; Use Operator Mono, my favorite monospaced font, handling its absence gracefully.
 
 (ignore-errors
-  (set-frame-font "Operator Mono-11"))
+  (set-frame-font "Fira Code Retina-14")
+  (mac-auto-operator-composition-mode))
 
 ;; Any Customize-based settings should live in custom.el, not here.
 
@@ -68,8 +69,10 @@
 
 (eval-when-compile
   (require 'use-package)
-  (require 'bind-key)
-  (require 'diminish))
+  (require 'bind-key))
+
+(use-package diminish
+  :ensure t)
 
 ;; Apropospriate is easy on the eyes.
 
@@ -130,6 +133,12 @@
   (helm-autoresize-mode t)
   (helm-adaptive-mode t)
   (setq-default helm-M-x-fuzzy-match t))
+
+;; Keychain stuff.
+
+(use-package keychain-environment
+  :ensure t
+  :init (keychain-refresh-environment))
 
 ;; Company has its issues but is overall the most modern autocomplete
 ;; facility for Emacs.
@@ -212,7 +221,7 @@
   :bind (("C-c G" . helm-do-ag-project-root)
 	 ("C-c h" . helm-do-ag-project-root))
   :config
-  (setq helm-ag-base-command "rg --no-heading"
+  (setq helm-ag-base-command "rg --no-heading -t haskell"
 	helm-ag-insert-at-point 'symbol
 	helm-ag-fuzzy-match t))
 
@@ -389,11 +398,17 @@
 
 (use-package dash-at-point
   :ensure t
+  :disabled
   :bind ("C-c d" . dash-at-point))
+
+(use-package dumb-jump
+  :ensure t
+  :bind ("C-c d" . dumb-jump-go))
 
 ;; I rarely have to edit Lua anymore.
 
-(use-package lua-mode)
+(use-package lua-mode
+  :disabled)
 
 (defun em-dash ()
   "Insert an em-dash."
