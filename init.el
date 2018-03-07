@@ -92,7 +92,7 @@
 (use-package ace-window
   :defer t
   :ensure t
-  :bind (("C-." . ace-window)))
+  :bind (("C-," . ace-window)))
 
 ;; The default modeline is ugly. Until spacemakes makes their modeline into a
 ;; package that the rest of use can use, powerline will suffice.
@@ -106,7 +106,8 @@
 
 (use-package exec-path-from-shell
   :ensure t
-  :init (exec-path-from-shell-initialize))
+  :init
+  (exec-path-from-shell-initialize))
 
 ;; Recentf comes with Emacs but it should always be enabled.
 
@@ -134,7 +135,11 @@
   (helm-adaptive-mode t)
   (setq-default helm-M-x-fuzzy-match t))
 
-;; Keychain stuff.
+;; Keychain stuff. Note to self: if you keep having to enter your
+;; keychain password on OS X, make sure that you have the following in .ssh/config:
+;; Host *
+;;    UseKeychain yes
+
 
 (use-package keychain-environment
   :ensure t
@@ -471,12 +476,16 @@
   :ensure t
   :bind (("C-c a c" . haskell-cabal-visit-file)
 	 ("C-c a b" . haskell-mode-stylish-buffer))
-
-  :config
+  :init
+  (defun my-haskell-mode-hook ()
+    "Make sure the compile command is right."
+    (setq-local compile-command "stack build --fast"))
   (defun my-lithaskell-mode-hook ()
     "Turn off auto-indent for Literate Haskell snippets."
     (setq-local yas-indent-line nil))
+  (add-hook 'haskell-mode-hook 'my-haskell-mode-hook)
   (add-hook 'literate-haskell-mode-hook 'my-lithaskell-mode-hook)
+  :config
   (defalias 'haskell-completing-read-function 'helm--completing-read-default)
   (defalias 'haskell-complete-module-read 'helm--completing-read-default))
 
