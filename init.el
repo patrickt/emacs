@@ -31,15 +31,14 @@
 ;; Open my TODO on Mac
 
 (when (eq system-type 'darwin)
-  (find-file "~/Dropbox/todo.org"))
+  (find-file "~/txt/semantic.org"))
 
 (other-window 1)
 
 ;; Use Operator Mono, my favorite monospaced font, handling its absence gracefully.
 
 (ignore-errors
-  (set-frame-font "Fira Code Retina-14")
-  (mac-auto-operator-composition-mode))
+  (set-frame-font "Fira Code Retina-14"))
 
 ;; Any Customize-based settings should live in custom.el, not here.
 
@@ -479,7 +478,8 @@
   :init
   (defun my-haskell-mode-hook ()
     "Make sure the compile command is right."
-    (setq-local compile-command "stack build --fast"))
+    (setq-local compile-command "stack build --fast")
+    (mac-auto-operator-composition-mode))
   (defun my-lithaskell-mode-hook ()
     "Turn off auto-indent for Literate Haskell snippets."
     (setq-local yas-indent-line nil))
@@ -489,9 +489,18 @@
   (defalias 'haskell-completing-read-function 'helm--completing-read-default)
   (defalias 'haskell-complete-module-read 'helm--completing-read-default))
 
+(use-package intero
+  :ensure t
+  :defer haskell-mode
+  :config
+  (add-hook 'haskell-mode-hook 'global-intero-mode))
+
 (use-package idris-mode
   :ensure t
   :bind (("C-c C-v" . idris-case-split)))
+
+(use-package typescript-mode
+  :ensure t)
 
 (defun my-elisp-mode-hook ()
   "My elisp customizations."
@@ -516,6 +525,8 @@
   (find-file user-init-file))
 
 (bind-key "C-c e" 'open-init-file)
+(bind-key "C-c o" '(lambda () (interactive) (find-file "~/txt/semantic.org")))
+
 
 (defun kill-all-buffers ()
   "Close all buffers."
@@ -550,19 +561,19 @@
   (newline)
   (indent-for-tab-command))
 
-(bind-key "s-<return>" 'eol-then-newline)
-(bind-key "C-c l"  'goto-line)
-(bind-key "C-c 5"  'query-replace-regexp)
-(bind-key "C-c \\" 'align-regexp)
-(bind-key "C-c /"  'comment-or-uncomment-region)
-(bind-key "C-c x"  'ESC-prefix)
-(bind-key "s-+"    'text-scale-increase)
-(bind-key "s-_"    'text-scale-decrease)
-(bind-key "s-/"    'hippie-expand)
-(bind-key "s-c"    'kill-ring-save)
-(bind-key "s-v"    'yank)
-(bind-key "s-z"    'undo)
-(bind-key "s-a"    'mark-whole-buffer)
+(bind-key "s-<return>"	'eol-then-newline)
+(bind-key "C-c l"	'goto-line)
+(bind-key "C-c 5"	'query-replace-regexp)
+(bind-key "C-c \\"	'align-regexp)
+(bind-key "C-c /"	'comment-or-uncomment-region)
+(bind-key "C-c x"	'ESC-prefix)
+(bind-key "s-+"		'text-scale-increase)
+(bind-key "s-_"		'text-scale-decrease)
+(bind-key "s-/"		'hippie-expand)
+(bind-key "s-c"		'kill-ring-save)
+(bind-key "s-v"		'yank)
+(bind-key "s-z"		'undo)
+(bind-key "s-a"		'mark-whole-buffer)
 
 (unbind-key (kbd "<prior>"))
 (unbind-key (kbd "<next>"))
