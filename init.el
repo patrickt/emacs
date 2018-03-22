@@ -258,8 +258,9 @@
 ;; I'm sure somebody out there doesn't want line numbers in their gutters.
 ;; But that person is not me.
 
-(use-package linum
-  :init (global-linum-mode t)
+(use-package nlinum
+  :ensure t
+  :init (global-nlinum-mode t)
   :config (setq linum-format "%d"))
 
 ;; Magit is one of the best pieces of OSS I have ever used. It is truly esssential.
@@ -331,6 +332,7 @@
   :mode ("\\.md$" . markdown-mode)
   :config
   (remove-hook 'before-save-hook 'delete-trailing-whitespace)
+  (add-hook 'markdown-mode-hook '(lambda () (linum-mode -1)))
   (unbind-key "M-<left>" markdown-mode-map)
   (unbind-key "M-<right>" markdown-mode-map))
 
@@ -574,6 +576,10 @@
 (bind-key "s-v"		'yank)
 (bind-key "s-z"		'undo)
 (bind-key "s-a"		'mark-whole-buffer)
+(bind-key "s-<"         'beginning-of-buffer)
+(bind-key "<home>"      'beginning-of-buffer)
+(bind-key "<end>"       'beginning-of-buffer)
+(bind-key "s->"         'end-of-buffer)
 
 (unbind-key (kbd "<prior>"))
 (unbind-key (kbd "<next>"))
@@ -626,8 +632,8 @@
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
 ;; Restore original GC threshold.
-(setq gc-cons-threshold old-cons-threshold)
-(makunbound 'old-cons-threshold)
+;; (setq gc-cons-threshold old-cons-threshold)
+;; (makunbound 'old-cons-threshold)
 
 (provide 'init)
 
