@@ -75,10 +75,10 @@
 
 ;; Apropospriate is easy on the eyes.
 
-(use-package apropospriate-theme
+(use-package material-theme
   :ensure t
   :init
-  (load-theme 'apropospriate-dark))
+  (load-theme 'material))
 
 ;; I use this for prose writing to ensure I hit a minimum goal for the day.
 
@@ -269,13 +269,16 @@
   :defer t
   :ensure t
   :bind (("C-c g" . magit-status))
-  :init (global-auto-revert-mode t)
+  :init
+  (global-auto-revert-mode t)
+  (diminish auto-revert-mode)
   :config (setq-default magit-last-seen-setup-instructions "1.4.0"))
 
 ;; This is a feature that someone stole from Sublime Text - show git information in
 ;; the gutter. It's pretty nice.
 
 (use-package git-gutter
+  :disabled
   :ensure t
   :init (global-git-gutter-mode)
   :config (setq git-gutter:update-interval 1)
@@ -578,7 +581,7 @@
 (bind-key "s-a"		'mark-whole-buffer)
 (bind-key "s-<"         'beginning-of-buffer)
 (bind-key "<home>"      'beginning-of-buffer)
-(bind-key "<end>"       'beginning-of-buffer)
+(bind-key "<end>"       'end-of-buffer)
 (bind-key "s->"         'end-of-buffer)
 
 (unbind-key (kbd "<prior>"))
@@ -632,8 +635,8 @@
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
 ;; Restore original GC threshold.
-;; (setq gc-cons-threshold old-cons-threshold)
-;; (makunbound 'old-cons-threshold)
+(setq gc-cons-threshold old-cons-threshold)
+(makunbound 'old-cons-threshold)
 
 (provide 'init)
 
