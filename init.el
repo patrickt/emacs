@@ -206,7 +206,8 @@
 
 (use-package god-mode
   :ensure t
-  :bind ("C-c <SPC>" . god-mode-all)
+  :bind (("C-c <SPC>" . god-mode-all)
+	 ("C-i"       . god-mode-all))
   :config
   (add-hook 'god-mode-enabled-hook 'my-update-cursor)
   (add-hook 'god-mode-disabled-hook 'my-update-cursor))
@@ -443,6 +444,7 @@
   (defun my-org-mode-hook ()
     (wc-goal-mode)
     (visual-line-mode)
+    (nlinum-mode nil)
     (electric-pair-mode nil))
   (unbind-key "C-c ;" org-mode-map)
   (unbind-key "C-,"   org-mode-map)
@@ -575,6 +577,7 @@
 (bind-key "s-+"		'text-scale-increase)
 (bind-key "s-_"		'text-scale-decrease)
 (bind-key "s-/"		'hippie-expand)
+(bind-key "s-s"         'save-buffer)
 (bind-key "s-c"		'kill-ring-save)
 (bind-key "s-v"		'yank)
 (bind-key "s-z"		'undo)
