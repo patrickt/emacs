@@ -192,6 +192,11 @@
   :defer t
   :bind (("C-c q" . prodigy)))
 
+(use-package expand-region
+  :ensure t
+  :defer t
+  :bind (("C-c n" . er/expand-region)))
+
 ;; helm can look inside makefiles if you have helm-make enabled.
 ;; turning this off for now, though.
 
@@ -206,8 +211,7 @@
 
 (use-package god-mode
   :ensure t
-  :bind (("C-c <SPC>" . god-mode-all)
-	 ("C-i"       . god-mode-all))
+  :bind (("C-c <SPC>" . god-mode-all))
   :config
   (add-hook 'god-mode-enabled-hook 'my-update-cursor)
   (add-hook 'god-mode-disabled-hook 'my-update-cursor))
@@ -240,7 +244,9 @@
 
 (use-package go-mode
   :ensure t
+  :defer helm-ag
   :config
+  (setq helm-ag-base-command "rg --no-heading")
   (add-hook 'before-save-hook #'gofmt-before-save))
 
 ;; Projectile comes with Emacs, and is pretty essential. All these functions
@@ -323,6 +329,13 @@
   :init (global-undo-tree-mode +1)
   :diminish undo-tree-mode)
 
+(defun my-c-mode-hook ()
+  "C initialization."
+  (setq indent-tabs-mode ni.))
+
+;; C stuff.
+(use-package cc-mode)
+
 ;; I'm trying to wean myself off of zsh/Terminal.app, with limited success.
 
 (use-package eshell
@@ -401,7 +414,7 @@
 (use-package guide-key
   :ensure t
   :init (guide-key-mode +1)
-  :config (setq guide-key/guide-key-sequence '("C-x v"))
+  :config (setq guide-key/guide-key-sequence '("C-x v" "C-c a"))
   :diminish guide-key-mode)
 
 ;; Since the in-emacs Dash browser doesn't owrk on OS X, we have to settle for dash-at-point.
@@ -456,8 +469,9 @@
 ;; Haskell files we need to enable a bunch of default extensions.
 
 (use-package flycheck
-  :ensure t
   :disabled
+  :ensure t
+  :defer helm-mode
   :init (global-flycheck-mode)
   :bind ("C-c n" . flycheck-next-error)
   :config
@@ -477,11 +491,23 @@
                                           "TypeFamilies"
                                           "DeriveDataTypeable"))))
 
+(defun haskell-right-arrow ()
+  "Insert a right arrow."
+  (interactive)
+  (insert (if (eolp) " -> " "->")))
+
+(defun haskell-left-arrow ()
+  "Insert a left arrow."
+  (interactive)
+  (insert (if (eolp) " <- " "<-")))
 
 (use-package haskell-mode
   :ensure t
   :bind (("C-c a c" . haskell-cabal-visit-file)
-	 ("C-c a b" . haskell-mode-stylish-buffer))
+	 ("C-c a b" . haskell-mode-stylish-buffer)
+         ("C-c a i" . haskell-navigate-imports)
+         ("C-c a ," . haskell-left-arrow)
+         ("C-c a ." . haskell-right-arrow))
   :init
   (defun my-haskell-mode-hook ()
     "Make sure the compile command is right."
@@ -499,6 +525,12 @@
 (use-package intero
   :ensure t
   :defer haskell-mode
+  :bind (("C-c a r" . intero-repl)
+         ("C-c a j" . intero-goto-definition)
+         ("C-c a n" . intero-info)
+         ("C-c a t" . intero-type-at)
+         ("C-c a u" . intero-uses-at)
+         ("C-c a s" . intero-apply-suggestions))
   :config
   (add-hook 'haskell-mode-hook 'global-intero-mode))
 
@@ -632,6 +664,7 @@
 ;; Bar cursors everywhere.
 
 (setq-default cursor-type 'bar)
+(setq-default indent-tabs-mode nil)
 
 ;; Always trim trailing whitespace.
 
