@@ -279,7 +279,28 @@
   :init
   (global-auto-revert-mode t)
   (diminish auto-revert-mode)
-  (advice-add magit-status :before #'maybe-unset-buffer-modified)
+  ;; There is an extant bug where magit-refresh prompts to save files that haven't
+  ;; been modified. We work around this with some defadvice over maybe-unset-buffer-modified. SO:
+  ;; https://emacs.stackexchange.com/questions/24011/make-emacs-diff-files-before-asking-to-save
+
+  (defun current-buffer-matches-file-p ()
+    "Return t if the current buffer is identical to its associated file."
+    (autoload 'diff-no-select "diff")
+    (when buffer-file-name
+      (diff-no-select buffer-file-name (current-buffer) nil 'noasync)
+      (with-current-buffer "*Diff*"
+        (and (search-forward-regexp "^Diff finished \(no differences\)\." (point-max) 'noerror) t))))
+
+  (defun maybe-unset-buffer-modified ()
+    "Clear modified bit on all unmodified buffers."
+    (interactive)
+    (dolist (buf (buffer-list))
+      (with-current-buffer buf
+        (when (and buffer-file-name (buffer-modified-p))
+          (when (current-buffer-matches-file-p)
+            (set-buffer-modified-p nil))))))
+
+  (advice-add 'magit-refresh :before #'maybe-unset-buffer-modified)
   :config
   (setq-default magit-last-seen-setup-instructions "1.4.0"))
 
@@ -600,28 +621,6 @@
   (move-end-of-line nil)
   (newline)
   (indent-for-tab-command))
-
-;; There is an extant bug where magit-refresh prompts to save files that haven't
-;; been modified. We work around this with some defadvice over maybe-unset-buffer-modified. SO:
-;; https://emacs.stackexchange.com/questions/24011/make-emacs-diff-files-before-asking-to-save
-
-(defun current-buffer-matches-file-p ()
-  "Return t if the current buffer is identical to its associated file."
-  (autoload 'diff-no-select "diff")
-  (when buffer-file-name
-    (diff-no-select buffer-file-name (current-buffer) nil 'noasync)
-    (with-current-buffer "*Diff*"
-      (and (search-forward-regexp "^Diff finished \(no differences\)\." (point-max) 'noerror) t))))
-
-(defun maybe-unset-buffer-modified ()
-  "Clear modified bit on all unmodified buffers."
-  (interactive)
-  (dolist (buf (buffer-list))
-    (with-current-buffer buf
-      (when (and buffer-file-name (buffer-modified-p))
-        (when (current-buffer-matches-file-p)
-          (set-buffer-modified-p nil))))))
-
 
 (bind-key "s-<return>"	'eol-then-newline)
 (bind-key "C-c l"	'goto-line)
