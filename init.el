@@ -156,7 +156,7 @@
   :config
   ;; It completes a little too aggressively out of the box. Slow down, champ.
   (setq company-minimum-prefix-length 4
-        company-idle-delay 0.05
+        company-idle-delay 1
 	company-dabbrev-ignore-case nil
 	company-dabbrev-downcase nil)
   (define-key company-active-map (kbd "C-n") 'company-select-next))
@@ -279,7 +279,9 @@
   :init
   (global-auto-revert-mode t)
   (diminish auto-revert-mode)
-  :config (setq-default magit-last-seen-setup-instructions "1.4.0"))
+  (advice-add magit-status :before #'maybe-unset-buffer-modified)
+  :config
+  (setq-default magit-last-seen-setup-instructions "1.4.0"))
 
 ;; This is a feature that someone stole from Sublime Text - show git information in
 ;; the gutter. It's pretty nice.
@@ -566,7 +568,6 @@
 (bind-key "C-c e" 'open-init-file)
 (bind-key "C-c o" '(lambda () (interactive) (find-file "~/txt/semantic.org")))
 
-
 (defun kill-all-buffers ()
   "Close all buffers."
   (interactive)
@@ -599,6 +600,28 @@
   (move-end-of-line nil)
   (newline)
   (indent-for-tab-command))
+
+;; There is an extant bug where magit-refresh prompts to save files that haven't
+;; been modified. We work around this with some defadvice over maybe-unset-buffer-modified. SO:
+;; https://emacs.stackexchange.com/questions/24011/make-emacs-diff-files-before-asking-to-save
+
+(defun current-buffer-matches-file-p ()
+  "Return t if the current buffer is identical to its associated file."
+  (autoload 'diff-no-select "diff")
+  (when buffer-file-name
+    (diff-no-select buffer-file-name (current-buffer) nil 'noasync)
+    (with-current-buffer "*Diff*"
+      (and (search-forward-regexp "^Diff finished \(no differences\)\." (point-max) 'noerror) t))))
+
+(defun maybe-unset-buffer-modified ()
+  "Clear modified bit on all unmodified buffers."
+  (interactive)
+  (dolist (buf (buffer-list))
+    (with-current-buffer buf
+      (when (and buffer-file-name (buffer-modified-p))
+        (when (current-buffer-matches-file-p)
+          (set-buffer-modified-p nil))))))
+
 
 (bind-key "s-<return>"	'eol-then-newline)
 (bind-key "C-c l"	'goto-line)
