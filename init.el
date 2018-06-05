@@ -262,14 +262,6 @@
                 projectile-enable-caching t)
   :diminish projectile-mode)
 
-;; I'm sure somebody out there doesn't want line numbers in their gutters.
-;; But that person is not me.
-
-(use-package nlinum
-  :ensure t
-  :init (global-nlinum-mode t)
-  :config (setq linum-format "%d"))
-
 ;; Magit is one of the best pieces of OSS I have ever used. It is truly esssential.
 
 (use-package magit
@@ -279,6 +271,7 @@
   :init
   (global-auto-revert-mode t)
   (diminish auto-revert-mode)
+  (add-hook 'magit-mode-hook 'display-line-numbers-mode)
   ;; There is an extant bug where magit-refresh prompts to save files that haven't
   ;; been modified. We work around this with some defadvice over maybe-unset-buffer-modified. SO:
   ;; https://emacs.stackexchange.com/questions/24011/make-emacs-diff-files-before-asking-to-save
@@ -457,6 +450,11 @@
 
 (use-package lua-mode
   :disabled)
+
+;; OCaml.
+
+(ignore-errors
+  (load (expand-file-name "~/.opam/system/share/emacs/site-lisp/tuareg-site-file")))
 
 (defun em-dash ()
   "Insert an em-dash."
@@ -653,7 +651,7 @@
 (display-time-mode t)     ; Show the current time, though I never use this.
 (auto-save-mode -1)       ; Don't litter everywhere with backups.
 (prettify-symbols-mode)   ; Use pretty Unicode symbols where possible.
-
+(global-display-line-numbers-mode)
 
 
 (setq
