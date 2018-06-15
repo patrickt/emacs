@@ -230,7 +230,7 @@
   :bind (("C-c G" . helm-do-ag-project-root)
 	 ("C-c h" . helm-do-ag-project-root))
   :config
-  (setq helm-ag-base-command "rg --no-heading -t haskell"
+  (setq helm-ag-base-command "rg --no-heading"
 	helm-ag-insert-at-point 'symbol
 	helm-ag-fuzzy-match t))
 
@@ -272,6 +272,7 @@
   (global-auto-revert-mode t)
   (diminish auto-revert-mode)
   (add-hook 'magit-mode-hook 'display-line-numbers-mode)
+  (add-hook 'magit-mode-hook '(lambda () (define-key git-commit-mode-map "`" 'electric-pair)))
   ;; There is an extant bug where magit-refresh prompts to save files that haven't
   ;; been modified. We work around this with some defadvice over maybe-unset-buffer-modified. SO:
   ;; https://emacs.stackexchange.com/questions/24011/make-emacs-diff-files-before-asking-to-save
@@ -478,7 +479,6 @@
   (defun my-org-mode-hook ()
     (wc-goal-mode)
     (visual-line-mode)
-    (nlinum-mode nil)
     (electric-pair-mode nil))
   (unbind-key "C-c ;" org-mode-map)
   (unbind-key "C-,"   org-mode-map)
@@ -533,6 +533,7 @@
   (defun my-haskell-mode-hook ()
     "Make sure the compile command is right."
     (setq-local compile-command "stack build --fast")
+    (setq-local helm-ag-base-command "rg --no-heading -t haskell")
     (mac-auto-operator-composition-mode))
   (defun my-lithaskell-mode-hook ()
     "Turn off auto-indent for Literate Haskell snippets."
