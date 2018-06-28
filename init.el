@@ -10,6 +10,9 @@
 (defvar old-cons-threshold gc-cons-threshold)
 (setq gc-cons-threshold 100000000)
 
+(setq debug-on-error t
+      max-list-eval-depth 2000)
+
 ;; Package-initialization preamble.
 
 (require 'package)
@@ -33,7 +36,7 @@
 
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
-;; ;; Start with split windows
+;; Start with split windows
 
 (split-window-horizontally)
 
@@ -44,12 +47,12 @@
   (find-file "~/txt/semantic.org")
   (other-window 1))
 
-;; ;; Use Operator Mono, my favorite monospaced font, handling its absence gracefully.
+;; Use Operator Mono, my favorite monospaced font, handling its absence gracefully.
 
 (ignore-errors
   (set-frame-font "Fira Code Retina-14"))
 
-;; ;; Any Customize-based settings should live in custom.el, not here.
+;; Any Customize-based settings should live in custom.el, not here.
 
 (setq custom-file "~/.emacs.d/custom.el")
 (load custom-file 'noerror)
@@ -65,6 +68,8 @@
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
 (tooltip-mode -1)
+
+(use-package diminish)
 
 ;; Material is easy on the eyes.
 
@@ -96,38 +101,51 @@
 
 (use-package ivy
   :ensure t
-  :bind (("C-x b" . ivy-switch-buffer)
-         ("C-s"   . swiper))
   :config
   (ivy-mode 1)
   (setq ivy-height 30)
-  (setq ivy-use-virtual-buffers t))
+  (setq ivy-use-virtual-buffers t)
+  (defun swiper-at-point ()
+    (interactive)
+    (swiper (thing-at-point 'word)))
+  :bind (("C-x b"   . ivy-switch-buffer)
+         ("C-c C-r" . ivy-resume)
+         ("C-c s"   . swiper-at-point)
+         ("C-s"     . swiper))
+  :diminish)
+
+(use-package ivy-hydra)
 
 (use-package counsel
   :ensure t
-  :bind (("C-c ;" . counsel-M-x)
-         ("C-h f" . counsel-describe-function)
-         ("C-h v" . counsel-describe-variable)
-         ("C-c U" . counsel-unicode-char)
-         ("C-c h" . counsel-rg)
-         ("C-c H" . counsel-git-grep)
-         ("C-c i" . counsel-imenu)
-         ("C-c y" . counsel-yank-pop)
-	 ("C-c r" . counsel-recentf))
   :config
   (counsel-mode 1)
-  (setq ivy-re-builders-alist
-        '((t . ivy--regex-plus)
-          (t . ivy--regex-fuzzy))))
+  (defun counsel-rg-at-point ()
+    (interactive)
+    (counsel-rg (thing-at-point 'word)))
+  :bind (("C-c ;" . counsel-M-x)
+         ("C-c U" . counsel-unicode-char)
+         ("C-c h" . counsel-rg-at-point)
+         ("C-c H" . counsel-rg)
+         ("C-c y" . counsel-yank-pop)
+	 ("C-c r" . counsel-recentf)
+         :map ivy-minibuffer-map
+         ("C-r" . counsel-minibuffer-history))
+  :diminish)
 
 (use-package projectile
   :init
-  (setq projectile-enable-caching t))
+  (setq projectile-enable-caching t)
+  :diminish)
 
 (use-package counsel-projectile
   :bind (("C-c f" . counsel-projectile))
   :init
   (counsel-projectile-mode))
+
+;; If you don't use this, recent commands in ivy won't be shown first
+
+(use-package smex)
 
 ;; Keychain stuff. Note to self: if you keep having to enter your
 ;; keychain password on OS X, make sure that you have the following in .ssh/config:
@@ -171,7 +189,9 @@
 
    (advice-add 'magit-refresh :before #'maybe-unset-buffer-modified)
    :config
+   (setq magit-completing-read-function 'ivy-completing-read)
    (setq-default magit-last-seen-setup-instructions "1.4.0"))
+
 
 ;; Since I grew up on Textmate, I'm more-or-less reliant on snippets. It uses helm
 ;; when there is an ambiguiity as to which snippet is appropriate, which is nice.
@@ -179,7 +199,8 @@
 (use-package yasnippet
   :config
   (yas-global-mode 1)
-  (setq yas-prompt-functions '(yas-completing-prompt)))
+  (setq yas-prompt-functions '(yas-completing-prompt))
+  :diminish yas-minor-mode)
 
 ;; I usually don't edit very large files, but saveplace is nice on the occasions I do.
 
@@ -203,19 +224,26 @@
   :defer t
   :ensure t
   :bind (("C-c _" . undo-tree-visualize))
-  :init (global-undo-tree-mode +1))
+  :init
+  (global-undo-tree-mode +1)
+  (unbind-key "M-_" undo-tree-map)
+  :diminish)
 
 ;; C stuff.
 (use-package cc-mode)
 
 ;; I do all of my writing in either org-mode or markdown-mode.
 
-(use-package markdown-mode)
+(use-package markdown-mode
+  :mode ("\\.md$" . gfm-mode)
+  :hook (gfm-mode . auto-fill-mode))
 
 ;; Avy is better than ace-jump.
 (use-package avy
-  :bind (("C-l" . ivy-avy)
-         ("C-c j" . avy-goto-word-1)))
+  :defer ivy
+  :bind (("C-l"   . avy-goto-line)
+         ("C-c j" . avy-goto-word-1)
+         ("C-'"   . ivy-avy)))
 
 ;; YAML is underappreciated.
 
@@ -270,6 +298,7 @@
 
 (use-package org
   :defer
+  :hook (org-mode . auto-fill-mode)
   :bind (:map org-mode-map
          ("M--" . em-dash)
          ("M-;" . ellipsis)
@@ -277,6 +306,9 @@
          ("C-c a s" . org-emphasize)
          ("C-c a r" . org-ref)
          ("C-c a e" . outline-show-all))
+  :init
+  (setq org-footnote-section ""
+        org-startup-with-inline-images t)
   :config
   (defun org-mode-insert-code ()
     (interactive)
@@ -289,8 +321,11 @@
   (unbind-key "M-<left>" org-mode-map)
   (unbind-key "M-<right>" org-mode-map)
   (add-hook 'org-mode-hook 'my-org-mode-hook)
-  (setq org-src-fontify-natively t
-  	org-agenda-files (list "~/Dropbox/todo.org")))
+  (setq org-agenda-files (list "~/Dropbox/todo.org")))
+
+(use-package swift-mode
+  :config
+  (setq swift-mode:basic-offset 2))
 
 (use-package org-ref
   :defer
@@ -339,8 +374,8 @@
          ("C-c a ." . haskell-right-arrow)))
 
 (use-package intero
-  :hook (haskell-mode . global-intero-mode)
-  :bind (("C-c a r" . intero-repl)
+  :bind (:map haskell-mode-map
+         ("C-c a r" . intero-repl)
          ("C-c a j" . intero-goto-definition)
          ("C-c a n" . intero-info)
          ("C-c a t" . intero-type-at)
@@ -352,10 +387,11 @@
 
 (use-package typescript-mode)
 
+(use-package protobuf-mode)
+
 (defun my-elisp-mode-hook ()
   "My elisp customizations."
-  (electric-pair-mode)
-  (eldoc-mode t))
+  (electric-pair-mode))
 
 (add-hook 'emacs-lisp-mode-hook 'my-elisp-mode-hook)
 
@@ -396,17 +432,18 @@
   (newline)
   (indent-for-tab-command))
 
-(bind-key "C-c e" 'open-init-file)
-(bind-key "C-c k" 'kill-all-buffers)
-(bind-key "C-c o" 'open-semantic-notes)
-(bind-key "s-<return>"	'eol-then-newline)
-(bind-key "C-c 5"	'query-replace-regexp)
-(bind-key "C-c '"  'switch-to-previous-buffer)
-(bind-key "C-c \\"	'align-regexp)
-(bind-key "C-c m" 'compile)
-(bind-key "C-c 3"       'split-right-and-enter)
-(bind-key "C-c /"	'comment-or-uncomment-region)
-(bind-key "C-c x"	'ESC-prefix)
+(bind-key "C-c e"      'open-init-file)
+(bind-key "C-c k"      'kill-all-buffers)
+(bind-key "C-c o"      'open-semantic-notes)
+(bind-key "s-<return>" 'eol-then-newline)
+(bind-key "C-c 5"      'query-replace-regexp)
+(bind-key "C-c '"      'switch-to-previous-buffer)
+(bind-key "C-c \\"     'align-regexp)
+(bind-key "C-c m"      'compile)
+(bind-key "C-c 3"      'split-right-and-enter)
+(bind-key "C-c /"      'comment-or-uncomment-region)
+(bind-key "C-c x"      'ESC-prefix)
+(bind-key "C-c l"      'goto-line)
 
 ;; macOS-style bindings, too (no cua-mode, it's nasty)
 (bind-key "s-+"		'text-scale-increase)
@@ -420,9 +457,10 @@
 (bind-key "<home>"      'beginning-of-buffer)
 (bind-key "<end>"       'end-of-buffer)
 (bind-key "s->"         'end-of-buffer)
+(bind-key "M-_"         'em-dash)
+(bind-key "M-;"         'ellipsis)
 
-(unbind-key (kbd "<prior>"))
-(unbind-key (kbd "<next>"))
+(diminish 'eldoc-mode)
 
 (defalias 'yes-or-no-p 'y-or-n-p)
 
@@ -434,21 +472,22 @@
 (global-display-line-numbers-mode)  ; Emacs has this builtin now, it's fast
 
 (setq
-  compilation-always-kill t             ; Never prompt to kill a compilation session.
-  compilation-scroll-output t           ; Always scroll to the bottom.
-  make-backup-files nil                 ; No backups, thanks.
-  create-lockfiles nil                  ; Emacs sure loves to put lockfiles everywhere.
-  default-directory "~/src"             ; My code lives here.
-  inhibit-startup-screen t              ; No need to see GNU agitprop.
-  kill-whole-line t                     ; Delete the whole line if C-k is hit at the beginning of a line.
-  mac-command-modifier 'super           ; I'm not sure this is the right toggle, but whatever.
-  require-final-newline t               ; Auto-insert trailing newlines.
-  ring-bell-function 'ignore            ; Do not ding. Ever.
-  use-dialog-box nil                    ; Dialogues always go in the modeline.
-  frame-title-format "emacs – %b"       ; Put something useful in the status bar.
-  initial-scratch-message nil           ; SHUT UP SHUT UP SHUT UP
-  mac-option-modifier 'meta             ; why isn't this the default
-  save-interprogram-paste-before-kill t ; preserve paste to system ring
+  compilation-always-kill t              ; Never prompt to kill a compilation session.
+  compilation-scroll-output 'first-error ; Always scroll to the bottom.
+  make-backup-files nil                  ; No backups, thanks.
+  create-lockfiles nil                   ; Emacs sure loves to put lockfiles everywhere.
+  default-directory "~/src"              ; My code lives here.
+  inhibit-startup-screen t               ; No need to see GNU agitprop.
+  kill-whole-line t                      ; Delete the whole line if C-k is hit at the beginning of a line.
+  mac-command-modifier 'super            ; I'm not sure this is the right toggle, but whatever.
+  require-final-newline t                ; Auto-insert trailing newlines.
+  ring-bell-function 'ignore             ; Do not ding. Ever.
+  use-dialog-box nil                     ; Dialogues always go in the modeline.
+  frame-title-format "emacs – %b"        ; Put something useful in the status bar.
+  initial-scratch-message nil            ; SHUT UP SHUT UP SHUT UP
+  mac-option-modifier 'meta              ; why isn't this the default
+  save-interprogram-paste-before-kill t  ; preserve paste to system ring
+  enable-recursive-minibuffers t         ; don't fucking freak out if I use the minibuffer twice
   )
 
 ;; Bar cursors everywhere.
@@ -459,6 +498,8 @@
 ;; Always trim trailing whitespace.
 
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
+
+(setq debug-on-error nil)
 
 ;; Restore original GC threshold.
 (setq gc-cons-threshold old-cons-threshold)

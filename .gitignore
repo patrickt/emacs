@@ -9,5 +9,7 @@ auto-save*
 helm-adaptive-history
 url
 .last-package-update-day
+smex-items
+tramp
 /company-statistics-cache.el
 /elpa25
