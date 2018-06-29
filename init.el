@@ -91,6 +91,12 @@
   :init
   (exec-path-from-shell-initialize))
 
+;; Dim inactive buffers.
+
+(use-package dimmer
+  :config
+  (dimmer-mode))
+
 ;; Recentf comes with Emacs but it should always be enabled.
 
 (recentf-mode t)
@@ -127,6 +133,7 @@
          ("C-c U" . counsel-unicode-char)
          ("C-c h" . counsel-rg-at-point)
          ("C-c H" . counsel-rg)
+         ("C-c i" . counsel-imenu)
          ("C-c y" . counsel-yank-pop)
 	 ("C-c r" . counsel-recentf)
          :map ivy-minibuffer-map
@@ -166,35 +173,15 @@
   :bind (("C-c g" . magit-status))
   :init
   (global-auto-revert-mode t)
-  ;; There is an extant bug where magit-refresh prompts to save files that haven't
-  ;; been modified. We work around this with some defadvice over maybe-unset-buffer-modified. SO:
-  ;; https://emacs.stackexchange.com/questions/24011/make-emacs-diff-files-before-asking-to-save
 
-  (defun current-buffer-matches-file-p ()
-    "Return t if the current buffer is identical to its associated file."
-    (autoload 'diff-no-select "diff")
-    (when buffer-file-name
-      (diff-no-select buffer-file-name (current-buffer) nil 'noasync)
-      (with-current-buffer "*Diff*"
-        (and (search-forward-regexp "^Diff finished \(no differences\)\." (point-max) 'noerror) t))))
-
-  (defun maybe-unset-buffer-modified ()
-    "Clear modified bit on all unmodified buffers."
-    (interactive)
-    (dolist (buf (buffer-list))
-      (with-current-buffer buf
-        (when (and buffer-file-name (buffer-modified-p))
-          (when (current-buffer-matches-file-p)
-            (set-buffer-modified-p nil))))))
-
-   (advice-add 'magit-refresh :before #'maybe-unset-buffer-modified)
-   :config
-   (setq magit-completing-read-function 'ivy-completing-read)
-   (setq-default magit-last-seen-setup-instructions "1.4.0"))
+  (advice-add 'magit-refresh :before #'maybe-unset-buffer-modified)
+  :config
+  (setq magit-completing-read-function 'ivy-completing-read)
+  (add-to-list 'magit-no-confirm 'stage-all-changes)
+  (setq-default magit-last-seen-setup-instructions "1.4.0"))
 
 
-;; Since I grew up on Textmate, I'm more-or-less reliant on snippets. It uses helm
-;; when there is an ambiguiity as to which snippet is appropriate, which is nice.
+;; Since I grew up on Textmate, I'm more-or-less reliant on snippets.
 
 (use-package yasnippet
   :config
@@ -354,7 +341,6 @@
   (defun my-haskell-mode-hook ()
     "Make sure the compile command is right."
     (setq-local compile-command "stack build --fast")
-    (setq-local helm-ag-base-command "rg --no-heading -t haskell")
     (mac-auto-operator-composition-mode))
 
   (defun my-lithaskell-mode-hook ()
@@ -408,7 +394,7 @@
 (defun kill-all-buffers ()
   "Close all buffers."
   (interactive)
-  (mapc 'kill-buffer (buffer-list)))
+  (mapc 'kill-buffer-with-prejudice (buffer-list)))
 
 (defun split-right-and-enter ()
   "Split the window to the right and enter it."
@@ -432,11 +418,39 @@
   (newline)
   (indent-for-tab-command))
 
+;; There is an extant bug where magit-refresh prompts to save files that haven't
+;; been modified. We work around this with some defadvice over maybe-unset-buffer-modified. SO:
+;; https://emacs.stackexchange.com/questions/24011/make-emacs-diff-files-before-asking-to-save
+
+(defun current-buffer-matches-file-p ()
+  "Return t if the current buffer is identical to its associated file."
+  (autoload 'diff-no-select "diff")
+  (when buffer-file-name
+    (diff-no-select buffer-file-name (current-buffer) nil 'noasync)
+    (with-current-buffer "*Diff*"
+      (and (search-forward-regexp "^Diff finished \(no differences\)\." (point-max) 'noerror) t))))
+
+(defun maybe-unset-buffer-modified ()
+  "Clear modified bit on all unmodified buffers."
+  (interactive)
+  (dolist (buf (buffer-list))
+    (with-current-buffer buf
+      (when (and buffer-file-name (buffer-modified-p))
+        (when (current-buffer-matches-file-p)
+          (set-buffer-modified-p nil))))))
+
+(defun kill-buffer-with-prejudice ()
+  (interactive)
+  (when (current-buffer-matches-file-p) (set-buffer-modified-p nil))
+  (kill-buffer))
+
+(bind-key "C-x k"      'kill-buffer-with-prejudice)
 (bind-key "C-c e"      'open-init-file)
 (bind-key "C-c k"      'kill-all-buffers)
 (bind-key "C-c o"      'open-semantic-notes)
 (bind-key "s-<return>" 'eol-then-newline)
 (bind-key "C-c 5"      'query-replace-regexp)
+(bind-key "M-/"        'hippie-expand)
 (bind-key "C-c '"      'switch-to-previous-buffer)
 (bind-key "C-c \\"     'align-regexp)
 (bind-key "C-c m"      'compile)
@@ -454,6 +468,7 @@
 (bind-key "s-z"		'undo)
 (bind-key "s-a"		'mark-whole-buffer)
 (bind-key "s-<"         'beginning-of-buffer)
+(bind-key "s-x"         'kill-region)
 (bind-key "<home>"      'beginning-of-buffer)
 (bind-key "<end>"       'end-of-buffer)
 (bind-key "s->"         'end-of-buffer)
@@ -489,6 +504,8 @@
   save-interprogram-paste-before-kill t  ; preserve paste to system ring
   enable-recursive-minibuffers t         ; don't fucking freak out if I use the minibuffer twice
   )
+
+(add-to-list 'electric-pair-pairs '(?` . ?`)) ; electric-quote backticks
 
 ;; Bar cursors everywhere.
 
