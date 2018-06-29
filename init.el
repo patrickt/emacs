@@ -394,7 +394,8 @@
 (defun kill-all-buffers ()
   "Close all buffers."
   (interactive)
-  (mapc 'kill-buffer-with-prejudice (buffer-list)))
+  (maybe-unset-buffer-modified)
+  (mapc 'kill-buffer (buffer-list)))
 
 (defun split-right-and-enter ()
   "Split the window to the right and enter it."
