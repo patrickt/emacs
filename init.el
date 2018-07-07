@@ -36,7 +36,7 @@
 
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
-;; Start with split windows
+;; Start with split windows.
 
 (split-window-horizontally)
 
@@ -69,13 +69,13 @@
 (scroll-bar-mode -1)
 (tooltip-mode -1)
 
-(use-package diminish)
+(use-package diminish
+  :diminish eldoc-mode)
 
 ;; Material is easy on the eyes.
 
 (use-package material-theme
-  :ensure t
-  :init
+  :config
   (load-theme 'material))
 
 ;; Ace-window is a nice way to switch between frames quickly.
@@ -87,8 +87,7 @@
 ;; probably just come with the main distribution.
 
 (use-package exec-path-from-shell
-  :ensure t
-  :init
+  :config
   (exec-path-from-shell-initialize))
 
 ;; Dim inactive buffers.
@@ -128,7 +127,10 @@
   (counsel-mode 1)
   (defun counsel-rg-at-point ()
     (interactive)
-    (counsel-rg (thing-at-point 'word)))
+    (let ((selection (thing-at-point 'word)))
+      (if (<= 4 (length selection))
+          (counsel-rg selection)
+        (counsel-rg))))
   :bind (("C-c ;" . counsel-M-x)
          ("C-c U" . counsel-unicode-char)
          ("C-c h" . counsel-rg-at-point)
@@ -141,13 +143,13 @@
   :diminish)
 
 (use-package projectile
-  :init
+  :config
   (setq projectile-enable-caching t)
   :diminish)
 
 (use-package counsel-projectile
   :bind (("C-c f" . counsel-projectile))
-  :init
+  :config
   (counsel-projectile-mode))
 
 ;; If you don't use this, recent commands in ivy won't be shown first
@@ -160,7 +162,8 @@
 ;;    UseKeychain yes
 
 (use-package keychain-environment
-  :init (keychain-refresh-environment))
+  :config
+  (keychain-refresh-environment))
 
 ;; TODO: reinvestigate company and determine if it's slow
 
@@ -171,11 +174,9 @@
 
 (use-package magit
   :bind (("C-c g" . magit-status))
-  :init
-  (global-auto-revert-mode t)
-
-  (advice-add 'magit-refresh :before #'maybe-unset-buffer-modified)
   :config
+  (magit-auto-revert-mode t)
+  (advice-add 'magit-refresh :before #'maybe-unset-buffer-modified)
   (setq magit-completing-read-function 'ivy-completing-read)
   (add-to-list 'magit-no-confirm 'stage-all-changes)
   (setq-default magit-last-seen-setup-instructions "1.4.0"))
@@ -208,15 +209,14 @@
 ;; a buffer, you'll always be able to get it back. That is crucial.
 
 (use-package undo-tree
-  :defer t
-  :ensure t
   :bind (("C-c _" . undo-tree-visualize))
-  :init
+  :config
   (global-undo-tree-mode +1)
   (unbind-key "M-_" undo-tree-map)
   :diminish)
 
 ;; C stuff.
+
 (use-package cc-mode)
 
 ;; I do all of my writing in either org-mode or markdown-mode.
@@ -240,14 +240,13 @@
 ;; third-party package; it should be standard.
 
 (use-package duplicate-thing
-  :ensure t
   :bind (("C-c u" . duplicate-thing)))
 
 ;; I can never remember the hierarchies of certain bindings, like C-x v for version control
 ;; stuff. Guide-key helps there. (TODO: figure out other places it'll help.)
 
 (use-package guide-key
-  :init
+  :config
   (guide-key-mode t)
   (setq guide-key/guide-key-sequence '("C-x v"
                                        "C-c a"
@@ -293,10 +292,9 @@
          ("C-c a s" . org-emphasize)
          ("C-c a r" . org-ref)
          ("C-c a e" . outline-show-all))
-  :init
+  :config
   (setq org-footnote-section ""
         org-startup-with-inline-images t)
-  :config
   (defun org-mode-insert-code ()
     (interactive)
     (org-emphasize ?~))
@@ -316,7 +314,7 @@
 
 (use-package org-ref
   :defer
-  :init
+  :config
   (setq reftex-default-bibliography '("~/src/rsbook/bibliography/references.bib")
         org-ref-bibliography-notes "~/src/rsbook/bibliography/notes.org"
         org-ref-default-bibliography '("~/src/rsbook/bibliography/references.bib")
@@ -326,7 +324,7 @@
   :hook (org-mode . wc-goal-mode))
 
 (use-package haskell-mode
-  :init
+  :config
 
   (defun haskell-right-arrow ()
     "Insert a right arrow."
@@ -475,8 +473,7 @@
 (bind-key "s->"         'end-of-buffer)
 (bind-key "M-_"         'em-dash)
 (bind-key "M-;"         'ellipsis)
-
-(diminish 'eldoc-mode)
+(unbind-key "C-z")
 
 (defalias 'yes-or-no-p 'y-or-n-p)
 
