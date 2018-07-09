@@ -278,6 +278,11 @@
   (interactive)
   (insert "…"))
 
+(defun lambduh ()
+  "Insert a lowercase lambda."
+  (interactive)
+  (insert "λ"))
+
 ;; I do a lot of writing in org-mode, though I have yet to truly take advantage
 ;; of its enormous power. It steps on a few of my keybindings, so we take care of
 ;; those with unbind-key.
@@ -291,7 +296,8 @@
          ("C-c c" . org-mode-insert-code)
          ("C-c a s" . org-emphasize)
          ("C-c a r" . org-ref)
-         ("C-c a e" . outline-show-all))
+         ("C-c a e" . outline-show-all)
+         ("C-c a l" . lambduh))
   :config
   (setq org-footnote-section ""
         org-startup-with-inline-images t)
