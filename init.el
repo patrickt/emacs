@@ -70,7 +70,9 @@
 (tooltip-mode -1)
 
 (use-package diminish
-  :diminish eldoc-mode)
+  :init
+  (diminish 'eldoc-mode)
+  (diminish 'auto-revert-mode))
 
 ;; Material is easy on the eyes.
 
@@ -181,6 +183,8 @@
   (add-to-list 'magit-no-confirm 'stage-all-changes)
   (setq-default magit-last-seen-setup-instructions "1.4.0"))
 
+(use-package libgit
+  :after magit)
 
 ;; Since I grew up on Textmate, I'm more-or-less reliant on snippets.
 
@@ -522,9 +526,7 @@
 
 (setq debug-on-error nil)
 
-;; Restore original GC threshold.
-(setq gc-cons-threshold old-cons-threshold)
-(makunbound 'old-cons-threshold)
+(setq gc-cons-threshold 30000000)
 
 (provide 'init)
 
