@@ -70,9 +70,10 @@
 (tooltip-mode -1)
 
 (use-package diminish
-  :init
-  (diminish 'eldoc-mode)
-  (diminish 'auto-revert-mode))
+  :ensure t)
+
+(diminish 'eldoc-mode)
+(diminish 'auto-revert-mode)
 
 ;; Material is easy on the eyes.
 
@@ -138,6 +139,7 @@
          ("C-c h" . counsel-rg-at-point)
          ("C-c H" . counsel-rg)
          ("C-c i" . counsel-imenu)
+         ("C-x f" . counsel-find-file)
          ("C-c y" . counsel-yank-pop)
 	 ("C-c r" . counsel-recentf)
          :map ivy-minibuffer-map
@@ -176,12 +178,14 @@
 
 (use-package magit
   :bind (("C-c g" . magit-status))
+  :diminish magit-auto-revert-mode
   :config
   (magit-auto-revert-mode t)
   (advice-add 'magit-refresh :before #'maybe-unset-buffer-modified)
   (setq magit-completing-read-function 'ivy-completing-read)
   (add-to-list 'magit-no-confirm 'stage-all-changes)
   (setq-default magit-last-seen-setup-instructions "1.4.0"))
+
 
 (use-package libgit
   :after magit)
@@ -468,6 +472,7 @@
 (bind-key "C-c x"      'ESC-prefix)
 (bind-key "C-c l"      'goto-line)
 
+
 ;; macOS-style bindings, too (no cua-mode, it's nasty)
 (bind-key "s-+"		'text-scale-increase)
 (bind-key "s-_"		'text-scale-decrease)
@@ -483,7 +488,9 @@
 (bind-key "s->"         'end-of-buffer)
 (bind-key "M-_"         'em-dash)
 (bind-key "M-;"         'ellipsis)
+
 (unbind-key "C-z")
+(unbind-key "C-<tab>")
 
 (defalias 'yes-or-no-p 'y-or-n-p)
 
