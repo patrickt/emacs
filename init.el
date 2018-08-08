@@ -68,6 +68,7 @@
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
 (tooltip-mode -1)
+(fringe-mode -1)
 
 (use-package diminish
   :ensure t)
@@ -77,9 +78,9 @@
 
 ;; Material is easy on the eyes.
 
-(use-package material-theme
+(use-package doom-themes
   :config
-  (load-theme 'material))
+  (load-theme 'doom-spacegrey))
 
 ;; Ace-window is a nice way to switch between frames quickly.
 
@@ -179,6 +180,7 @@
 (use-package magit
   :bind (("C-c g" . magit-status))
   :diminish magit-auto-revert-mode
+  :diminish auto-revert-mode
   :config
   (magit-auto-revert-mode t)
   (advice-add 'magit-refresh :before #'maybe-unset-buffer-modified)
