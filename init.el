@@ -11,7 +11,8 @@
 (setq gc-cons-threshold 100000000)
 
 (setq debug-on-error t
-      max-list-eval-depth 2000)
+      max-list-eval-depth 2000
+      auto-window-vscroll nil)
 
 ;; Package-initialization preamble.
 
@@ -40,13 +41,6 @@
 
 (split-window-horizontally)
 
-;; Open my TODO on Mac
-
-(when (eq system-type 'darwin)
-  (other-window 1)
-  (find-file "~/txt/semantic.org")
-  (other-window 1))
-
 ;; Use Operator Mono, my favorite monospaced font, handling its absence gracefully.
 
 (ignore-errors
@@ -64,23 +58,26 @@
  load-prefer-newer t)
 
 ;; Disable otiose GUI settings: they just waste space.
+;; fringe-mode is especially ruinous performance-wise.
 
-(tool-bar-mode -1)
-(scroll-bar-mode -1)
-(tooltip-mode -1)
-(fringe-mode -1)
+(when (window-system)
+  (tool-bar-mode -1)
+  (scroll-bar-mode -1)
+  (tooltip-mode -1)
+  (fringe-mode -1))
 
 (use-package diminish
   :ensure t)
 
 (diminish 'eldoc-mode)
-(diminish 'auto-revert-mode)
 
-;; Material is easy on the eyes.
+;; The Doom Emacs themes look really good.
 
 (use-package doom-themes
   :config
-  (load-theme 'doom-spacegrey))
+  (load-theme 'doom-spacegrey)
+  (doom-themes-visual-bell-config)
+  (doom-themes-org-config))
 
 ;; Ace-window is a nice way to switch between frames quickly.
 
@@ -98,6 +95,7 @@
 
 (use-package dimmer
   :config
+  (setq dimmer-fraction 0.3)
   (dimmer-mode))
 
 ;; Recentf comes with Emacs but it should always be enabled.
@@ -188,9 +186,12 @@
   (add-to-list 'magit-no-confirm 'stage-all-changes)
   (setq-default magit-last-seen-setup-instructions "1.4.0"))
 
+;; Unclear whether this does anything at the moment.
 
 (use-package libgit
   :after magit)
+
+;; Good for experiments.
 
 ;; Since I grew up on Textmate, I'm more-or-less reliant on snippets.
 
@@ -208,7 +209,13 @@
 ;; Haskell and Elisp are made a lot easier when delimiters are nicely color-coded.
 
 (use-package rainbow-delimiters
-  :config (add-hook 'prog-mode-hook 'rainbow-delimiters-mode))
+  :hook (prog-mode . rainbow-delimiters-mode))
+
+;; multiple-cursors is better than cua-selection-mode.
+;; TODO: learn ace-mc
+
+(use-package multiple-cursors
+  :bind (("C-c M" . mc/edit-lines)))
 
 ;; Common Haskell snippets. These take a while to load, so no need to block on startup.
 
@@ -298,31 +305,35 @@
 ;; those with unbind-key.
 
 (use-package org
-  :defer
   :hook (org-mode . auto-fill-mode)
+
+  :diminish org-indent-mode
+
   :bind (:map org-mode-map
-         ("M--" . em-dash)
-         ("M-;" . ellipsis)
-         ("C-c c" . org-mode-insert-code)
-         ("C-c a s" . org-emphasize)
-         ("C-c a r" . org-ref)
-         ("C-c a e" . outline-show-all)
-         ("C-c a l" . lambduh))
+         ("M--"      . em-dash)
+         ("M-;"      . ellipsis)
+         ("C-c c"    . org-mode-insert-code)
+         ("C-c a s"  . org-emphasize)
+         ("C-c a r"  . org-ref)
+         ("C-c a e"  . outline-show-all)
+         ("C-c a l"  . lambduh))
+
   :config
-  (setq org-footnote-section ""
-        org-startup-with-inline-images t)
-  (defun org-mode-insert-code ()
-    (interactive)
-    (org-emphasize ?~))
-  (defun my-org-mode-hook ()
-    (visual-line-mode)
-    (electric-pair-mode nil))
   (unbind-key "C-c ;" org-mode-map)
   (unbind-key "C-,"   org-mode-map)
   (unbind-key "M-<left>" org-mode-map)
   (unbind-key "M-<right>" org-mode-map)
-  (add-hook 'org-mode-hook 'my-org-mode-hook)
-  (setq org-agenda-files (list "~/Dropbox/todo.org")))
+
+  (setq org-footnote-section ""
+        org-startup-with-inline-images t
+        org-pretty-entities t
+        org-hide-emphasis-markers t
+        org-ellipsis "…"
+        org-startup-indented t)
+
+  (defun org-mode-insert-code ()
+    (interactive)
+    (org-emphasize ?~)))
 
 (use-package swift-mode
   :config
@@ -354,8 +365,7 @@
 
   (defun my-haskell-mode-hook ()
     "Make sure the compile command is right."
-    (setq-local compile-command "stack build --fast")
-    (mac-auto-operator-composition-mode))
+    (setq-local compile-command "stack build --fast"))
 
   (defun my-lithaskell-mode-hook ()
     "Turn off auto-indent for Literate Haskell snippets."
@@ -391,7 +401,9 @@
 
 (defun my-elisp-mode-hook ()
   "My elisp customizations."
-  (electric-pair-mode))
+  (electric-pair-mode 1)
+  (add-hook 'before-save-hook 'check-parens nil t)
+  (auto-composition-mode nil))
 
 (add-hook 'emacs-lisp-mode-hook 'my-elisp-mode-hook)
 
@@ -496,12 +508,13 @@
 
 (defalias 'yes-or-no-p 'y-or-n-p)
 
-(global-hl-line-mode t)             ; Always highlight the current line.
-(show-paren-mode t)                 ; And point out matching parentheses.
-(delete-selection-mode t)           ; Behave like any other sensible text editor would.
-(column-number-mode t)              ; Show column information in the modeline.
-(prettify-symbols-mode)             ; Use pretty Unicode symbols where possible.
-(global-display-line-numbers-mode)  ; Emacs has this builtin now, it's fast
+(global-hl-line-mode t)              ; Always highlight the current line.
+(show-paren-mode t)                  ; And point out matching parentheses.
+(delete-selection-mode t)            ; Behave like any other sensible text editor would.
+(column-number-mode t)               ; Show column information in the modeline.
+(prettify-symbols-mode)              ; Use pretty Unicode symbols where possible.
+(global-display-line-numbers-mode)   ; Emacs has this builtin now, it's fast
+(mac-auto-operator-composition-mode) ; thanks, railwaycat
 
 (setq
   compilation-always-kill t              ; Never prompt to kill a compilation session.
@@ -520,9 +533,14 @@
   mac-option-modifier 'meta              ; why isn't this the default
   save-interprogram-paste-before-kill t  ; preserve paste to system ring
   enable-recursive-minibuffers t         ; don't fucking freak out if I use the minibuffer twice
+  sentence-end-double-space nil          ; are you fucking kidding me with this shit
   )
 
 (add-to-list 'electric-pair-pairs '(?` . ?`)) ; electric-quote backticks
+
+;; Make use-package declarations show up in the imenu.
+(add-to-list 'imenu-generic-expression
+             '("Used Packages" "\\(^\\s-*(use-package +\\)\\(\\_<.+\\_>\\)" 2))
 
 ;; Bar cursors everywhere.
 
@@ -532,6 +550,13 @@
 ;; Always trim trailing whitespace.
 
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
+
+;; Open my TODO on Mac
+
+(when (eq system-type 'darwin)
+  (other-window 1)
+  (find-file "~/txt/semantic.org")
+  (other-window 1))
 
 (setq debug-on-error nil)
 
