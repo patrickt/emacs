@@ -26,8 +26,11 @@
 ;; Ensure use-package is present. From here on out, all packages are loaded
 ;; with use-package.
 
+(setq fast-but-imprecise-scrolling nil)
+
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
+  (package-initialize)
   (package-install 'use-package))
 
 (setq use-package-always-ensure t
@@ -69,19 +72,33 @@
 (use-package diminish
   :ensure t)
 
-(diminish 'eldoc-mode)
-
 ;; The Doom Emacs themes look really good.
 
 (use-package doom-themes
   :config
   (load-theme 'doom-spacegrey)
   (doom-themes-visual-bell-config)
-  (doom-themes-org-config))
+  (doom-themes-org-config)
+  (custom-theme-set-faces
+   'doom-spacegrey
+   '(font-lock-doc-face ((t (:foreground "#D8D2C1"))))))
+
+(use-package winum
+  :config (winum-mode))
+
+(use-package doom-modeline
+  :config
+  (setq doom-modeline-height 22)
+  (doom-modeline-def-modeline
+    main
+   (workspace-number window-number bar evil-state matches " " buffer-info buffer-position  " " selection-info)
+   (global major-mode process vcs flycheck))
+  (doom-modeline-init))
 
 ;; Ace-window is a nice way to switch between frames quickly.
 
 (use-package ace-window
+  :disabled ; trying out winum-mode
   :bind (("C-," . ace-window)))
 
 ;; Ensure that items in the PATH are made available to Emacs. This should
@@ -95,7 +112,7 @@
 
 (use-package dimmer
   :config
-  (setq dimmer-fraction 0.3)
+  (setq dimmer-fraction 0.15)
   (dimmer-mode))
 
 ;; Recentf comes with Emacs but it should always be enabled.
@@ -120,6 +137,17 @@
          ("C-c s"   . swiper-at-point)
          ("C-s"     . swiper))
   :diminish)
+
+(use-package ivy-rich
+  :after ivy
+  :custom
+  (ivy-virtual-abbreviate 'full
+   ivy-rich-switch-buffer-align-virtual-buffer t
+   ivy-rich-path-style 'abbrev)
+  :config
+  (ivy-set-display-transformer 'ivy-switch-buffer
+                               'ivy-rich-switch-buffer-transformer))
+
 
 (use-package ivy-hydra)
 
@@ -152,8 +180,23 @@
 
 (use-package counsel-projectile
   :bind (("C-c f" . counsel-projectile))
-  :config
-  (counsel-projectile-mode))
+  :init
+  ; https://github.com/ericdanan/counsel-projectile/pull/92
+  (makunbound 'counsel-projectile-mode-map)
+  (defvar counsel-projectile-mode-map
+    (let ((map (make-sparse-keymap))
+          (projectile-command-keymap (where-is-internal 'projectile-command-map nil t)))
+      (when projectile-command-keymap
+        (define-key map projectile-command-keymap 'counsel-projectile-command-map))
+      (define-key map [remap projectile-find-file] 'counsel-projectile-find-file)
+      (define-key map [remap projectile-find-dir] 'counsel-projectile-find-dir)
+      (define-key map [remap projectile-switch-to-buffer] 'counsel-projectile-switch-to-buffer)
+      (define-key map [remap projectile-grep] 'counsel-projectile-grep)
+      (define-key map [remap projectile-ag] 'counsel-projectile-ag)
+      (define-key map [remap projectile-switch-project] 'counsel-projectile-switch-project)
+      map)
+    "Keymap for Counsel-Projectile mode.")
+  :config (counsel-projectile-mode))
 
 ;; If you don't use this, recent commands in ivy won't be shown first
 
@@ -300,10 +343,6 @@
   (interactive)
   (insert "λ"))
 
-;; I do a lot of writing in org-mode, though I have yet to truly take advantage
-;; of its enormous power. It steps on a few of my keybindings, so we take care of
-;; those with unbind-key.
-
 (use-package org
   :hook (org-mode . auto-fill-mode)
 
@@ -327,7 +366,6 @@
   (setq org-footnote-section ""
         org-startup-with-inline-images t
         org-pretty-entities t
-        org-hide-emphasis-markers t
         org-ellipsis "…"
         org-startup-indented t)
 
@@ -484,8 +522,7 @@
 (bind-key "C-c 3"      'split-right-and-enter)
 (bind-key "C-c /"      'comment-or-uncomment-region)
 (bind-key "C-c x"      'ESC-prefix)
-(bind-key "C-c l"      'goto-line)
-
+(bind-key "C-,"        'other-window)
 
 ;; macOS-style bindings, too (no cua-mode, it's nasty)
 (bind-key "s-+"		'text-scale-increase)
@@ -536,16 +573,13 @@
   sentence-end-double-space nil          ; are you fucking kidding me with this shit
   )
 
+(setq-default
+ cursor-type 'bar
+ indent-tabs-mode nil
+ cursor-in-non-selected-windows nil
+ )
+
 (add-to-list 'electric-pair-pairs '(?` . ?`)) ; electric-quote backticks
-
-;; Make use-package declarations show up in the imenu.
-(add-to-list 'imenu-generic-expression
-             '("Used Packages" "\\(^\\s-*(use-package +\\)\\(\\_<.+\\_>\\)" 2))
-
-;; Bar cursors everywhere.
-
-(setq-default cursor-type 'bar)
-(setq-default indent-tabs-mode nil)
 
 ;; Always trim trailing whitespace.
 
