@@ -40,10 +40,6 @@
 
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
-;; Start with split windows.
-
-(split-window-horizontally)
-
 ;; Use Operator Mono, my favorite monospaced font, handling its absence gracefully.
 
 (ignore-errors
@@ -429,6 +425,82 @@
          ("C-c a u" . intero-uses-at)
          ("C-c a s" . intero-apply-suggestions)))
 
+;; My own mode for running stack build --file-watch
+;; TODO: investigate why I have to use polling here.
+;; Cobbled together from various sources. Sic semper.
+
+(define-minor-mode stack-watch-mode
+  "A minor mode for stack build --file-watch."
+  :lighter " stack watch"
+  (compilation-minor-mode))
+
+(defvar stack-watch-command
+  "stack build semantic:lib --fast --file-watch-poll\n"
+  "The command used to run stack-watch.")
+
+(defun get-or-create-stack-watch-buffer (buf-name)
+  "Select the buffer with name BUF-NAME."
+  (let ((stack-watch-buf (get-buffer-create buf-name)))
+    (display-buffer
+     stack-watch-buf
+     '((display-buffer-pop-up-window
+        display-buffer-reuse-window)
+       (window-height . 25)))
+    (select-window (get-buffer-window stack-watch-buf))))
+
+(defun spawn-stack-watch (buf-name)
+  "Spawn stack-watch inside the current buffer with BUF-NAME."
+  (make-term (format "stack-watch: %s" (projectile-project-name)) "/bin/zsh")
+  (term-mode)
+  (term-line-mode)
+  (setq-local compilation-down-aggressively t)
+  (setq-local window-point-insertion-type t)
+  (stack-watch-mode)
+  (comint-send-string buf-name stack-watch-command))
+
+(defun run-stack-watch (buf-name)
+  "Run or display a stack-watch buffer with the given BUF-NAME."
+  (let ((cur (selected-window))
+        (buf-exists (get-buffer buf-name)))
+    (progn
+      (get-or-create-stack-watch-buffer buf-name)
+      (if buf-exists (goto-char (point-max))
+        (spawn-stack-watch buf-name))
+      (select-window cur))))
+
+(defun stack-watch-projectile-buf-name ()
+  (format "*stack-watch: %s*" (projectile-project-name)))
+
+(defun projectile-stack-watch-stop ()
+  "Stop stack-watch for this project."
+  (interactive)
+  (let* ((buf-name (stack-watch-projectile-buf-name))
+         (stack-watch-buf (get-buffer buf-name))
+         (stack-watch-window (get-buffer-window stack-watch-buf))
+         (stack-watch-proc (get-buffer-process stack-watch-buf)))
+    (when stack-watch-buf
+      (progn
+        (when (processp stack-watch-proc)
+          (progn
+            (set-process-query-on-exit-flag stack-watch-proc nil)
+            (kill-process stack-watch-proc)))))
+        (select-window stack-watch-window)
+        (kill-buffer-and-window)))
+
+(defun projectile-stack-watch-switch-to-buffer ()
+  "Switch to an active stack-watch buffer."
+  (interactive)
+  (projectile-with-default-dir (projectile-project-root)
+    (let ((buf-name (stack-watch-projectile-buf-name)))
+      (get-or-create-stack-watch-buffer buf-name))))
+
+(defun stack-watch ()
+  "Spawn stack-watch in the project root."
+  (interactive)
+  (projectile-with-default-dir (projectile-project-root)
+    (let ((buf-name (stack-watch-projectile-buf-name)))
+      (run-stack-watch buf-name))))
+
 (use-package idris-mode
   :bind (("C-c C-v" . idris-case-split)))
 
@@ -522,6 +594,7 @@
 (bind-key "C-c /"      'comment-or-uncomment-region)
 (bind-key "C-c x"      'ESC-prefix)
 (bind-key "C-,"        'other-window)
+(bind-key "C-c l"      'goto-line)
 
 ;; macOS-style bindings, too (no cua-mode, it's nasty)
 (bind-key "s-+"		'text-scale-increase)
@@ -572,6 +645,7 @@
   sentence-end-double-space nil          ; are you fucking kidding me with this shit
   scroll-conservatively 101              ; move minimum when cursor exits view, instead of recentering
   mouse-wheel-scroll-amount '(1)         ; on a long mouse scroll keep scrolling by 1 line
+  confirm-kill-processes nil             ; don't whine at me when I'm quitting.
   )
 
 (setq-default
@@ -586,12 +660,15 @@
 
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
-;; Open my TODO on Mac
+(defun open-notes-and-split ()
+  "Open my notes and split the window."
+  (when (eq system-type 'darwin)
+    (split-window-horizontally)
+    (other-window 1)
+    (find-file "~/txt/semantic.org")
+    (other-window 1)))
 
-(when (eq system-type 'darwin)
-  (other-window 1)
-  (find-file "~/txt/semantic.org")
-  (other-window 1))
+(add-hook 'after-init-hook 'open-notes-and-split)
 
 (setq debug-on-error nil)
 
