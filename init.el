@@ -76,11 +76,11 @@
 
 (use-package doom-themes
   :config
-  (load-theme 'doom-spacegrey)
+  (load-theme 'doom-vibrant)
   (doom-themes-visual-bell-config)
   (doom-themes-org-config)
   (custom-theme-set-faces
-   'doom-spacegrey
+   'doom-vibrant
    '(font-lock-doc-face ((t (:foreground "#D8D2C1"))))))
 
 (use-package winum
@@ -366,8 +366,7 @@
   (setq org-footnote-section ""
         org-startup-with-inline-images t
         org-pretty-entities t
-        org-ellipsis "…"
-        org-startup-indented t)
+        org-ellipsis "…")
 
   (defun org-mode-insert-code ()
     (interactive)
@@ -571,6 +570,8 @@
   save-interprogram-paste-before-kill t  ; preserve paste to system ring
   enable-recursive-minibuffers t         ; don't fucking freak out if I use the minibuffer twice
   sentence-end-double-space nil          ; are you fucking kidding me with this shit
+  scroll-conservatively 101              ; move minimum when cursor exits view, instead of recentering
+  mouse-wheel-scroll-amount '(1)         ; on a long mouse scroll keep scrolling by 1 line
   )
 
 (setq-default
