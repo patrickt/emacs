@@ -144,8 +144,8 @@
   (ivy-set-display-transformer 'ivy-switch-buffer
                                'ivy-rich-switch-buffer-transformer))
 
-
-(use-package ivy-hydra)
+(use-package ivy-hydra
+  :after ivy)
 
 (use-package counsel
   :ensure t
@@ -159,8 +159,8 @@
         (counsel-rg))))
   :bind (("C-c ;" . counsel-M-x)
          ("C-c U" . counsel-unicode-char)
-         ("C-c h" . counsel-rg-at-point)
-         ("C-c H" . counsel-rg)
+         ("C-c h" . counsel-rg)
+         ("C-c H" . counsel-rg-at-point)
          ("C-c i" . counsel-imenu)
          ("C-x f" . counsel-find-file)
          ("C-c y" . counsel-yank-pop)
@@ -413,6 +413,7 @@
          ("C-c a c" . haskell-cabal-visit-file)
 	 ("C-c a b" . haskell-mode-stylish-buffer)
          ("C-c a i" . haskell-navigate-imports)
+         ("C-c a w" . stack-watch)
          ("C-c a ," . haskell-left-arrow)
          ("C-c a ." . haskell-right-arrow)))
 
