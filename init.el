@@ -1,20 +1,19 @@
-;; init.el -- Patrick Thomson's emacs config
+;; init.el -- Patrick Thomson's emacs config. -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 ;; This file is in the public domain.
 
 ;;; Code:
 
-;; Temporarily disable GC limits.
+;; To start, we temporarily disable GC limits.
 
 (defvar old-cons-threshold gc-cons-threshold)
 (setq gc-cons-threshold 100000000)
 
-(setq debug-on-error t
-      max-list-eval-depth 2000
-      auto-window-vscroll nil)
+(setq debug-on-error t          ;; If we encounter an error, don't just croak and die
+      max-list-eval-depth 2000) ;; Bump up the recursion limit.
 
-;; Package-initialization preamble.
+;; Package-initialization preamble, adding melpa and melpa-stable.
 
 (require 'package)
 
@@ -25,8 +24,6 @@
 
 ;; Ensure use-package is present. From here on out, all packages are loaded
 ;; with use-package.
-
-(setq fast-but-imprecise-scrolling nil)
 
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
@@ -40,7 +37,7 @@
 
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
-;; Use Operator Mono, my favorite monospaced font, handling its absence gracefully.
+;; Use Fira Code, my favorite monospaced/ligatured font, handling its absence gracefully.
 
 (ignore-errors
   (set-frame-font "Fira Code Retina-14"))
@@ -50,10 +47,9 @@
 (setq custom-file "~/.emacs.d/custom.el")
 (load custom-file 'noerror)
 
-;; Important preamble settings: use lexical scope and prefer newer files.
+;; Always prefer newer files.
 
 (setq
- lexical-binding t
  load-prefer-newer t)
 
 ;; Disable otiose GUI settings: they just waste space.
@@ -65,6 +61,7 @@
   (tooltip-mode -1)
   (fringe-mode -1))
 
+;;
 (use-package diminish
   :ensure t)
 
@@ -79,15 +76,18 @@
    'doom-vibrant
    '(font-lock-doc-face ((t (:foreground "#D8D2C1"))))))
 
+;; Number the windows.
 (use-package winum
-  :config (winum-mode))
+  :init (winum-mode)
+  ;; I usually just use C-, for this
+  :bind (("C-c w" . winum-select-window-by-number)))
 
 (use-package doom-modeline
   :config
   (setq doom-modeline-height 22)
   (doom-modeline-def-modeline
     main
-   (workspace-number window-number bar evil-state matches " " buffer-info buffer-position  " " selection-info)
+   (workspace-number window-number bar matches " " buffer-info buffer-position  " " selection-info)
    (global major-mode process vcs flycheck))
   (doom-modeline-init))
 
@@ -116,12 +116,13 @@
 (recentf-mode t)
 (add-to-list 'recentf-exclude "\\.emacs.d")
 
-;; I used to use helm, but it was too slow. Unfortunately org-ref
-;; depends on it, but I never load it, so we good.
+;; Ivy makes most minibuffer prompts sortable and filterable. I used
+;; to use helm, but it was too slow. Unfortunately org-ref depends on
+;; it, but I never load it, so we good.
 
 (use-package ivy
   :ensure t
-  :config
+  :init
   (ivy-mode 1)
   (setq ivy-height 30)
   (setq ivy-use-virtual-buffers t)
@@ -134,6 +135,8 @@
          ("C-s"     . swiper))
   :diminish)
 
+;; ivy-rich makes Ivy look a little bit more like Helm.
+
 (use-package ivy-rich
   :after ivy
   :custom
@@ -145,7 +148,11 @@
                                'ivy-rich-switch-buffer-transformer))
 
 (use-package ivy-hydra
+  :disabled
   :after ivy)
+
+;; Counsel applies Ivy-like behavior to other builtin features of
+;; emacs, e.g. search.
 
 (use-package counsel
   :ensure t
@@ -169,14 +176,20 @@
          ("C-r" . counsel-minibuffer-history))
   :diminish)
 
+;; projectile comes with Emacs these days, but we want to enable
+;; caching.
+
 (use-package projectile
   :config
   (setq projectile-enable-caching t)
   :diminish)
 
+;; Counsel and projectile should work together.
+
 (use-package counsel-projectile
   :bind (("C-c f" . counsel-projectile))
   :init
+  ; This is a workaround until the below bugfix makes into melpa.
   ; https://github.com/ericdanan/counsel-projectile/pull/92
   (makunbound 'counsel-projectile-mode-map)
   (defvar counsel-projectile-mode-map
@@ -207,7 +220,16 @@
   :config
   (keychain-refresh-environment))
 
-;; TODO: reinvestigate company and determine if it's slow
+;; Company is the best Emacs completion system, but I haven't sat down
+;; and thought "okay, how am I going to implement this in my
+;; workflow", which is a sign that I should leave this disabled.
+
+(use-package company
+  :disabled
+  :config
+  (company-mode))
+
+;; Textmate-style tap-to-expand-into-the-current-delimiter.
 
 (use-package expand-region
   :bind (("C-c n" . er/expand-region)))
@@ -229,8 +251,6 @@
 
 (use-package libgit
   :after magit)
-
-;; Good for experiments.
 
 ;; Since I grew up on Textmate, I'm more-or-less reliant on snippets.
 
@@ -271,6 +291,10 @@
   (unbind-key "M-_" undo-tree-map)
   :diminish)
 
+;; (use-package ansi-color
+;;   :config
+;;   (add-hook 'shell-mode-hook 'ansi-color-for-comint-mode-on))
+
 ;; C stuff.
 
 (use-package cc-mode)
@@ -304,12 +328,11 @@
 (use-package guide-key
   :config
   (guide-key-mode t)
-  (setq guide-key/guide-key-sequence '("C-x v"
-                                       "C-c a"
-                                       "C-c p"))
+  (setq guide-key/guide-key-sequence '("C-x v"   ;; version control
+                                       "C-c a")) ;; my mode-specific bindings
   :diminish guide-key-mode)
 
-;; Since the in-emacs Dash browser doesn't owrk on OS X, we have to settle for dash-at-point.
+;; Since the in-emacs Dash browser doesn't work on OS X, we have to settle for dash-at-point.
 
 (use-package dash-at-point
   :bind ("C-c d" . dash-at-point))
@@ -319,7 +342,7 @@
 	 ("C-c D" . dumb-jump-go-prompt))
   :config (setq dumb-jump-selector 'ivy))
 
-;; OCaml.
+;; OCaml is loaded not through melpa, but through OPAM itself.
 
 (ignore-errors
   (autoload (expand-file-name "~/.opam/system/share/emacs/site-lisp/tuareg-site-file")))
@@ -338,6 +361,9 @@
   "Insert a lowercase lambda."
   (interactive)
   (insert "λ"))
+
+;; I am very early on in my journey down the org-mode road.
+;; But I like it a lot.
 
 (use-package org
   :hook (org-mode . auto-fill-mode)
@@ -375,10 +401,7 @@
 (use-package org-ref
   :defer
   :config
-  (setq reftex-default-bibliography '("~/src/rsbook/bibliography/references.bib")
-        org-ref-bibliography-notes "~/src/rsbook/bibliography/notes.org"
-        org-ref-default-bibliography '("~/src/rsbook/bibliography/references.bib")
-        org-ref-pdf-director "~/src/rsbook/pdfs"))
+  (ignore-errors (load-private-settings)))
 
 (use-package wc-goal-mode
   :hook (org-mode . wc-goal-mode))
@@ -428,7 +451,7 @@
 
 ;; My own mode for running stack build --file-watch
 ;; TODO: investigate why I have to use polling here.
-;; Cobbled together from various sources. Sic semper.
+;; Cobbled together from various sources, sic semper.
 
 (define-minor-mode stack-watch-mode
   "A minor mode for stack build --file-watch."
@@ -438,6 +461,8 @@
 (defvar stack-watch-command
   "stack build semantic:lib --fast --file-watch-poll\n"
   "The command used to run stack-watch.")
+
+(setq stack-watch-command "stack build semantic:lib --fast --file-watch-poll\n")
 
 (defun get-or-create-stack-watch-buffer (buf-name)
   "Select the buffer with name BUF-NAME."
@@ -522,6 +547,10 @@
   (interactive)
   (find-file user-init-file))
 
+(defun open-eshell-file ()
+  (interactive)
+  (find-file eshell-rc-script))
+
 (defun open-semantic-notes ()
   "Open my notes file."
   (interactive)
@@ -593,6 +622,7 @@
 (bind-key "C-c m"      'compile)
 (bind-key "C-c 3"      'split-right-and-enter)
 (bind-key "C-c /"      'comment-or-uncomment-region)
+(bind-key "C-c t"      'shell)
 (bind-key "C-c x"      'ESC-prefix)
 (bind-key "C-,"        'other-window)
 (bind-key "C-c l"      'goto-line)
@@ -612,6 +642,7 @@
 (bind-key "s->"         'end-of-buffer)
 (bind-key "M-_"         'em-dash)
 (bind-key "M-;"         'ellipsis)
+(bind-key "C-="         'next-error)
 
 (unbind-key "C-z")
 (unbind-key "C-<tab>")
