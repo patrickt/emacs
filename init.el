@@ -72,6 +72,8 @@
   (load-theme 'doom-vibrant)
   (doom-themes-visual-bell-config)
   (doom-themes-org-config)
+  (setq org-hide-leading-stars nil)
+
   (custom-theme-set-faces
    'doom-vibrant
    '(font-lock-doc-face ((t (:foreground "#D8D2C1"))))))
@@ -83,13 +85,15 @@
   :bind (("C-c w" . winum-select-window-by-number)))
 
 (use-package doom-modeline
-  :config
+  :pin melpa-stable
+  :init
   (setq doom-modeline-height 22)
-  (doom-modeline-def-modeline
-    main
-   (workspace-number window-number bar matches " " buffer-info buffer-position  " " selection-info)
-   (global major-mode process vcs flycheck))
-  (doom-modeline-init))
+  (doom-modeline-init)
+  (doom-modeline-def-modeline 'patrick
+    '(window-number bar matches " " buffer-info buffer-position " " selection-info)
+    '(global buffer-encoding major-mode process vcs flycheck))
+  (doom-modeline-set-modeline 'patrick t)
+  )
 
 ;; Ace-window is a nice way to switch between frames quickly.
 
@@ -138,14 +142,13 @@
 ;; ivy-rich makes Ivy look a little bit more like Helm.
 
 (use-package ivy-rich
-  :after ivy
+  :after counsel
   :custom
   (ivy-virtual-abbreviate 'full
    ivy-rich-switch-buffer-align-virtual-buffer t
    ivy-rich-path-style 'abbrev)
-  :config
-  (ivy-set-display-transformer 'ivy-switch-buffer
-                               'ivy-rich-switch-buffer-transformer))
+  :init
+  (ivy-rich-mode))
 
 (use-package ivy-hydra
   :disabled
@@ -156,6 +159,7 @@
 
 (use-package counsel
   :ensure t
+  :after ivy
   :config
   (counsel-mode 1)
   (defun counsel-rg-at-point ()
@@ -303,7 +307,10 @@
 
 (use-package markdown-mode
   :mode ("\\.md$" . gfm-mode)
-  :hook (gfm-mode . auto-fill-mode))
+  :hook (gfm-mode . auto-fill-mode)
+  :config
+  (when (executable-find "pandoc")
+    (setq markdown-command "pandoc -f markdown -t html")))
 
 ;; Avy is better than ace-jump.
 (use-package avy
@@ -366,7 +373,6 @@
 ;; But I like it a lot.
 
 (use-package org
-  :hook (org-mode . auto-fill-mode)
 
   :diminish org-indent-mode
 
@@ -627,6 +633,9 @@
 (bind-key "C-,"        'other-window)
 (bind-key "C-c l"      'goto-line)
 
+(bind-key "C-c a p" 'profiler-start)
+(bind-key "C-c a P" 'profiler-report)
+
 ;; macOS-style bindings, too (no cua-mode, it's nasty)
 (bind-key "s-+"		'text-scale-increase)
 (bind-key "s-_"		'text-scale-decrease)
@@ -676,8 +685,9 @@
   enable-recursive-minibuffers t         ; don't fucking freak out if I use the minibuffer twice
   sentence-end-double-space nil          ; are you fucking kidding me with this shit
   scroll-conservatively 101              ; move minimum when cursor exits view, instead of recentering
-  mouse-wheel-scroll-amount '(1)         ; on a long mouse scroll keep scrolling by 1 line
   confirm-kill-processes nil             ; don't whine at me when I'm quitting.
+  fast-but-imprecise-scrolling t         ; makes a difference
+  mac-mouse-wheel-smooth-scroll nil
   )
 
 (setq-default

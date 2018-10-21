@@ -11,5 +11,6 @@ url
 .last-package-update-day
 smex-items
 tramp
+.mc-lists.el
 /company-statistics-cache.el
 /elpa25
