@@ -69,13 +69,15 @@
 
 (use-package doom-themes
   :config
-  (load-theme 'doom-vibrant)
+  (load-theme 'doom-tomorrow-night)
   (doom-themes-visual-bell-config)
   (doom-themes-org-config)
   (setq org-hide-leading-stars nil)
 
+
+
   (custom-theme-set-faces
-   'doom-vibrant
+   'doom-tomorrow-night
    '(font-lock-doc-face ((t (:foreground "#D8D2C1"))))))
 
 ;; Number the windows.
@@ -84,16 +86,9 @@
   ;; I usually just use C-, for this
   :bind (("C-c w" . winum-select-window-by-number)))
 
-(use-package doom-modeline
-  :pin melpa-stable
-  :init
-  (setq doom-modeline-height 22)
-  (doom-modeline-init)
-  (doom-modeline-def-modeline 'patrick
-    '(window-number bar matches " " buffer-info buffer-position " " selection-info)
-    '(global buffer-encoding major-mode process vcs flycheck))
-  (doom-modeline-set-modeline 'patrick t)
-  )
+(use-package spaceline
+  :config
+  (spaceline-spacemacs-theme))
 
 ;; Ace-window is a nice way to switch between frames quickly.
 
@@ -119,6 +114,7 @@
 
 (recentf-mode t)
 (add-to-list 'recentf-exclude "\\.emacs.d")
+(add-to-list 'recentf-exclude ".+tmp......\\.org")
 
 ;; Ivy makes most minibuffer prompts sortable and filterable. I used
 ;; to use helm, but it was too slow. Unfortunately org-ref depends on
@@ -128,8 +124,9 @@
   :ensure t
   :init
   (ivy-mode 1)
-  (setq ivy-height 30)
-  (setq ivy-use-virtual-buffers t)
+  (setq ivy-height 30
+        ivy-use-virtual-buffers t
+        ivy-use-selectable-prompt t)
   (defun swiper-at-point ()
     (interactive)
     (swiper (thing-at-point 'word)))
@@ -185,7 +182,8 @@
 
 (use-package projectile
   :config
-  (setq projectile-enable-caching t)
+  (setq projectile-enable-caching t
+        projectile-completion-system 'ivy)
   :diminish)
 
 ;; Counsel and projectile should work together.
@@ -372,6 +370,8 @@
 ;; I am very early on in my journey down the org-mode road.
 ;; But I like it a lot.
 
+
+
 (use-package org
 
   :diminish org-indent-mode
@@ -385,6 +385,8 @@
          ("C-c a e"  . outline-show-all)
          ("C-c a l"  . lambduh))
 
+  :hook (org-mode . visual-line-mode)
+
   :config
   (unbind-key "C-c ;" org-mode-map)
   (unbind-key "C-,"   org-mode-map)
@@ -394,7 +396,10 @@
   (setq org-footnote-section ""
         org-startup-with-inline-images t
         org-pretty-entities t
-        org-ellipsis "…")
+        org-ellipsis "…"
+        )
+
+  (setcar (nthcdr 4 org-emphasis-regexp-components) 4)
 
   (defun org-mode-insert-code ()
     (interactive)
@@ -408,6 +413,38 @@
   :defer
   :config
   (ignore-errors (load-private-settings)))
+
+(use-package ox-pandoc
+  :after org
+  :config
+  (setq org-pandoc-format-extensions '(markdown+smart))
+
+  ;; Utterly brain-dead bullshit to enable org+smart as an input format.
+  (defun org-pandoc-run (input-file output-file format sentinel &optional options)
+    (let* ((format (symbol-name format))
+           (output-format
+            (car (--filter (string-prefix-p format it)
+                           org-pandoc-format-extensions-str)))
+           (args
+            `("-f" "org+smart"
+              "-t" ,(or output-format format)
+              ,@(and output-file
+                     (list "-o" (expand-file-name output-file)))
+              ,@(-mapcat (lambda (key)
+                           (-when-let (vals (gethash key options))
+                             (if (equal vals t) (setq vals (list t)))
+                             (--map (concat "--" (symbol-name key)
+                                            (when (not (equal it t)) (format "=%s" it)))
+                                    vals)))
+                         (ht-keys options))
+              ,(expand-file-name input-file))))
+      (message "Running pandoc with args: %s" args)
+      (let ((process
+             (apply 'start-process
+                    `("pandoc" ,(generate-new-buffer "*Pandoc*")
+                      ,org-pandoc-command ,@args))))
+        (set-process-sentinel process sentinel)
+        process))))
 
 (use-package wc-goal-mode
   :hook (org-mode . wc-goal-mode))
@@ -616,6 +653,12 @@
   (when (current-buffer-matches-file-p) (set-buffer-modified-p nil))
   (kill-buffer))
 
+(defun my-goto-line ()
+  "Go to a line and recenter the buffer."
+  (interactive)
+  (call-interactively 'goto-line)
+  (recenter-top-bottom))
+
 (bind-key "C-x k"      'kill-buffer-with-prejudice)
 (bind-key "C-c e"      'open-init-file)
 (bind-key "C-c k"      'kill-all-buffers)
@@ -631,7 +674,7 @@
 (bind-key "C-c t"      'shell)
 (bind-key "C-c x"      'ESC-prefix)
 (bind-key "C-,"        'other-window)
-(bind-key "C-c l"      'goto-line)
+(bind-key "C-c l"      'my-goto-line)
 
 (bind-key "C-c a p" 'profiler-start)
 (bind-key "C-c a P" 'profiler-report)
@@ -655,6 +698,7 @@
 
 (unbind-key "C-z")
 (unbind-key "C-<tab>")
+(unbind-key "C-h n")
 
 (defalias 'yes-or-no-p 'y-or-n-p)
 
@@ -698,9 +742,11 @@
 
 (add-to-list 'electric-pair-pairs '(?` . ?`)) ; electric-quote backticks
 
+(set-fill-column 85)
+
 ;; Always trim trailing whitespace.
 
-(add-hook 'before-save-hook 'delete-trailing-whitespace)
+;; (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
 (defun open-notes-and-split ()
   "Open my notes and split the window."
