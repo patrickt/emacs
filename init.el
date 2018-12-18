@@ -227,9 +227,8 @@
 ;; workflow", which is a sign that I should leave this disabled.
 
 (use-package company
-  :disabled
-  :config
-  (company-mode))
+  :bind (("C-." . company-complete))
+  :diminish company-mode)
 
 ;; Textmate-style tap-to-expand-into-the-current-delimiter.
 
@@ -305,7 +304,6 @@
 
 (use-package markdown-mode
   :mode ("\\.md$" . gfm-mode)
-  :hook (gfm-mode . auto-fill-mode)
   :config
   (when (executable-find "pandoc")
     (setq markdown-command "pandoc -f markdown -t html")))
@@ -383,20 +381,33 @@
          ("C-c a s"  . org-emphasize)
          ("C-c a r"  . org-ref)
          ("C-c a e"  . outline-show-all)
-         ("C-c a l"  . lambduh))
+         ("C-c a l"  . lambduh)
+         ("C-c a t"  . unindent-by-four))
 
   :hook (org-mode . visual-line-mode)
 
   :config
+
+  (defun unindent-by-four ()
+    (interactive)
+    (indent-rigidly (region-beginning) (region-end) -4))
+  
   (unbind-key "C-c ;" org-mode-map)
   (unbind-key "C-,"   org-mode-map)
   (unbind-key "M-<left>" org-mode-map)
   (unbind-key "M-<right>" org-mode-map)
 
+  (let ((todo-path (expand-file-name "~/txt/todo.org")))
+    (when (file-exists-p todo-path)
+      (setq org-agenda-files (list todo-path)
+            org-default-notes-file todo-path)))
+
   (setq org-footnote-section ""
         org-startup-with-inline-images t
         org-pretty-entities t
         org-ellipsis "…"
+        org-startup-folded nil
+        org-footnote-section nil
         )
 
   (setcar (nthcdr 4 org-emphasis-regexp-components) 4)
@@ -404,6 +415,11 @@
   (defun org-mode-insert-code ()
     (interactive)
     (org-emphasize ?~)))
+
+(bind-key "C-c o c" 'org-capture)
+(bind-key "C-c o n" 'open-semantic-notes)
+(bind-key "C-c o s" 'org-store-link)
+(bind-key "C-c o a" 'org-agenda)
 
 (use-package swift-mode
   :config
@@ -419,32 +435,34 @@
   :config
   (setq org-pandoc-format-extensions '(markdown+smart))
 
-  ;; Utterly brain-dead bullshit to enable org+smart as an input format.
-  (defun org-pandoc-run (input-file output-file format sentinel &optional options)
-    (let* ((format (symbol-name format))
-           (output-format
-            (car (--filter (string-prefix-p format it)
-                           org-pandoc-format-extensions-str)))
-           (args
-            `("-f" "org+smart"
-              "-t" ,(or output-format format)
-              ,@(and output-file
-                     (list "-o" (expand-file-name output-file)))
-              ,@(-mapcat (lambda (key)
-                           (-when-let (vals (gethash key options))
-                             (if (equal vals t) (setq vals (list t)))
-                             (--map (concat "--" (symbol-name key)
-                                            (when (not (equal it t)) (format "=%s" it)))
-                                    vals)))
-                         (ht-keys options))
-              ,(expand-file-name input-file))))
-      (message "Running pandoc with args: %s" args)
-      (let ((process
-             (apply 'start-process
-                    `("pandoc" ,(generate-new-buffer "*Pandoc*")
-                      ,org-pandoc-command ,@args))))
-        (set-process-sentinel process sentinel)
-        process))))
+  ;; ;; Utterly brain-dead bullshit to enable org+smart as an input format.
+  ;; (defun org-pandoc-run (input-file output-file format sentinel &optional options)
+  ;;   (let* ((format (symbol-name format))
+  ;;          (output-format
+  ;;           (car (--filter (string-prefix-p format it)
+  ;;                          org-pandoc-format-extensions-str)))
+  ;;          (args
+  ;;           `("-f" "org+smart"
+  ;;             "-t" ,(or output-format format)
+  ;;             ,@(and output-file
+  ;;                    (list "-o" (expand-file-name output-file)))
+  ;;             ,@(-mapcat (lambda (key)
+  ;;                          (-when-let (vals (gethash key options))
+  ;;                            (if (equal vals t) (setq vals (list t)))
+  ;;                            (--map (concat "--" (symbol-name key)
+  ;;                                           (when (not (equal it t)) (format "=%s" it)))
+  ;;                                   vals)))
+  ;;                        (ht-keys options))
+  ;;             ,(expand-file-name input-file))))
+  ;;     (message "Running pandoc with args: %s" args)
+  ;;     (let ((process
+  ;;            (apply 'start-process
+  ;;                   `("pandoc" ,(generate-new-buffer "*Pandoc*")
+  ;;                     ,org-pandoc-command ,@args))))
+  ;;       (set-process-sentinel process sentinel)
+  ;;       process)))
+
+  )
 
 (use-package wc-goal-mode
   :hook (org-mode . wc-goal-mode))
@@ -469,6 +487,25 @@
   (defun my-lithaskell-mode-hook ()
     "Turn off auto-indent for Literate Haskell snippets."
     (setq-local yas-indent-line nil))
+
+  (setq haskell-font-lock-symbols-alist
+        '(("\\" . "λ")
+          ("not" . "¬")
+          ("()" . "∅")
+          ("!!" . "‼")
+          ("&&" . "∧")
+          ("||" . "∨")
+          ("sqrt" . "√")
+          ("undefined" . "⊥")
+          ("pi" . "π")
+          ("::" . "∷")
+          ("." "∘" ;"○"
+           ;; Need a predicate here to distinguish the . used by
+           ;; forall <foo> . <bar>.
+           haskell-font-lock-dot-is-not-composition)
+          ("forall" . "∀")))
+
+  (setq haskell-font-lock-symbols 't)
 
   :mode ("\\.hs$" . haskell-mode)
 
@@ -662,7 +699,6 @@
 (bind-key "C-x k"      'kill-buffer-with-prejudice)
 (bind-key "C-c e"      'open-init-file)
 (bind-key "C-c k"      'kill-all-buffers)
-(bind-key "C-c o"      'open-semantic-notes)
 (bind-key "s-<return>" 'eol-then-newline)
 (bind-key "C-c 5"      'query-replace-regexp)
 (bind-key "M-/"        'hippie-expand)
@@ -731,7 +767,8 @@
   scroll-conservatively 101              ; move minimum when cursor exits view, instead of recentering
   confirm-kill-processes nil             ; don't whine at me when I'm quitting.
   fast-but-imprecise-scrolling t         ; makes a difference
-  mac-mouse-wheel-smooth-scroll nil
+  mac-mouse-wheel-smooth-scroll nil      ; no smooth scrolling
+  mac-drawing-use-gcd t                  ; and you can do it on other frames
   )
 
 (setq-default
@@ -753,7 +790,7 @@
   (when (eq system-type 'darwin)
     (split-window-horizontally)
     (other-window 1)
-    (find-file "~/txt/semantic.org")
+    (find-file "~/txt/todo.org")
     (other-window 1)))
 
 (add-hook 'after-init-hook 'open-notes-and-split)
