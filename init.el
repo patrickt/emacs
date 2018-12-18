@@ -368,7 +368,7 @@
 ;; I am very early on in my journey down the org-mode road.
 ;; But I like it a lot.
 
-
+;; NOTE ORG-MODE STARTS HERE
 
 (use-package org
 
@@ -420,6 +420,9 @@
 (bind-key "C-c o n" 'open-semantic-notes)
 (bind-key "C-c o s" 'org-store-link)
 (bind-key "C-c o a" 'org-agenda)
+
+(use-package org-ac
+  :after org)
 
 (use-package swift-mode
   :config
@@ -495,6 +498,7 @@
           ("!!" . "‼")
           ("&&" . "∧")
           ("||" . "∨")
+          ("/=" . "≠")
           ("sqrt" . "√")
           ("undefined" . "⊥")
           ("pi" . "π")
