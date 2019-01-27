@@ -65,6 +65,8 @@
 (use-package diminish
   :ensure t)
 
+(diminish 'eldoc-mode)
+
 ;; The Doom Emacs themes look really good.
 
 (use-package doom-themes
@@ -87,13 +89,14 @@
   :bind (("C-c w" . winum-select-window-by-number)))
 
 (use-package spaceline
+  :disabled
   :config
   (spaceline-spacemacs-theme))
 
 ;; Ace-window is a nice way to switch between frames quickly.
 
 (use-package ace-window
-  :disabled ; trying out winum-mode
+  :pin melpa-stable
   :bind (("C-," . ace-window)))
 
 ;; Ensure that items in the PATH are made available to Emacs. This should
@@ -227,8 +230,26 @@
 ;; workflow", which is a sign that I should leave this disabled.
 
 (use-package company
+  :disabled
   :bind (("C-." . company-complete))
-  :diminish company-mode)
+  :diminish company-mode
+  :config
+  (global-company-mode)
+
+  ;; use numbers 0-9 to select company completion candidates
+  (let ((map company-active-map))
+    (mapc (lambda (x) (define-key map (format "%d" x)
+                        `(lambda () (interactive) (company-complete-number ,x))))
+          (number-sequence 0 9)))
+
+  (setq company-dabbrev-downcase nil
+        company-idle-delay 2
+        company-show-numbers t
+        company-tooltip-limit 20
+        company-abort-manual-when-too-short t))
+
+(use-package centered-window
+  :bind (("C-c W" . centered-window-mode)))
 
 ;; Textmate-style tap-to-expand-into-the-current-delimiter.
 
@@ -317,7 +338,8 @@
 
 ;; YAML is underappreciated.
 
-(use-package yaml-mode)
+(use-package yaml-mode
+  :bind (("C-c a c" . haskell-cabal-visit-file)))
 
 ;; Quickly duplicate whatever's under the cursor. I'm shocked this requires a
 ;; third-party package; it should be standard.
@@ -391,7 +413,7 @@
   (defun unindent-by-four ()
     (interactive)
     (indent-rigidly (region-beginning) (region-end) -4))
-  
+
   (unbind-key "C-c ;" org-mode-map)
   (unbind-key "C-,"   org-mode-map)
   (unbind-key "M-<left>" org-mode-map)
@@ -424,11 +446,18 @@
 (use-package org-ac
   :after org)
 
+(use-package writegood-mode
+  :bind (:map org-mode-map
+              ("C-c a l" . writegood-grade-level)
+              ("C-c a e" . writegood-reading-ease)))
+
 (use-package swift-mode
+  :disabled
   :config
   (setq swift-mode:basic-offset 2))
 
 (use-package org-ref
+  :disabled
   :defer
   :config
   (ignore-errors (load-private-settings)))
@@ -436,39 +465,26 @@
 (use-package ox-pandoc
   :after org
   :config
-  (setq org-pandoc-format-extensions '(markdown+smart))
-
-  ;; ;; Utterly brain-dead bullshit to enable org+smart as an input format.
-  ;; (defun org-pandoc-run (input-file output-file format sentinel &optional options)
-  ;;   (let* ((format (symbol-name format))
-  ;;          (output-format
-  ;;           (car (--filter (string-prefix-p format it)
-  ;;                          org-pandoc-format-extensions-str)))
-  ;;          (args
-  ;;           `("-f" "org+smart"
-  ;;             "-t" ,(or output-format format)
-  ;;             ,@(and output-file
-  ;;                    (list "-o" (expand-file-name output-file)))
-  ;;             ,@(-mapcat (lambda (key)
-  ;;                          (-when-let (vals (gethash key options))
-  ;;                            (if (equal vals t) (setq vals (list t)))
-  ;;                            (--map (concat "--" (symbol-name key)
-  ;;                                           (when (not (equal it t)) (format "=%s" it)))
-  ;;                                   vals)))
-  ;;                        (ht-keys options))
-  ;;             ,(expand-file-name input-file))))
-  ;;     (message "Running pandoc with args: %s" args)
-  ;;     (let ((process
-  ;;            (apply 'start-process
-  ;;                   `("pandoc" ,(generate-new-buffer "*Pandoc*")
-  ;;                     ,org-pandoc-command ,@args))))
-  ;;       (set-process-sentinel process sentinel)
-  ;;       process)))
-
-  )
+  (setq org-pandoc-format-extensions '(markdown+smart)))
 
 (use-package wc-goal-mode
   :hook (org-mode . wc-goal-mode))
+
+(use-package flycheck
+  :disabled
+  :hook ((prog-mode . flycheck-mode))
+  :config
+
+  ;; (flycheck-define-checker proselint
+  ;;   "A linter for prose."
+  ;;   :command ("proselint" source-inplace)
+  ;;   :error-patterns
+  ;;   ((warning line-start (file-name) ":" line ":" column ": "
+  ;;             (id (one-or-more (not (any " "))))
+  ;;             (message) line-end))
+  ;;   :modes (text-mode org-mode markdown-mode gfm-mode))
+
+  (add-to-list 'flycheck-checkers 'proselint))
 
 (use-package haskell-mode
   :config
@@ -502,7 +518,6 @@
           ("sqrt" . "√")
           ("undefined" . "⊥")
           ("pi" . "π")
-          ("::" . "∷")
           ("." "∘" ;"○"
            ;; Need a predicate here to distinguish the . used by
            ;; forall <foo> . <bar>.
@@ -510,6 +525,13 @@
           ("forall" . "∀")))
 
   (setq haskell-font-lock-symbols 't)
+  (add-to-list 'haskell-ghc-supported-extensions "DerivingVia")
+  (add-to-list 'haskell-ghc-supported-extensions "DerivingStrategies")
+  (add-to-list 'haskell-ghc-supported-extensions "BlockArguments")
+
+  (add-to-list 'haskell-font-lock-keywords "via")
+  (add-to-list 'haskell-font-lock-keywords "stock")
+  (add-to-list 'haskell-font-lock-keywords "anyclass")
 
   :mode ("\\.hs$" . haskell-mode)
 
@@ -532,6 +554,10 @@
          ("C-c a t" . intero-type-at)
          ("C-c a u" . intero-uses-at)
          ("C-c a s" . intero-apply-suggestions)))
+
+(use-package flycheck-haskell
+  :defer haskell-mode
+  :hook ((haskell-mode . flycheck-haskell-setup)))
 
 ;; My own mode for running stack build --file-watch
 ;; TODO: investigate why I have to use polling here.
@@ -644,6 +670,7 @@
   "Close all buffers."
   (interactive)
   (maybe-unset-buffer-modified)
+  (save-some-buffers)
   (mapc 'kill-buffer (buffer-list)))
 
 (defun split-right-and-enter ()
@@ -715,6 +742,7 @@
 (bind-key "C-c x"      'ESC-prefix)
 (bind-key "C-,"        'other-window)
 (bind-key "C-c l"      'my-goto-line)
+(bind-key "M-,"        'other-window)
 
 (bind-key "C-c a p" 'profiler-start)
 (bind-key "C-c a P" 'profiler-report)
@@ -787,7 +815,7 @@
 
 ;; Always trim trailing whitespace.
 
-;; (add-hook 'before-save-hook 'delete-trailing-whitespace)
+(add-hook 'before-save-hook 'delete-trailing-whitespace)
 
 (defun open-notes-and-split ()
   "Open my notes and split the window."
