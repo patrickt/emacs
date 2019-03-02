@@ -14,3 +14,5 @@ tramp
 .mc-lists.el
 /company-statistics-cache.el
 /elpa25
+ac-comphist.dat
+bookmarks

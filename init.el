@@ -2,16 +2,22 @@
 
 ;;; Commentary:
 ;; This file is in the public domain.
+;;
+;; A general note on keybindings: the custom keybindings applicable to
+;; all major modes appear with the C-c prefix, as is standard.
+;; Per-language commands appear with the C-c a prefix. The most
+;; important keybinding, C-;, provides counsel-M-x, which lets you
+;; fuzzy-find through the space of available functions.
 
 ;;; Code:
 
 ;; To start, we temporarily disable GC limits.
 
 (defvar old-cons-threshold gc-cons-threshold)
-(setq gc-cons-threshold 100000000)
+(setq gc-cons-threshold (eval-when-compile (* 1024 1024 100)))
 
-(setq debug-on-error t          ;; If we encounter an error, don't just croak and die
-      max-list-eval-depth 2000) ;; Bump up the recursion limit.
+;; Bump up the recursion limit.
+(setq max-lisp-eval-depth 2000)
 
 ;; Package-initialization preamble, adding melpa and melpa-stable.
 
@@ -19,6 +25,10 @@
 
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
 (add-to-list 'package-archives '("melpa-stable" . "http://stable.melpa.org/packages/") t)
+(add-to-list 'package-archives '("org-elpa" . "https://orgmode.org/elpa/") t)
+
+(defmacro append-to-list (target suffix)
+  `(setq ,target (append ,suffix ,target)))
 
 (package-initialize)
 
@@ -30,8 +40,10 @@
   (package-initialize)
   (package-install 'use-package))
 
-(setq use-package-always-ensure t
-      use-package-verbose t)
+(setq-default
+ use-package-always-ensure t
+ use-package-verbose t
+ use-package-enable-imenu-support t)
 
 ;; Fullscreen by default, as early as possible.
 
@@ -49,8 +61,7 @@
 
 ;; Always prefer newer files.
 
-(setq
- load-prefer-newer t)
+(setq load-prefer-newer t)
 
 ;; Disable otiose GUI settings: they just waste space.
 ;; fringe-mode is especially ruinous performance-wise.
@@ -61,57 +72,28 @@
   (tooltip-mode -1)
   (fringe-mode -1))
 
-;;
+;; Haven't figured out how to diminish eldoc-mode outside of
+;; requiring this explicitly and doing it manually.
 (use-package diminish
   :ensure t)
 
 (diminish 'eldoc-mode)
 
-;; The Doom Emacs themes look really good.
+;; The Doom Emacs themes look really good. I use opera.
 
 (use-package doom-themes
   :config
-  (load-theme 'doom-tomorrow-night)
+  (load-theme 'doom-opera)
   (doom-themes-visual-bell-config)
   (doom-themes-org-config)
-  (setq org-hide-leading-stars nil)
 
-
-
+  ;; Docstrings should be a bit lighter, since they're important.
   (custom-theme-set-faces
-   'doom-tomorrow-night
-   '(font-lock-doc-face ((t (:foreground "#D8D2C1"))))))
-
-;; Number the windows.
-(use-package winum
-  :init (winum-mode)
-  ;; I usually just use C-, for this
-  :bind (("C-c w" . winum-select-window-by-number)))
-
-(use-package spaceline
-  :disabled
-  :config
-  (spaceline-spacemacs-theme))
-
-;; Ace-window is a nice way to switch between frames quickly.
-
-(use-package ace-window
-  :pin melpa-stable
-  :bind (("C-," . ace-window)))
+  'doom-opera
+  '(font-lock-doc-face ((t (:foreground "#D8D2C1"))))))
 
 ;; Ensure that items in the PATH are made available to Emacs. This should
 ;; probably just come with the main distribution.
-
-(use-package exec-path-from-shell
-  :config
-  (exec-path-from-shell-initialize))
-
-;; Dim inactive buffers.
-
-(use-package dimmer
-  :config
-  (setq dimmer-fraction 0.15)
-  (dimmer-mode))
 
 ;; Recentf comes with Emacs but it should always be enabled.
 
@@ -150,9 +132,13 @@
   :init
   (ivy-rich-mode))
 
-(use-package ivy-hydra
-  :disabled
-  :after ivy)
+;; Slurp environment variables from the shell.
+
+(use-package exec-path-from-shell
+  :config
+  (exec-path-from-shell-initialize))
+
+(use-package fish-mode)
 
 ;; Counsel applies Ivy-like behavior to other builtin features of
 ;; emacs, e.g. search.
@@ -160,7 +146,7 @@
 (use-package counsel
   :ensure t
   :after ivy
-  :config
+  :init
   (counsel-mode 1)
   (defun counsel-rg-at-point ()
     (interactive)
@@ -181,9 +167,10 @@
   :diminish)
 
 ;; projectile comes with Emacs these days, but we want to enable
-;; caching.
+;; caching, since I work on big projects.
 
 (use-package projectile
+  :bind (("C-c f" . projectile-find-file))
   :config
   (setq projectile-enable-caching t
         projectile-completion-system 'ivy)
@@ -194,25 +181,9 @@
 (use-package counsel-projectile
   :bind (("C-c f" . counsel-projectile))
   :init
-  ; This is a workaround until the below bugfix makes into melpa.
-  ; https://github.com/ericdanan/counsel-projectile/pull/92
-  (makunbound 'counsel-projectile-mode-map)
-  (defvar counsel-projectile-mode-map
-    (let ((map (make-sparse-keymap))
-          (projectile-command-keymap (where-is-internal 'projectile-command-map nil t)))
-      (when projectile-command-keymap
-        (define-key map projectile-command-keymap 'counsel-projectile-command-map))
-      (define-key map [remap projectile-find-file] 'counsel-projectile-find-file)
-      (define-key map [remap projectile-find-dir] 'counsel-projectile-find-dir)
-      (define-key map [remap projectile-switch-to-buffer] 'counsel-projectile-switch-to-buffer)
-      (define-key map [remap projectile-grep] 'counsel-projectile-grep)
-      (define-key map [remap projectile-ag] 'counsel-projectile-ag)
-      (define-key map [remap projectile-switch-project] 'counsel-projectile-switch-project)
-      map)
-    "Keymap for Counsel-Projectile mode.")
-  :config (counsel-projectile-mode))
+  (counsel-projectile-mode))
 
-;; If you don't use this, recent commands in ivy won't be shown first
+;; Sort commands by recency in ivy windows.
 
 (use-package smex)
 
@@ -225,14 +196,20 @@
   :config
   (keychain-refresh-environment))
 
-;; Company is the best Emacs completion system, but I haven't sat down
-;; and thought "okay, how am I going to implement this in my
-;; workflow", which is a sign that I should leave this disabled.
+;; Elm stuff.
+
+(use-package elm-mode)
+
+;; Company is the best Emacs completion system.
 
 (use-package company
-  :disabled
   :bind (("C-." . company-complete))
   :diminish company-mode
+  :custom
+  (company-dabbrev-downcase nil "Don't downcase returned candidates.")
+  (company-show-numbers t "Numbers are helpful.")
+  (company-tooltip-limit 20 "The more the merrier.")
+  (company-abort-manual-when-too-short t "Be less enthusiastic about completion.")
   :config
   (global-company-mode)
 
@@ -240,16 +217,7 @@
   (let ((map company-active-map))
     (mapc (lambda (x) (define-key map (format "%d" x)
                         `(lambda () (interactive) (company-complete-number ,x))))
-          (number-sequence 0 9)))
-
-  (setq company-dabbrev-downcase nil
-        company-idle-delay 2
-        company-show-numbers t
-        company-tooltip-limit 20
-        company-abort-manual-when-too-short t))
-
-(use-package centered-window
-  :bind (("C-c W" . centered-window-mode)))
+          (number-sequence 0 9))))
 
 ;; Textmate-style tap-to-expand-into-the-current-delimiter.
 
@@ -264,7 +232,12 @@
   :diminish auto-revert-mode
   :config
   (magit-auto-revert-mode t)
+
+  ;; Magit, and Emacs in general, has a nasty habit of prompting to save buffers
+  ;; that are identical to those on disk. This is an attempt at remedying that,
+  ;; one that I should probably attach to other functions like save-buffers-kill-emacs.
   (advice-add 'magit-refresh :before #'maybe-unset-buffer-modified)
+  (advice-add 'magit-commit  :before #'maybe-unset-buffer-modified)
   (setq magit-completing-read-function 'ivy-completing-read)
   (add-to-list 'magit-no-confirm 'stage-all-changes)
   (setq-default magit-last-seen-setup-instructions "1.4.0"))
@@ -272,6 +245,7 @@
 ;; Unclear whether this does anything at the moment.
 
 (use-package libgit
+  :disabled
   :after magit)
 
 ;; Since I grew up on Textmate, I'm more-or-less reliant on snippets.
@@ -285,11 +259,13 @@
 ;; I usually don't edit very large files, but saveplace is nice on the occasions I do.
 
 (use-package saveplace
+  :disabled
   :config (setq-default save-place t))
 
 ;; Haskell and Elisp are made a lot easier when delimiters are nicely color-coded.
 
 (use-package rainbow-delimiters
+  :disabled
   :hook (prog-mode . rainbow-delimiters-mode))
 
 ;; multiple-cursors is better than cua-selection-mode.
@@ -307,11 +283,20 @@
 ;; a buffer, you'll always be able to get it back. That is crucial.
 
 (use-package undo-tree
+  :disabled
   :bind (("C-c _" . undo-tree-visualize))
   :config
   (global-undo-tree-mode +1)
   (unbind-key "M-_" undo-tree-map)
   :diminish)
+
+;; Trying undo-propose, which seems to offer a better experience, as
+;; undo tree is prone to losing data.
+
+(use-package undo-propose
+  :bind (("C-c _" . undo-propose)
+         :map undo-propose-mode-map
+         ("<up>" . undo-only)))
 
 ;; (use-package ansi-color
 ;;   :config
@@ -319,7 +304,8 @@
 
 ;; C stuff.
 
-(use-package cc-mode)
+(use-package cc-mode
+  :disabled)
 
 ;; I do all of my writing in either org-mode or markdown-mode.
 
@@ -332,11 +318,10 @@
 ;; Avy is better than ace-jump.
 (use-package avy
   :defer ivy
-  :bind (("C-l"   . avy-goto-line)
-         ("C-c j" . avy-goto-word-1)
-         ("C-'"   . ivy-avy)))
-
-;; YAML is underappreciated.
+  :bind (("C-c l l" . avy-goto-line)
+         ("C-c l c" . avy-goto-char-timer)
+         ("C-c l w" . avy-goto-word-1)
+         ("C-'"     . ivy-avy)))
 
 (use-package yaml-mode
   :bind (("C-c a c" . haskell-cabal-visit-file)))
@@ -351,20 +336,24 @@
 ;; stuff. Guide-key helps there. (TODO: figure out other places it'll help.)
 
 (use-package guide-key
+  :diminish guide-key-mode
   :config
   (guide-key-mode t)
-  (setq guide-key/guide-key-sequence '("C-x v"   ;; version control
-                                       "C-c a")) ;; my mode-specific bindings
-  :diminish guide-key-mode)
+  (setq guide-key/guide-key-sequence '("C-x v" ;; version control
+                                       "C-c a" ;; my mode-specific bindings
+                                       "C-c l" ;; line-jumping
+                                       )))
 
 ;; Since the in-emacs Dash browser doesn't work on OS X, we have to settle for dash-at-point.
 
 (use-package dash-at-point
   :bind ("C-c d" . dash-at-point))
 
+;; Need to remember to use this more, though I have my issues with the UI.
+
 (use-package dumb-jump
-  :bind (("C-c d" . dumb-jump-go)
-	 ("C-c D" . dumb-jump-go-prompt))
+  :disabled
+  :bind (("C-c j" . dumb-jump-go-prompt))
   :config (setq dumb-jump-selector 'ivy))
 
 ;; OCaml is loaded not through melpa, but through OPAM itself.
@@ -387,16 +376,19 @@
   (interactive)
   (insert "λ"))
 
-;; I am very early on in my journey down the org-mode road.
-;; But I like it a lot.
-
-;; NOTE ORG-MODE STARTS HERE
-
 (use-package org
+  ;; Always get this from the GNU archive.
+  :pin gnu
 
   :diminish org-indent-mode
 
-  :bind (:map org-mode-map
+  ;; Global functions that drop me into org-mode-related modes
+  ;; are prefixed under C-c o.
+  :bind (("C-c o c"  . org-capture)
+         ("C-c o n"  . open-semantic-notes)
+         ("C-c o s"  . org-store-link)
+         ("C-c o a"  . org-agenda)
+         :map org-mode-map
          ("M--"      . em-dash)
          ("M-;"      . ellipsis)
          ("C-c c"    . org-mode-insert-code)
@@ -410,10 +402,13 @@
 
   :config
 
+  ;; TODO: build a real indentation solution
+
   (defun unindent-by-four ()
     (interactive)
     (indent-rigidly (region-beginning) (region-end) -4))
 
+  ;; Org-mode conflicts with a lot of stuff I take for granted.
   (unbind-key "C-c ;" org-mode-map)
   (unbind-key "C-,"   org-mode-map)
   (unbind-key "M-<left>" org-mode-map)
@@ -430,122 +425,77 @@
         org-ellipsis "…"
         org-startup-folded nil
         org-footnote-section nil
+        org-hide-leading-stars nil
         )
 
+  ;; This allegedly gets better behavior for delineating org-mode
+  ;; emphasis. But (Monique voice) I would like to see it.
   (setcar (nthcdr 4 org-emphasis-regexp-components) 4)
 
   (defun org-mode-insert-code ()
     (interactive)
     (org-emphasize ?~)))
 
-(bind-key "C-c o c" 'org-capture)
-(bind-key "C-c o n" 'open-semantic-notes)
-(bind-key "C-c o s" 'org-store-link)
-(bind-key "C-c o a" 'org-agenda)
+;; Autocomplete for org tags.
+(use-package org-ac :after org)
 
-(use-package org-ac
-  :after org)
+;; Sometimes useful for putting the right piece of punctuation in there.
+(use-package typo)
 
-(use-package writegood-mode
-  :bind (:map org-mode-map
-              ("C-c a l" . writegood-grade-level)
-              ("C-c a e" . writegood-reading-ease)))
-
-(use-package swift-mode
-  :disabled
-  :config
-  (setq swift-mode:basic-offset 2))
-
+;; Reference management disabled for org-ref until I figure out what its deal is.
 (use-package org-ref
   :disabled
   :defer
   :config
   (ignore-errors (load-private-settings)))
 
-(use-package ox-pandoc
-  :after org
-  :config
-  (setq org-pandoc-format-extensions '(markdown+smart)))
-
-(use-package wc-goal-mode
-  :hook (org-mode . wc-goal-mode))
-
+;; Flycheck mode is usually useful.
 (use-package flycheck
-  :disabled
-  :hook ((prog-mode . flycheck-mode))
+  :hook (org-mode . flycheck-mode)
   :config
-
-  ;; (flycheck-define-checker proselint
-  ;;   "A linter for prose."
-  ;;   :command ("proselint" source-inplace)
-  ;;   :error-patterns
-  ;;   ((warning line-start (file-name) ":" line ":" column ": "
-  ;;             (id (one-or-more (not (any " "))))
-  ;;             (message) line-end))
-  ;;   :modes (text-mode org-mode markdown-mode gfm-mode))
-
+  (global-flycheck-mode)
   (add-to-list 'flycheck-checkers 'proselint))
 
+;; For Hammerspoon.
+(use-package lua-mode)
+
+;; Haskell is my programming language of choice.
 (use-package haskell-mode
   :config
-
-  (defun haskell-right-arrow ()
-    "Insert a right arrow."
-    (interactive)
-    (insert (if (eolp) " -> " "->")))
-
-  (defun haskell-left-arrow ()
-    "Insert a left arrow."
-    (interactive)
-    (insert (if (eolp) " <- " "<-")))
 
   (defun my-haskell-mode-hook ()
     "Make sure the compile command is right."
     (setq-local compile-command "stack build --fast"))
 
-  (defun my-lithaskell-mode-hook ()
-    "Turn off auto-indent for Literate Haskell snippets."
-    (setq-local yas-indent-line nil))
-
-  (setq haskell-font-lock-symbols-alist
+  ;; I don't go overboard with the symbols but they can be nice.
+  (setq haskell-font-lock-symbols 't
+        haskell-font-lock-symbols-alist
         '(("\\" . "λ")
-          ("not" . "¬")
-          ("()" . "∅")
-          ("!!" . "‼")
-          ("&&" . "∧")
-          ("||" . "∨")
           ("/=" . "≠")
-          ("sqrt" . "√")
-          ("undefined" . "⊥")
-          ("pi" . "π")
-          ("." "∘" ;"○"
-           ;; Need a predicate here to distinguish the . used by
-           ;; forall <foo> . <bar>.
-           haskell-font-lock-dot-is-not-composition)
-          ("forall" . "∀")))
+          ("undefined" . "⊥") ;; Wish this didn't change the height of the line.
+          ("." "◦" haskell-font-lock-dot-is-not-composition)
+          ))
 
-  (setq haskell-font-lock-symbols 't)
-  (add-to-list 'haskell-ghc-supported-extensions "DerivingVia")
-  (add-to-list 'haskell-ghc-supported-extensions "DerivingStrategies")
-  (add-to-list 'haskell-ghc-supported-extensions "BlockArguments")
+  ;; Unfortunately haskell-mode doesn't quite track the latest and
+  ;; greatest in Haskell extensions, so we have to give the font-lock
+  ;; system a couple of hints.
 
-  (add-to-list 'haskell-font-lock-keywords "via")
-  (add-to-list 'haskell-font-lock-keywords "stock")
-  (add-to-list 'haskell-font-lock-keywords "anyclass")
+  (append-to-list haskell-ghc-supported-extensions
+                  '("DerivingVia" "BlockArguments" "DerivingStrategies"))
+
+  (append-to-list haskell-font-lock-keywords '("capi" "via" "stock" "anyclass"))
 
   :mode ("\\.hs$" . haskell-mode)
-
-  :hook ((haskell-mode . my-haskell-mode-hook)
-         (literate-haskell-mode-hook . my-lithaskell-mode-hook))
 
   :bind (:map haskell-mode-map
          ("C-c a c" . haskell-cabal-visit-file)
 	 ("C-c a b" . haskell-mode-stylish-buffer)
          ("C-c a i" . haskell-navigate-imports)
-         ("C-c a w" . stack-watch)
-         ("C-c a ," . haskell-left-arrow)
-         ("C-c a ." . haskell-right-arrow)))
+         ("C-c a w" . stack-watch)))
 
+;; Intero… well, it sort-of works. It generally chokes on large projects,
+;; but for sandboxes and small projects it's the best thing out there
+;; (though I need to try dante-mode, or so joshvera tells me).
 (use-package intero
   :bind (:map haskell-mode-map
          ("C-c a r" . intero-repl)
@@ -555,89 +505,9 @@
          ("C-c a u" . intero-uses-at)
          ("C-c a s" . intero-apply-suggestions)))
 
-(use-package flycheck-haskell
-  :defer haskell-mode
-  :hook ((haskell-mode . flycheck-haskell-setup)))
-
-;; My own mode for running stack build --file-watch
-;; TODO: investigate why I have to use polling here.
-;; Cobbled together from various sources, sic semper.
-
-(define-minor-mode stack-watch-mode
-  "A minor mode for stack build --file-watch."
-  :lighter " stack watch"
-  (compilation-minor-mode))
-
-(defvar stack-watch-command
-  "stack build semantic:lib --fast --file-watch-poll\n"
-  "The command used to run stack-watch.")
-
-(setq stack-watch-command "stack build semantic:lib --fast --file-watch-poll\n")
-
-(defun get-or-create-stack-watch-buffer (buf-name)
-  "Select the buffer with name BUF-NAME."
-  (let ((stack-watch-buf (get-buffer-create buf-name)))
-    (display-buffer
-     stack-watch-buf
-     '((display-buffer-pop-up-window
-        display-buffer-reuse-window)
-       (window-height . 25)))
-    (select-window (get-buffer-window stack-watch-buf))))
-
-(defun spawn-stack-watch (buf-name)
-  "Spawn stack-watch inside the current buffer with BUF-NAME."
-  (make-term (format "stack-watch: %s" (projectile-project-name)) "/bin/zsh")
-  (term-mode)
-  (term-line-mode)
-  (setq-local compilation-down-aggressively t)
-  (setq-local window-point-insertion-type t)
-  (stack-watch-mode)
-  (comint-send-string buf-name stack-watch-command))
-
-(defun run-stack-watch (buf-name)
-  "Run or display a stack-watch buffer with the given BUF-NAME."
-  (let ((cur (selected-window))
-        (buf-exists (get-buffer buf-name)))
-    (progn
-      (get-or-create-stack-watch-buffer buf-name)
-      (if buf-exists (goto-char (point-max))
-        (spawn-stack-watch buf-name))
-      (select-window cur))))
-
-(defun stack-watch-projectile-buf-name ()
-  (format "*stack-watch: %s*" (projectile-project-name)))
-
-(defun projectile-stack-watch-stop ()
-  "Stop stack-watch for this project."
-  (interactive)
-  (let* ((buf-name (stack-watch-projectile-buf-name))
-         (stack-watch-buf (get-buffer buf-name))
-         (stack-watch-window (get-buffer-window stack-watch-buf))
-         (stack-watch-proc (get-buffer-process stack-watch-buf)))
-    (when stack-watch-buf
-      (progn
-        (when (processp stack-watch-proc)
-          (progn
-            (set-process-query-on-exit-flag stack-watch-proc nil)
-            (kill-process stack-watch-proc)))))
-        (select-window stack-watch-window)
-        (kill-buffer-and-window)))
-
-(defun projectile-stack-watch-switch-to-buffer ()
-  "Switch to an active stack-watch buffer."
-  (interactive)
-  (projectile-with-default-dir (projectile-project-root)
-    (let ((buf-name (stack-watch-projectile-buf-name)))
-      (get-or-create-stack-watch-buffer buf-name))))
-
-(defun stack-watch ()
-  "Spawn stack-watch in the project root."
-  (interactive)
-  (projectile-with-default-dir (projectile-project-root)
-    (let ((buf-name (stack-watch-projectile-buf-name)))
-      (run-stack-watch buf-name))))
-
+;; Someday I'm going to start using Idris again.
 (use-package idris-mode
+  :disabled
   :bind (("C-c C-v" . idris-case-split)))
 
 (use-package typescript-mode)
@@ -657,10 +527,6 @@
   (interactive)
   (find-file user-init-file))
 
-(defun open-eshell-file ()
-  (interactive)
-  (find-file eshell-rc-script))
-
 (defun open-semantic-notes ()
   "Open my notes file."
   (interactive)
@@ -671,7 +537,7 @@
   (interactive)
   (maybe-unset-buffer-modified)
   (save-some-buffers)
-  (mapc 'kill-buffer (buffer-list)))
+  (mapc 'kill-buffer-with-prejudice (buffer-list)))
 
 (defun split-right-and-enter ()
   "Split the window to the right and enter it."
@@ -707,7 +573,7 @@
     (with-current-buffer "*Diff*"
       (and (search-forward-regexp "^Diff finished \(no differences\)\." (point-max) 'noerror) t))))
 
-(defun maybe-unset-buffer-modified ()
+(defun maybe-unset-buffer-modified (&optional _)
   "Clear modified bit on all unmodified buffers."
   (interactive)
   (dolist (buf (buffer-list))
@@ -716,67 +582,70 @@
         (when (current-buffer-matches-file-p)
           (set-buffer-modified-p nil))))))
 
+;; Don't prompt to save unmodified buffers on exit.
+(advice-add 'save-buffers-kill-emacs :before #'maybe-unset-buffer-modified)
+
 (defun kill-buffer-with-prejudice ()
+  "Kill a buffer, eliding the save dialogue if there are no diffs."
   (interactive)
   (when (current-buffer-matches-file-p) (set-buffer-modified-p nil))
   (kill-buffer))
-
-(defun my-goto-line ()
-  "Go to a line and recenter the buffer."
-  (interactive)
-  (call-interactively 'goto-line)
-  (recenter-top-bottom))
 
 (bind-key "C-x k"      'kill-buffer-with-prejudice)
 (bind-key "C-c e"      'open-init-file)
 (bind-key "C-c k"      'kill-all-buffers)
 (bind-key "s-<return>" 'eol-then-newline)
-(bind-key "C-c 5"      'query-replace-regexp)
+(bind-key "C-c 5"      'query-replace-regexp) ;; stupid vestigial binding
 (bind-key "M-/"        'hippie-expand)
 (bind-key "C-c '"      'switch-to-previous-buffer)
 (bind-key "C-c \\"     'align-regexp)
 (bind-key "C-c m"      'compile)
 (bind-key "C-c 3"      'split-right-and-enter)
 (bind-key "C-c /"      'comment-or-uncomment-region)
-(bind-key "C-c t"      'shell)
 (bind-key "C-c x"      'ESC-prefix)
 (bind-key "C-,"        'other-window)
-(bind-key "C-c l"      'my-goto-line)
 (bind-key "M-,"        'other-window)
 
+;; When tracking down slowness, opening ivy to start these functions
+;; throws off the traces.
 (bind-key "C-c a p" 'profiler-start)
 (bind-key "C-c a P" 'profiler-report)
 
 ;; macOS-style bindings, too (no cua-mode, it's nasty)
-(bind-key "s-+"		'text-scale-increase)
-(bind-key "s-_"		'text-scale-decrease)
-(bind-key "s-s"         'save-buffer)
-(bind-key "s-c"		'kill-ring-save)
-(bind-key "s-v"		'yank)
-(bind-key "s-z"		'undo)
-(bind-key "s-a"		'mark-whole-buffer)
-(bind-key "s-<"         'beginning-of-buffer)
-(bind-key "s-x"         'kill-region)
-(bind-key "<home>"      'beginning-of-buffer)
-(bind-key "<end>"       'end-of-buffer)
-(bind-key "s->"         'end-of-buffer)
-(bind-key "M-_"         'em-dash)
-(bind-key "M-;"         'ellipsis)
-(bind-key "C-="         'next-error)
+(bind-key "s-+"	   'text-scale-increase)
+(bind-key "s-_"	   'text-scale-decrease)
+(bind-key "s-s"    'save-buffer)
+(bind-key "s-c"	   'kill-ring-save)
+(bind-key "s-v"	   'yank)
+(bind-key "s-z"	   'undo)
+(bind-key "s-a"	   'mark-whole-buffer)
+(bind-key "s-<"    'beginning-of-buffer)
+(bind-key "s-x"    'kill-region)
+(bind-key "<home>" 'beginning-of-buffer)
+(bind-key "<end>"  'end-of-buffer)
+(bind-key "s->"    'end-of-buffer)
+(bind-key "M-_"    'em-dash)
+(bind-key "M-;"    'ellipsis)
+(bind-key "C-="    'next-error)
+(bind-key "s-{"    'previous-buffer)
+(bind-key "s-}"    'next-buffer)
 
-(unbind-key "C-z")
-(unbind-key "C-<tab>")
-(unbind-key "C-h n")
+(unbind-key "C-z")     ;; I never want to suspend the frame
+(unbind-key "C-<tab>") ;; prevent switching to tab mode randomly
+(unbind-key "C-h n")   ;; I have never wanted to see emacs news ever
 
+;; I'm not made of time, I can't type "yes" for every choice
 (defalias 'yes-or-no-p 'y-or-n-p)
 
 (global-hl-line-mode t)              ; Always highlight the current line.
 (show-paren-mode t)                  ; And point out matching parentheses.
 (delete-selection-mode t)            ; Behave like any other sensible text editor would.
-(column-number-mode t)               ; Show column information in the modeline.
-(prettify-symbols-mode)              ; Use pretty Unicode symbols where possible.
 (global-display-line-numbers-mode)   ; Emacs has this builtin now, it's fast
-(mac-auto-operator-composition-mode) ; thanks, railwaycat
+
+;; Make sure that ligatures from fonts that offer them are enabled.
+;; This isn't present on GNU Emacs and requires a tremendous amount
+;; of munging of 'prettify-symbols-alist'.
+(ignore-errors (mac-auto-operator-composition-mode))
 
 (setq
   compilation-always-kill t              ; Never prompt to kill a compilation session.
@@ -785,7 +654,7 @@
   create-lockfiles nil                   ; Emacs sure loves to put lockfiles everywhere.
   default-directory "~/src"              ; My code lives here.
   inhibit-startup-screen t               ; No need to see GNU agitprop.
-  kill-whole-line t                      ; Delete the whole line if C-k is hit at the beginning of a line.
+  kill-whole-line t                      ; Lets C-k delete the whole line
   mac-command-modifier 'super            ; I'm not sure this is the right toggle, but whatever.
   require-final-newline t                ; Auto-insert trailing newlines.
   ring-bell-function 'ignore             ; Do not ding. Ever.
@@ -796,20 +665,24 @@
   save-interprogram-paste-before-kill t  ; preserve paste to system ring
   enable-recursive-minibuffers t         ; don't fucking freak out if I use the minibuffer twice
   sentence-end-double-space nil          ; are you fucking kidding me with this shit
-  scroll-conservatively 101              ; move minimum when cursor exits view, instead of recentering
   confirm-kill-processes nil             ; don't whine at me when I'm quitting.
-  fast-but-imprecise-scrolling t         ; makes a difference
   mac-mouse-wheel-smooth-scroll nil      ; no smooth scrolling
   mac-drawing-use-gcd t                  ; and you can do it on other frames
+  mark-even-if-inactive nil              ; prevent really unintuitive undo behavior
   )
 
+;; dired whines at you on macOS unless you do this.
+(when (eq system-type 'darwin)
+  (setq dired-use-ls-dired nil))
+
 (setq-default
- cursor-type 'bar
- indent-tabs-mode nil
- cursor-in-non-selected-windows nil
- )
+  cursor-type 'bar
+  indent-tabs-mode nil
+  cursor-in-non-selected-windows nil
+  )
 
 (add-to-list 'electric-pair-pairs '(?` . ?`)) ; electric-quote backticks
+(add-to-list 'electric-pair-pairs '(?“ . ?”)) ; electric-quote backticks
 
 (set-fill-column 85)
 
@@ -817,19 +690,7 @@
 
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
-(defun open-notes-and-split ()
-  "Open my notes and split the window."
-  (when (eq system-type 'darwin)
-    (split-window-horizontally)
-    (other-window 1)
-    (find-file "~/txt/todo.org")
-    (other-window 1)))
-
-(add-hook 'after-init-hook 'open-notes-and-split)
-
-(setq debug-on-error nil)
-
-(setq gc-cons-threshold 30000000)
+;; (setq debug-on-error nil)
 
 (provide 'init)
 
