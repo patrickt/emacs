@@ -23,12 +23,14 @@
 
 (require 'package)
 
-(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
-(add-to-list 'package-archives '("melpa-stable" . "http://stable.melpa.org/packages/") t)
-(add-to-list 'package-archives '("org-elpa" . "https://orgmode.org/elpa/") t)
-
 (defmacro append-to-list (target suffix)
-  `(setq ,target (append ,suffix ,target)))
+  "Append SUFFIX to TARGET in place."
+  `(setq ,target (append ,target ,suffix)))
+
+(append-to-list package-archives
+                '(("melpa" . "http://melpa.org/packages/")
+                  ("melpa-stable" . "http://stable.melpa.org/packages/")
+                  ("org-elpa" . "https://orgmode.org/elpa/")))
 
 (package-initialize)
 
@@ -682,7 +684,7 @@
   )
 
 (add-to-list 'electric-pair-pairs '(?` . ?`)) ; electric-quote backticks
-(add-to-list 'electric-pair-pairs '(?“ . ?”)) ; electric-quote backticks
+(add-to-list 'electric-pair-pairs '(?“ . ?”)) ; and curlies
 
 (set-fill-column 85)
 
