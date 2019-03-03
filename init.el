@@ -99,9 +99,11 @@
 
 ;; Recentf comes with Emacs but it should always be enabled.
 
-(recentf-mode t)
-(add-to-list 'recentf-exclude "\\.emacs.d")
-(add-to-list 'recentf-exclude ".+tmp......\\.org")
+(use-package recentf
+  :init (recentf-mode t)
+  :config
+  (add-to-list 'recentf-exclude "\\.emacs.d")
+  (add-to-list 'recentf-exclude ".+tmp......\\.org"))
 
 ;; Ivy makes most minibuffer prompts sortable and filterable. I used
 ;; to use helm, but it was too slow. Unfortunately org-ref depends on
@@ -378,6 +380,11 @@
   (interactive)
   (insert "λ"))
 
+(defun open-semantic-notes ()
+  "Open my notes file."
+  (interactive)
+  (find-file "~/txt/semantic.org"))
+
 (use-package org
   ;; Always get this from the GNU archive.
   :pin gnu
@@ -528,11 +535,6 @@
   "Open this very file."
   (interactive)
   (find-file user-init-file))
-
-(defun open-semantic-notes ()
-  "Open my notes file."
-  (interactive)
-  (find-file "~/txt/semantic.org"))
 
 (defun kill-all-buffers ()
   "Close all buffers."
@@ -694,6 +696,7 @@
 
 ;; (setq debug-on-error nil)
 
-(provide 'init)
-
 ;; goodbye, thanks for reading
+
+(provide 'init)
+;;; init.el ends here
