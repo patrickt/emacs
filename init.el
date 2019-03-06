@@ -42,10 +42,13 @@
   (package-initialize)
   (package-install 'use-package))
 
-(setq-default
+(setq-default use-package-enable-imenu-support t)
+
+(require 'use-package)
+
+(setq
  use-package-always-ensure t
- use-package-verbose t
- use-package-enable-imenu-support t)
+ use-package-verbose t)
 
 ;; Fullscreen by default, as early as possible.
 
@@ -360,6 +363,11 @@
   :bind (("C-c j" . dumb-jump-go-prompt))
   :config (setq dumb-jump-selector 'ivy))
 
+(use-package elec-pair
+  :config
+  (add-to-list 'electric-pair-pairs '(?` . ?`))  ; electric-quote backticks
+  (add-to-list 'electric-pair-pairs '(?“ . ?”))) ; and curlies
+
 ;; OCaml is loaded not through melpa, but through OPAM itself.
 
 (ignore-errors
@@ -476,6 +484,8 @@
     "Make sure the compile command is right."
     (setq-local compile-command "stack build --fast"))
 
+  (unbind-key "C-c C-s" haskell-mode-map)
+
   ;; I don't go overboard with the symbols but they can be nice.
   (setq haskell-font-lock-symbols 't
         haskell-font-lock-symbols-alist
@@ -569,9 +579,10 @@
 ;; been modified. We work around this with some defadvice over maybe-unset-buffer-modified. SO:
 ;; https://emacs.stackexchange.com/questions/24011/make-emacs-diff-files-before-asking-to-save
 
+(autoload 'diff-no-select "diff")
+
 (defun current-buffer-matches-file-p ()
   "Return t if the current buffer is identical to its associated file."
-  (autoload 'diff-no-select "diff")
   (when buffer-file-name
     (diff-no-select buffer-file-name (current-buffer) nil 'noasync)
     (with-current-buffer "*Diff*"
@@ -589,7 +600,7 @@
 ;; Don't prompt to save unmodified buffers on exit.
 (advice-add 'save-buffers-kill-emacs :before #'maybe-unset-buffer-modified)
 
-(defun kill-buffer-with-prejudice ()
+(defun kill-buffer-with-prejudice (&optional _)
   "Kill a buffer, eliding the save dialogue if there are no diffs."
   (interactive)
   (when (current-buffer-matches-file-p) (set-buffer-modified-p nil))
@@ -682,11 +693,8 @@
 (setq-default
   cursor-type 'bar
   indent-tabs-mode nil
-  cursor-in-non-selected-windows nil
-  )
+  cursor-in-non-selected-windows nil)
 
-(add-to-list 'electric-pair-pairs '(?` . ?`)) ; electric-quote backticks
-(add-to-list 'electric-pair-pairs '(?“ . ?”)) ; and curlies
 
 (set-fill-column 85)
 
