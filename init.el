@@ -57,7 +57,7 @@
 ;; Use Fira Code, my favorite monospaced/ligatured font, handling its absence gracefully.
 
 (ignore-errors
-  (set-frame-font "Fira Code Retina-14"))
+  (set-frame-font "Iosevka-14"))
 
 ;; Any Customize-based settings should live in custom.el, not here.
 
@@ -290,7 +290,6 @@
 ;; a buffer, you'll always be able to get it back. That is crucial.
 
 (use-package undo-tree
-  :disabled
   :bind (("C-c _" . undo-tree-visualize))
   :config
   (global-undo-tree-mode +1)
@@ -301,6 +300,7 @@
 ;; undo tree is prone to losing data.
 
 (use-package undo-propose
+  :disabled
   :bind (("C-c _" . undo-propose)
          :map undo-propose-mode-map
          ("<up>" . undo-only)))
@@ -482,7 +482,8 @@
 
   (defun my-haskell-mode-hook ()
     "Make sure the compile command is right."
-    (setq-local compile-command "stack build --fast"))
+    (setq-local compile-command "stack build --fast")
+    (add-pragmatapro-prettify-symbols-alist))
 
   (unbind-key "C-c C-s" haskell-mode-map)
 
@@ -490,9 +491,16 @@
   (setq haskell-font-lock-symbols 't
         haskell-font-lock-symbols-alist
         '(("\\" . "λ")
-          ("/=" . "≠")
-          ("undefined" . "⊥") ;; Wish this didn't change the height of the line.
-          ("." "◦" haskell-font-lock-dot-is-not-composition)
+          ("<=" . "≤")
+          (">=" . "≥")
+          ("==" . "≡")
+          ("<>" . "♢")
+          ("/=" . "≢")
+          ("::" . "∷")
+          ("<+>" . "⍚")
+          ("undefined" . "⊥")
+          ("forall" . "∀")
+          ("." "∘" haskell-font-lock-dot-is-not-composition) ; or '◦'
           ))
 
   ;; Unfortunately haskell-mode doesn't quite track the latest and
@@ -505,6 +513,7 @@
   (append-to-list haskell-font-lock-keywords '("capi" "via" "stock" "anyclass"))
 
   :mode ("\\.hs$" . haskell-mode)
+  :hook (haskell-mode . my-haskell-mode-hook)
 
   :bind (:map haskell-mode-map
          ("C-c a c" . haskell-cabal-visit-file)
@@ -593,9 +602,8 @@
   (interactive)
   (dolist (buf (buffer-list))
     (with-current-buffer buf
-      (when (and buffer-file-name (buffer-modified-p))
-        (when (current-buffer-matches-file-p)
-          (set-buffer-modified-p nil))))))
+      (when (and buffer-file-name (buffer-modified-p) (current-buffer-matches-file-p))
+        (set-buffer-modified-p nil)))))
 
 ;; Don't prompt to save unmodified buffers on exit.
 (advice-add 'save-buffers-kill-emacs :before #'maybe-unset-buffer-modified)
@@ -660,7 +668,7 @@
 ;; Make sure that ligatures from fonts that offer them are enabled.
 ;; This isn't present on GNU Emacs and requires a tremendous amount
 ;; of munging of 'prettify-symbols-alist'.
-(ignore-errors (mac-auto-operator-composition-mode))
+;; (ignore-errors (mac-auto-operator-composition-mode))
 
 (setq
   compilation-always-kill t              ; Never prompt to kill a compilation session.
