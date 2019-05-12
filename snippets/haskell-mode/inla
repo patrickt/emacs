@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: INLINEABLE
+# key: inla
+# --
+{-# INLINEABLE $1 #-}

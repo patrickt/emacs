@@ -3,6 +3,9 @@
 ;;; Commentary:
 ;; This file is in the public domain.
 ;;
+;; If you want to give this file a try, you can just drop it into
+;; ~/.emacs.d: it downloads everything it needs.
+;;
 ;; A general note on keybindings: the custom keybindings applicable to
 ;; all major modes appear with the C-c prefix, as is standard.
 ;; Per-language commands appear with the C-c a prefix. The most
@@ -13,8 +16,8 @@
 
 ;; To start, we temporarily disable GC limits.
 
-(defvar old-cons-threshold gc-cons-threshold)
-(setq gc-cons-threshold (eval-when-compile (* 1024 1024 100)))
+(setq gc-cons-threshold 32000000     ;; 32 MB
+      garbage-collection-messages t) ;; indicator of thrashing
 
 ;; Bump up the recursion limit.
 (setq max-lisp-eval-depth 2000)
@@ -54,7 +57,6 @@
 
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
-;; Use Fira Code, my favorite monospaced/ligatured font, handling its absence gracefully.
 
 (ignore-errors
   (set-frame-font "Iosevka-14"))
@@ -88,13 +90,13 @@
 
 (use-package doom-themes
   :config
-  (load-theme 'doom-opera)
+  (load-theme 'doom-tomorrow-night)
   (doom-themes-visual-bell-config)
   (doom-themes-org-config)
 
   ;; Docstrings should be a bit lighter, since they're important.
   (custom-theme-set-faces
-  'doom-opera
+  'doom-tomorrow-night
   '(font-lock-doc-face ((t (:foreground "#D8D2C1"))))))
 
 ;; Ensure that items in the PATH are made available to Emacs. This should
@@ -116,6 +118,7 @@
   :ensure t
   :init
   (ivy-mode 1)
+  (unbind-key "S-SPC" ivy-minibuffer-map)
   (setq ivy-height 30
         ivy-use-virtual-buffers t
         ivy-use-selectable-prompt t)
@@ -146,6 +149,8 @@
   (exec-path-from-shell-initialize))
 
 (use-package fish-mode)
+
+(use-package gnu-elpa-keyring-update)
 
 ;; Counsel applies Ivy-like behavior to other builtin features of
 ;; emacs, e.g. search.
@@ -205,7 +210,8 @@
 
 ;; Elm stuff.
 
-(use-package elm-mode)
+(use-package elm-mode
+  :disabled)
 
 ;; Company is the best Emacs completion system.
 
@@ -320,7 +326,22 @@
   :mode ("\\.md$" . gfm-mode)
   :config
   (when (executable-find "pandoc")
-    (setq markdown-command "pandoc -f markdown -t html")))
+    (setq markdown-command "pandoc -f markdown -t html"))
+
+  (defun link-to-hackage (start end)
+    "Make a Hackage link from selected text."
+    (interactive "r")
+    (letrec
+        ((selected  (buffer-substring start end))
+         (url       "[%s](https://hackage.haskell.org/package/%s)")
+         (formatted (format url selected selected)))
+
+
+      )
+
+    ())
+
+  )
 
 ;; Avy is better than ace-jump.
 (use-package avy
@@ -349,6 +370,7 @@
   (setq guide-key/guide-key-sequence '("C-x v" ;; version control
                                        "C-c a" ;; my mode-specific bindings
                                        "C-c l" ;; line-jumping
+                                       "C-c o"
                                        )))
 
 ;; Since the in-emacs Dash browser doesn't work on OS X, we have to settle for dash-at-point.
@@ -406,6 +428,7 @@
          ("C-c o s"  . org-store-link)
          ("C-c o a"  . org-agenda)
          :map org-mode-map
+         ("M-s-<return>" . org-insert-todo-heading)
          ("M--"      . em-dash)
          ("M-;"      . ellipsis)
          ("C-c c"    . org-mode-insert-code)
@@ -466,6 +489,13 @@
   :config
   (ignore-errors (load-private-settings)))
 
+(use-package go-mode
+  :init
+  (defun my-go-mode-hook ()
+    (add-hook 'before-save-hook #'gofmt-before-save))
+
+  :hook (go-mode . my-go-mode-hook))
+
 ;; Flycheck mode is usually useful.
 (use-package flycheck
   :hook (org-mode . flycheck-mode)
@@ -482,8 +512,7 @@
 
   (defun my-haskell-mode-hook ()
     "Make sure the compile command is right."
-    (setq-local compile-command "stack build --fast")
-    (add-pragmatapro-prettify-symbols-alist))
+    (setq-local compile-command "stack build --fast"))
 
   (unbind-key "C-c C-s" haskell-mode-map)
 
@@ -496,7 +525,8 @@
           ("==" . "≡")
           ("<>" . "♢")
           ("/=" . "≢")
-          ("::" . "∷")
+          ("*"  . "★")
+;;          ("::" . "∷")
           ("<+>" . "⍚")
           ("undefined" . "⊥")
           ("forall" . "∀")
@@ -512,6 +542,22 @@
 
   (append-to-list haskell-font-lock-keywords '("capi" "via" "stock" "anyclass"))
 
+  (append-to-list haskell-language-extensions
+      '("-XDataKinds"
+        "-XDeriveFoldable"
+        "-XDeriveFunctor"
+        "-XDeriveGeneric"
+        "-XDeriveTraversable"
+        "-XFlexibleContexts"
+        "-XFlexibleInstances"
+        "-XMonadFailDesugaring"
+        "-XMultiParamTypeClasses"
+        "-XOverloadedStrings"
+        "-XRecordWildCards"
+        "-XStandaloneDeriving"
+        "-XStrictData"
+        "-XTypeApplications"))
+
   :mode ("\\.hs$" . haskell-mode)
   :hook (haskell-mode . my-haskell-mode-hook)
 
@@ -525,6 +571,7 @@
 ;; but for sandboxes and small projects it's the best thing out there
 ;; (though I need to try dante-mode, or so joshvera tells me).
 (use-package intero
+  :after haskell-mode
   :bind (:map haskell-mode-map
          ("C-c a r" . intero-repl)
          ("C-c a j" . intero-goto-definition)
@@ -538,7 +585,7 @@
   :disabled
   :bind (("C-c C-v" . idris-case-split)))
 
-(use-package typescript-mode)
+(use-package typescript-mode :defer)
 
 (use-package protobuf-mode)
 
@@ -628,6 +675,7 @@
 (bind-key "C-c x"      'ESC-prefix)
 (bind-key "C-,"        'other-window)
 (bind-key "M-,"        'other-window)
+(bind-key "M-i"        'delete-indentation)
 
 ;; When tracking down slowness, opening ivy to start these functions
 ;; throws off the traces.
@@ -656,6 +704,11 @@
 (unbind-key "C-z")     ;; I never want to suspend the frame
 (unbind-key "C-<tab>") ;; prevent switching to tab mode randomly
 (unbind-key "C-h n")   ;; I have never wanted to see emacs news ever
+(unbind-key "C-h C-n") ;; why on earth is it bound to two keybindings??
+(unbind-key "C-x C-d") ;; list-directory is utterly useless given the existence of dired
+(unbind-key "M-o")     ;; facemenu mode is useless
+(unbind-key "C-x C-r") ;; as is find-file-read-only
+
 
 ;; I'm not made of time, I can't type "yes" for every choice
 (defalias 'yes-or-no-p 'y-or-n-p)
@@ -674,8 +727,9 @@
   compilation-always-kill t              ; Never prompt to kill a compilation session.
   compilation-scroll-output 'first-error ; Always scroll to the bottom.
   make-backup-files nil                  ; No backups, thanks.
+  auto-save-default nil                  ; Or autosaves. What's the difference between autosaves and backups?
   create-lockfiles nil                   ; Emacs sure loves to put lockfiles everywhere.
-  default-directory "~/src"              ; My code lives here.
+  default-directory "~/src/"             ; My code lives here.
   inhibit-startup-screen t               ; No need to see GNU agitprop.
   kill-whole-line t                      ; Lets C-k delete the whole line
   mac-command-modifier 'super            ; I'm not sure this is the right toggle, but whatever.
@@ -704,7 +758,7 @@
   cursor-in-non-selected-windows nil)
 
 
-(set-fill-column 85)
+(set-fill-column 95)
 
 ;; Always trim trailing whitespace.
 
