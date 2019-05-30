@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: ghcexts
+# key: ghcexts
+# --
+{-# LANGUAGE DeriveAnyClass, DeriveFunctor, DerivingVia, FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving, KindSignatures, MultiParamTypeClasses, TypeApplications, TypeOperators, UndecidableInstances #-}
