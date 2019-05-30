@@ -45,6 +45,7 @@
   (package-initialize)
   (package-install 'use-package))
 
+;; Allow navigation between use-package stanzas with iMenu.
 (setq-default use-package-enable-imenu-support t)
 
 (require 'use-package)
@@ -57,6 +58,9 @@
 
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
+;; UTF-8 everywhere, please.
+
+(prefer-coding-system 'utf-8)
 
 (ignore-errors
   (set-frame-font "Iosevka-14"))
@@ -326,22 +330,7 @@
   :mode ("\\.md$" . gfm-mode)
   :config
   (when (executable-find "pandoc")
-    (setq markdown-command "pandoc -f markdown -t html"))
-
-  (defun link-to-hackage (start end)
-    "Make a Hackage link from selected text."
-    (interactive "r")
-    (letrec
-        ((selected  (buffer-substring start end))
-         (url       "[%s](https://hackage.haskell.org/package/%s)")
-         (formatted (format url selected selected)))
-
-
-      )
-
-    ())
-
-  )
+    (setq markdown-command "pandoc -f markdown -t html")))
 
 ;; Avy is better than ace-jump.
 (use-package avy
@@ -500,6 +489,23 @@
 (use-package flycheck
   :hook (org-mode . flycheck-mode)
   :config
+  (setq-default flycheck-ghc-args
+                '( "-XDataKinds"
+                   "-XDeriveFoldable"
+                   "-XDeriveFunctor"
+                   "-XDeriveGeneric"
+                   "-XDeriveTraversable"
+                   "-XFlexibleContexts"
+                   "-XFlexibleInstances"
+                   "-XMonadFailDesugaring"
+                   "-XMultiParamTypeClasses"
+                   "-XOverloadedStrings"
+                   "-XRecordWildCards"
+                   "-XStandaloneDeriving"
+                   "-XTypeApplications"
+                 ))
+
+
   (global-flycheck-mode)
   (add-to-list 'flycheck-checkers 'proselint))
 
@@ -526,6 +532,7 @@
           ("<>" . "♢")
           ("/=" . "≢")
           ("*"  . "★")
+          ("<=<" . "<=<")
 ;;          ("::" . "∷")
           ("<+>" . "⍚")
           ("undefined" . "⊥")
@@ -565,6 +572,7 @@
          ("C-c a c" . haskell-cabal-visit-file)
 	 ("C-c a b" . haskell-mode-stylish-buffer)
          ("C-c a i" . haskell-navigate-imports)
+         ("C-c a a" . haskell-mode-toggle-scc-at-point)
          ("C-c a w" . stack-watch)))
 
 ;; Intero… well, it sort-of works. It generally chokes on large projects,
@@ -588,6 +596,10 @@
 (use-package typescript-mode :defer)
 
 (use-package protobuf-mode)
+
+(use-package dtrace-script-mode)
+
+(use-package rust-mode)
 
 (defun my-elisp-mode-hook ()
   "My elisp customizations."
@@ -639,7 +651,7 @@
 
 (defun current-buffer-matches-file-p ()
   "Return t if the current buffer is identical to its associated file."
-  (when buffer-file-name
+  (when (and buffer-file-name (buffer-modified-p))
     (diff-no-select buffer-file-name (current-buffer) nil 'noasync)
     (with-current-buffer "*Diff*"
       (and (search-forward-regexp "^Diff finished \(no differences\)\." (point-max) 'noerror) t))))
@@ -717,6 +729,7 @@
 (show-paren-mode t)                  ; And point out matching parentheses.
 (delete-selection-mode t)            ; Behave like any other sensible text editor would.
 (global-display-line-numbers-mode)   ; Emacs has this builtin now, it's fast
+(save-place-mode)                    ; Remember where I was
 
 ;; Make sure that ligatures from fonts that offer them are enabled.
 ;; This isn't present on GNU Emacs and requires a tremendous amount
@@ -746,6 +759,7 @@
   mac-mouse-wheel-smooth-scroll nil      ; no smooth scrolling
   mac-drawing-use-gcd t                  ; and you can do it on other frames
   mark-even-if-inactive nil              ; prevent really unintuitive undo behavior
+  user-full-name "Patrick Thomson"       ; it me
   )
 
 ;; dired whines at you on macOS unless you do this.
