@@ -4,17 +4,22 @@
 ;; This file is in the public domain.
 ;;
 ;; If you want to give this file a try, you can just drop it into
-;; ~/.emacs.d: it downloads everything it needs.
+;; ~/.emacs.d: it downloads everything it needs. It is also relatively
+;; fast to start up (once it's downloaded all the required packages),
+;; as it endeavours to load packages lazily when possible.
 ;;
 ;; A general note on keybindings: the custom keybindings applicable to
 ;; all major modes appear with the C-c prefix, as is standard.
 ;; Per-language commands appear with the C-c a prefix. The most
 ;; important keybinding, C-;, provides counsel-M-x, which lets you
-;; fuzzy-find through the space of available functions.
+;; fuzzy-find through the space of available functions. Exploring
+;; counsel-M-x is the best way to become familiar with the space of
+;; extensible functions, which is a sine qua non for being comfortable
+;; with Emacs.
 
 ;;; Code:
 
-;; To start, we temporarily disable GC limits.
+;; To start, we adjust the garbage collection param
 
 (setq gc-cons-threshold 32000000     ;; 32 MB
       garbage-collection-messages t) ;; indicator of thrashing
@@ -42,7 +47,6 @@
 
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
-  (package-initialize)
   (package-install 'use-package))
 
 ;; Allow navigation between use-package stanzas with iMenu.
@@ -146,6 +150,8 @@
   :init
   (ivy-rich-mode))
 
+(use-package ivy-hydra)
+
 ;; Slurp environment variables from the shell.
 
 (use-package exec-path-from-shell
@@ -164,16 +170,9 @@
   :after ivy
   :init
   (counsel-mode 1)
-  (defun counsel-rg-at-point ()
-    (interactive)
-    (let ((selection (thing-at-point 'word)))
-      (if (<= 4 (length selection))
-          (counsel-rg selection)
-        (counsel-rg))))
+
   :bind (("C-c ;" . counsel-M-x)
          ("C-c U" . counsel-unicode-char)
-         ("C-c h" . counsel-rg)
-         ("C-c H" . counsel-rg-at-point)
          ("C-c i" . counsel-imenu)
          ("C-x f" . counsel-find-file)
          ("C-c y" . counsel-yank-pop)
@@ -181,6 +180,11 @@
          :map ivy-minibuffer-map
          ("C-r" . counsel-minibuffer-history))
   :diminish)
+
+;; Deadgrep is amazing.
+
+(use-package deadgrep
+  :bind (("C-c h" . deadgrep)))
 
 ;; projectile comes with Emacs these days, but we want to enable
 ;; caching, since I work on big projects.
@@ -247,6 +251,9 @@
   :bind (("C-c g" . magit-status))
   :diminish magit-auto-revert-mode
   :diminish auto-revert-mode
+  :custom
+  (magit-remote-set-if-missing t)
+  (magit-diff-refine-hunk t)
   :config
   (magit-auto-revert-mode t)
 
@@ -256,8 +263,7 @@
   (advice-add 'magit-refresh :before #'maybe-unset-buffer-modified)
   (advice-add 'magit-commit  :before #'maybe-unset-buffer-modified)
   (setq magit-completing-read-function 'ivy-completing-read)
-  (add-to-list 'magit-no-confirm 'stage-all-changes)
-  (setq-default magit-last-seen-setup-instructions "1.4.0"))
+  (add-to-list 'magit-no-confirm 'stage-all-changes))
 
 ;; Unclear whether this does anything at the moment.
 
@@ -579,6 +585,7 @@
 ;; but for sandboxes and small projects it's the best thing out there
 ;; (though I need to try dante-mode, or so joshvera tells me).
 (use-package intero
+  :disabled
   :after haskell-mode
   :bind (:map haskell-mode-map
          ("C-c a r" . intero-repl)
@@ -587,6 +594,17 @@
          ("C-c a t" . intero-type-at)
          ("C-c a u" . intero-uses-at)
          ("C-c a s" . intero-apply-suggestions)))
+
+(use-package attrap
+  :bind (("C-c q" . attrap-attrap)))
+
+(use-package dante
+  :after haskell-mode
+  :bind (:map haskell-mode-map
+              ("C-c a t" . dante-type-at)
+              ("C-c a n" . dante-info)
+              ("C-c a s" . attrap-attrap)
+              ))
 
 ;; Someday I'm going to start using Idris again.
 (use-package idris-mode
