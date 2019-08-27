@@ -19,7 +19,8 @@
 
 ;;; Code:
 
-;; To start, we adjust the garbage collection param
+;; To start, we adjust the garbage collection parameter up from a
+;; measly 8 MB. We don't set it too high, though, lest GCs never happen.
 
 (setq gc-cons-threshold 32000000     ;; 32 MB
       garbage-collection-messages t) ;; indicator of thrashing
@@ -49,8 +50,9 @@
   (package-refresh-contents)
   (package-install 'use-package))
 
-;; Allow navigation between use-package stanzas with iMenu.
-(setq-default use-package-enable-imenu-support t)
+;; Allow navigation between use-package stanzas with imenu.
+;; This has to be set before loading use-package.
+(defvar use-package-enable-imenu-support t)
 
 (require 'use-package)
 
@@ -89,12 +91,17 @@
 
 ;; Haven't figured out how to diminish eldoc-mode outside of
 ;; requiring this explicitly and doing it manually.
+
 (use-package diminish
-  :ensure t)
+  :ensure t
+  :config
+  (diminish 'eldoc-mode))
 
-(diminish 'eldoc-mode)
+;; Ensure GNU ELPA has the GPG keys it needs
 
-;; The Doom Emacs themes look really good. I use opera.
+(use-package gnu-elpa-keyring-update)
+
+;; The Doom Emacs themes look really good.
 
 (use-package doom-themes
   :config
@@ -150,17 +157,21 @@
   :init
   (ivy-rich-mode))
 
+;; Provides visual interface to hydra layouts. I don't really
+;; use hydras anywhere yet but some packages do.
+
 (use-package ivy-hydra)
 
 ;; Slurp environment variables from the shell.
+;; a.k.a. The Most Asked Question On r/emacs
 
 (use-package exec-path-from-shell
   :config
   (exec-path-from-shell-initialize))
 
-(use-package fish-mode)
+;; fish is a good shell. You should try it.
 
-(use-package gnu-elpa-keyring-update)
+(use-package fish-mode)
 
 ;; Counsel applies Ivy-like behavior to other builtin features of
 ;; emacs, e.g. search.
@@ -302,8 +313,9 @@
 (use-package haskell-snippets
   :defer yasnippet)
 
-;; The beauty of undo-tree is that it means that, once you've typed something into
-;; a buffer, you'll always be able to get it back. That is crucial.
+;; The beauty of undo-tree is that it means that, once you've typed something into a buffer,
+;; you'll always be able to get it back. At least in theory. undo-tree has long-standing data
+;; loss bugs that are unlikely to be fixed. But no other package provodes a comparable experience.
 
 (use-package undo-tree
   :bind (("C-c _" . undo-tree-visualize))
@@ -312,23 +324,9 @@
   (unbind-key "M-_" undo-tree-map)
   :diminish)
 
-;; Trying undo-propose, which seems to offer a better experience, as
-;; undo tree is prone to losing data.
-
-(use-package undo-propose
-  :disabled
-  :bind (("C-c _" . undo-propose)
-         :map undo-propose-mode-map
-         ("<up>" . undo-only)))
-
-;; (use-package ansi-color
-;;   :config
-;;   (add-hook 'shell-mode-hook 'ansi-color-for-comint-mode-on))
-
 ;; C stuff.
 
-(use-package cc-mode
-  :disabled)
+(use-package cc-mode)
 
 ;; I do all of my writing in either org-mode or markdown-mode.
 
@@ -365,7 +363,7 @@
   (setq guide-key/guide-key-sequence '("C-x v" ;; version control
                                        "C-c a" ;; my mode-specific bindings
                                        "C-c l" ;; line-jumping
-                                       "C-c o"
+                                       "C-c o" ;; org-mode
                                        )))
 
 ;; Since the in-emacs Dash browser doesn't work on OS X, we have to settle for dash-at-point.
@@ -376,7 +374,6 @@
 ;; Need to remember to use this more, though I have my issues with the UI.
 
 (use-package dumb-jump
-  :disabled
   :bind (("C-c j" . dumb-jump-go-prompt))
   :config (setq dumb-jump-selector 'ivy))
 
@@ -389,6 +386,8 @@
 
 (ignore-errors
   (autoload (expand-file-name "~/.opam/system/share/emacs/site-lisp/tuareg-site-file")))
+
+;; Some useful text-manipulation functions used later on in org-mode stuff.
 
 (defun em-dash ()
   "Insert an em-dash."
@@ -491,7 +490,8 @@
 
   :hook (go-mode . my-go-mode-hook))
 
-;; Flycheck mode is usually useful.
+;; Flycheck mode is usually useful, but I need to sit down
+;; and figure out what the story is with Haskell checking.
 (use-package flycheck
   :hook (org-mode . flycheck-mode)
   :config
@@ -662,10 +662,6 @@
   (newline)
   (indent-for-tab-command))
 
-;; There is an extant bug where magit-refresh prompts to save files that haven't
-;; been modified. We work around this with some defadvice over maybe-unset-buffer-modified. SO:
-;; https://emacs.stackexchange.com/questions/24011/make-emacs-diff-files-before-asking-to-save
-
 (autoload 'diff-no-select "diff")
 
 (defun current-buffer-matches-file-p ()
@@ -778,7 +774,6 @@
   mac-mouse-wheel-smooth-scroll nil      ; no smooth scrolling
   mac-drawing-use-gcd t                  ; and you can do it on other frames
   mark-even-if-inactive nil              ; prevent really unintuitive undo behavior
-  user-full-name "Patrick Thomson"       ; it me
   )
 
 ;; dired whines at you on macOS unless you do this.
@@ -790,7 +785,6 @@
   indent-tabs-mode nil
   cursor-in-non-selected-windows nil)
 
-
 (set-fill-column 95)
 
 ;; Always trim trailing whitespace.
@@ -800,6 +794,9 @@
 ;; (setq debug-on-error nil)
 
 ;; goodbye, thanks for reading
+
+(unless (stringp user-full-name)
+  (message "user-full-name is not set. Add it to custom.el for the best experience."))
 
 (provide 'init)
 ;;; init.el ends here
