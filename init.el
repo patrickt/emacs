@@ -513,7 +513,8 @@
 
 
   (global-flycheck-mode)
-  (add-to-list 'flycheck-checkers 'proselint))
+  (add-to-list 'flycheck-checkers 'proselint)
+  (add-to-list 'flycheck-disabled-checkers 'haskell-stack-ghc))
 
 ;; For Hammerspoon.
 (use-package lua-mode)
