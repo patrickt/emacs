@@ -582,26 +582,15 @@
          ("C-c a a" . haskell-mode-toggle-scc-at-point)
          ("C-c a w" . stack-watch)))
 
-;; Intero… well, it sort-of works. It generally chokes on large projects,
-;; but for sandboxes and small projects it's the best thing out there
-;; (though I need to try dante-mode, or so joshvera tells me).
-(use-package intero
-  :disabled
-  :after haskell-mode
-  :bind (:map haskell-mode-map
-         ("C-c a r" . intero-repl)
-         ("C-c a j" . intero-goto-definition)
-         ("C-c a n" . intero-info)
-         ("C-c a t" . intero-type-at)
-         ("C-c a u" . intero-uses-at)
-         ("C-c a s" . intero-apply-suggestions)))
-
 (use-package attrap
   :bind (("C-c q" . attrap-attrap)))
 
 (use-package dante
   :after haskell-mode
-  :bind (:map haskell-mode-map
+  :hook (haskell-mode . dante-mode)
+  :bind (:map dante-mode-map
+              ("C-c /" . comment-dwim)
+         :map haskell-mode-map
               ("C-c a t" . dante-type-at)
               ("C-c a n" . dante-info)
               ("C-c a s" . attrap-attrap)
@@ -698,11 +687,11 @@
 (bind-key "C-c \\"     'align-regexp)
 (bind-key "C-c m"      'compile)
 (bind-key "C-c 3"      'split-right-and-enter)
-(bind-key "C-c /"      'comment-or-uncomment-region)
 (bind-key "C-c x"      'ESC-prefix)
 (bind-key "C-,"        'other-window)
 (bind-key "M-,"        'other-window)
 (bind-key "M-i"        'delete-indentation)
+(bind-key "C-c /"      'comment-dwim)
 
 ;; When tracking down slowness, opening ivy to start these functions
 ;; throws off the traces.
@@ -749,7 +738,7 @@
 ;; Make sure that ligatures from fonts that offer them are enabled.
 ;; This isn't present on GNU Emacs and requires a tremendous amount
 ;; of munging of 'prettify-symbols-alist'.
-;; (ignore-errors (mac-auto-operator-composition-mode))
+(ignore-errors (mac-auto-operator-composition-mode))
 
 (setq
   compilation-always-kill t              ; Never prompt to kill a compilation session.
@@ -791,12 +780,12 @@
 
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
-;; (setq debug-on-error nil)
-
-;; goodbye, thanks for reading
+;; I moved this into custom.el because it can screw up other people's git commits.
 
 (unless (stringp user-full-name)
   (message "user-full-name is not set. Add it to custom.el for the best experience."))
+
+;; goodbye, thanks for reading
 
 (provide 'init)
 ;;; init.el ends here
