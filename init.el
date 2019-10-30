@@ -201,7 +201,8 @@
 ;; caching, since I work on big projects.
 
 (use-package projectile
-  :bind (("C-c f" . projectile-find-file))
+  :bind (("C-c f" . projectile-find-file)
+         ("C-c F" . projectile-switch-project))
   :config
   (setq projectile-enable-caching t
         projectile-completion-system 'ivy)
@@ -265,6 +266,7 @@
   :custom
   (magit-remote-set-if-missing t)
   (magit-diff-refine-hunk t)
+  (magit-branch-prefer-remote-upstream)
   :config
   (magit-auto-revert-mode t)
 
