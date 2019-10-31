@@ -228,6 +228,9 @@
   :config
   (keychain-refresh-environment))
 
+;; Emacs makes it weirdly hard to edit a file as root. This helps.
+(use-package sudo-edit)
+
 ;; Elm stuff.
 
 (use-package elm-mode
