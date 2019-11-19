@@ -116,9 +116,6 @@
      '(font-lock-doc-face ((t (:foreground "#D8D2C1")))))))
 
 
-;; Ensure that items in the PATH are made available to Emacs. This should
-;; probably just come with the main distribution.
-
 ;; Recentf comes with Emacs but it should always be enabled.
 
 (use-package recentf
@@ -203,19 +200,18 @@
 ;; caching, since I work on big projects.
 
 (use-package projectile
+  :diminish
   :bind (("C-c f" . projectile-find-file)
          ("C-c F" . projectile-switch-project))
-  :config
-  (setq projectile-enable-caching t
-        projectile-completion-system 'ivy)
-  :diminish)
+  :custom
+  (projectile-enable-caching t)
+  (projectile-completion-system 'ivy))
 
 ;; Counsel and projectile should work together.
 
 (use-package counsel-projectile
   :bind (("C-c f" . counsel-projectile))
-  :init
-  (counsel-projectile-mode))
+  :init (counsel-projectile-mode))
 
 ;; Sort commands by recency in ivy windows.
 
@@ -296,12 +292,6 @@
   (yas-global-mode 1)
   (setq yas-prompt-functions '(yas-completing-prompt))
   :diminish yas-minor-mode)
-
-;; I usually don't edit very large files, but saveplace is nice on the occasions I do.
-
-(use-package saveplace
-  :disabled
-  :config (setq-default save-place t))
 
 ;; Haskell and Elisp are made a lot easier when delimiters are nicely color-coded.
 
