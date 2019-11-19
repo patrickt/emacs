@@ -528,24 +528,16 @@
 (use-package haskell-mode
   :config
 
-  (defun my-haskell-mode-hook ()
-    "Make sure the compile command is right."
-    (setq-local compile-command "stack build --fast"))
-
   (unbind-key "C-c C-s" haskell-mode-map)
 
-  ;; I don't go overboard with the symbols but they can be nice.
-  (setq haskell-font-lock-symbols 't
+  (setq haskell-stylish-on-save 't
+        haskell-font-lock-symbols 't
         haskell-font-lock-symbols-alist
         '(("\\" . "λ")
-          ("<=" . "≤")
-          (">=" . "≥")
           ("==" . "≡")
           ("<>" . "♢")
           ("/=" . "≢")
           ("*"  . "★")
-          ("<=<" . "<=<")
-;;          ("::" . "∷")
           ("<+>" . "⍚")
           ("undefined" . "⊥")
           ("forall" . "∀")
