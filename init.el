@@ -105,14 +105,16 @@
 
 (use-package doom-themes
   :config
-  (load-theme 'doom-tomorrow-night)
-  (doom-themes-visual-bell-config)
-  (doom-themes-org-config)
+  (let ((chosen-theme 'doom-tomorrow-night))
+    (load-theme chosen-theme)
+    (doom-themes-visual-bell-config)
+    (doom-themes-org-config)
 
-  ;; Docstrings should be a bit lighter, since they're important.
-  (custom-theme-set-faces
-  'doom-tomorrow-night
-  '(font-lock-doc-face ((t (:foreground "#D8D2C1"))))))
+    ;; Docstrings should be a bit lighter, since they're important.
+    (custom-theme-set-faces
+     chosen-theme
+     '(font-lock-doc-face ((t (:foreground "#D8D2C1")))))))
+
 
 ;; Ensure that items in the PATH are made available to Emacs. This should
 ;; probably just come with the main distribution.
