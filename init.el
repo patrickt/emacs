@@ -610,6 +610,8 @@
 
 (use-package protobuf-mode)
 
+(use-package dockerfile-mode)
+
 (use-package dtrace-script-mode)
 
 (use-package rust-mode)
