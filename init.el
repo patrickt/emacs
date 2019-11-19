@@ -770,6 +770,7 @@
   mac-mouse-wheel-smooth-scroll nil      ; no smooth scrolling
   mac-drawing-use-gcd t                  ; and you can do it on other frames
   mark-even-if-inactive nil              ; prevent really unintuitive undo behavior
+  auto-window-vscroll nil                ; may be connected to speed
   )
 
 ;; dired whines at you on macOS unless you do this.
