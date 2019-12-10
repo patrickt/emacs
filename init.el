@@ -596,6 +596,8 @@
 
 (use-package dockerfile-mode)
 
+(use-package web-mode
+  :mode ("\\.html$" . web-mode))
 (use-package dtrace-script-mode)
 
 (use-package rust-mode)
@@ -667,6 +669,11 @@
   (interactive)
   (when (current-buffer-matches-file-p) (set-buffer-modified-p nil))
   (kill-buffer))
+
+(defun insert-current-date ()
+  "Insert the date into the current buffer."
+  (interactive)
+  (insert (format-time-string "%Y-%m-%d")))
 
 (bind-key "C-x k"      'kill-buffer-with-prejudice)
 (bind-key "C-c e"      'open-init-file)
