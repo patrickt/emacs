@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: inline haskell code
+# binding: C-c a i
+# --
+src_haskell{$1}
