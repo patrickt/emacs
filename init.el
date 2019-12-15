@@ -686,6 +686,7 @@
 (bind-key "C-c m"      'compile)
 (bind-key "C-c 3"      'split-right-and-enter)
 (bind-key "C-c x"      'ESC-prefix)
+(bind-key "C-c ,"      'other-window)
 (bind-key "C-,"        'other-window)
 (bind-key "M-,"        'other-window)
 (bind-key "M-i"        'delete-indentation)
