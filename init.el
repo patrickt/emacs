@@ -470,6 +470,12 @@
 ;; Autocomplete for org tags.
 (use-package org-ac :after org)
 
+;; vterm is good.
+(use-package vterm)
+
+(use-package vterm-toggle
+  :bind (("C-c t" . vterm-toggle)))
+
 ;; Sometimes useful for putting the right piece of punctuation in there.
 (use-package typo)
 
