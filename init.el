@@ -58,7 +58,8 @@
 
 (setq
  use-package-always-ensure t
- use-package-verbose t)
+ use-package-verbose t
+ custom-safe-themes t)
 
 ;; Fullscreen by default, as early as possible.
 
@@ -105,7 +106,7 @@
 
 (use-package doom-themes
   :config
-  (let ((chosen-theme 'doom-tomorrow-night))
+  (let ((chosen-theme 'doom-wilmersdorf))
     (load-theme chosen-theme)
     (doom-themes-visual-bell-config)
     (doom-themes-org-config)
@@ -201,8 +202,7 @@
 
 (use-package projectile
   :diminish
-  :bind (("C-c f" . projectile-find-file)
-         ("C-c F" . projectile-switch-project))
+  :bind (("C-c F" . projectile-switch-project))
   :custom
   (projectile-enable-caching t)
   (projectile-completion-system 'ivy))
@@ -243,7 +243,6 @@
   (company-dabbrev-downcase nil "Don't downcase returned candidates.")
   (company-show-numbers t "Numbers are helpful.")
   (company-tooltip-limit 20 "The more the merrier.")
-  (company-abort-manual-when-too-short t "Be less enthusiastic about completion.")
   :config
   (global-company-mode)
 
@@ -262,6 +261,7 @@
 
 (use-package magit
   :bind (("C-c g" . magit-status))
+
   :diminish magit-auto-revert-mode
   :diminish auto-revert-mode
   :custom
@@ -282,7 +282,6 @@
 ;; Unclear whether this does anything at the moment.
 
 (use-package libgit
-  :disabled
   :after magit)
 
 ;; Since I grew up on Textmate, I'm more-or-less reliant on snippets.
@@ -296,7 +295,6 @@
 ;; Haskell and Elisp are made a lot easier when delimiters are nicely color-coded.
 
 (use-package rainbow-delimiters
-  :disabled
   :hook (prog-mode . rainbow-delimiters-mode))
 
 ;; multiple-cursors is better than cua-selection-mode.
@@ -325,6 +323,9 @@
 
 (use-package cc-mode)
 
+(use-package purescript-mode
+  :hook (purescript-mode . turn-on-purescript-indentation))
+
 ;; I do all of my writing in either org-mode or markdown-mode.
 
 (use-package markdown-mode
@@ -348,7 +349,12 @@
 ;; third-party package; it should be standard.
 
 (use-package duplicate-thing
-  :bind (("C-c u" . duplicate-thing)))
+  :config
+  (defun duplicate-thing-without-moving (N)
+    (interactive "P")
+    (save-mark-and-excursion (duplicate-thing N)))
+
+  :bind (("C-c u" . duplicate-thing-without-moving)))
 
 ;; I can never remember the hierarchies of certain bindings, like C-x v for version control
 ;; stuff. Guide-key helps there. (TODO: figure out other places it'll help.)
@@ -528,8 +534,8 @@
 
   (unbind-key "C-c C-s" haskell-mode-map)
 
-  (setq haskell-stylish-on-save 't
-        haskell-font-lock-symbols 't
+  (setq haskell-stylish-on-save t
+        haskell-font-lock-symbols t
         haskell-font-lock-symbols-alist
         '(("\\" . "λ")
           ("==" . "≡")
@@ -568,7 +574,6 @@
         "-XTypeApplications"))
 
   :mode ("\\.hs$" . haskell-mode)
-  :hook (haskell-mode . my-haskell-mode-hook)
 
   :bind (:map haskell-mode-map
          ("C-c a c" . haskell-cabal-visit-file)
@@ -604,6 +609,7 @@
 
 (use-package web-mode
   :mode ("\\.html$" . web-mode))
+
 (use-package dtrace-script-mode)
 
 (use-package rust-mode)
