@@ -106,7 +106,7 @@
 
 (use-package doom-themes
   :config
-  (let ((chosen-theme 'doom-wilmersdorf))
+  (let ((chosen-theme 'doom-challenger-deep))
     (load-theme chosen-theme)
     (doom-themes-visual-bell-config)
     (doom-themes-org-config)
@@ -116,6 +116,9 @@
      chosen-theme
      '(font-lock-doc-face ((t (:foreground "#D8D2C1")))))))
 
+(use-package aggressive-indent
+  :config (global-aggressive-indent-mode)
+  :diminish)
 
 ;; Recentf comes with Emacs but it should always be enabled.
 
@@ -151,9 +154,9 @@
 (use-package ivy-rich
   :after counsel
   :custom
-  (ivy-virtual-abbreviate 'full
-   ivy-rich-switch-buffer-align-virtual-buffer t
-   ivy-rich-path-style 'abbrev)
+  (ivy-virtual-abbreviate 'full)
+  (ivy-rich-switch-buffer-align-virtual-buffer t)
+  (ivy-rich-path-style 'abbrev)
   :init
   (ivy-rich-mode))
 
@@ -232,7 +235,7 @@
 ;; Elm stuff.
 
 (use-package elm-mode
-  :disabled)
+  :defer)
 
 ;; Company is the best Emacs completion system.
 
@@ -243,6 +246,7 @@
   (company-dabbrev-downcase nil "Don't downcase returned candidates.")
   (company-show-numbers t "Numbers are helpful.")
   (company-tooltip-limit 20 "The more the merrier.")
+  (company-idle-delay 0.1 "Faster!")
   :config
   (global-company-mode)
 
@@ -283,6 +287,9 @@
 
 (use-package libgit
   :after magit)
+
+(use-package magit-libgit
+  :after libgit)
 
 ;; Since I grew up on Textmate, I'm more-or-less reliant on snippets.
 
@@ -385,11 +392,6 @@
   (add-to-list 'electric-pair-pairs '(?` . ?`))  ; electric-quote backticks
   (add-to-list 'electric-pair-pairs '(?“ . ?”))) ; and curlies
 
-;; OCaml is loaded not through melpa, but through OPAM itself.
-
-(ignore-errors
-  (autoload (expand-file-name "~/.opam/system/share/emacs/site-lisp/tuareg-site-file")))
-
 ;; Some useful text-manipulation functions used later on in org-mode stuff.
 
 (defun em-dash ()
@@ -417,6 +419,9 @@
   :pin gnu
 
   :diminish org-indent-mode
+
+  :custom
+  (company-dabbrev-ignore-case . nil)
 
   ;; Global functions that drop me into org-mode-related modes
   ;; are prefixed under C-c o.
@@ -479,6 +484,9 @@
 ;; vterm is good.
 (use-package vterm)
 
+;; I forgot editors can do that
+(use-package iedit)
+
 (use-package vterm-toggle
   :bind (("C-c t" . vterm-toggle)))
 
@@ -503,6 +511,7 @@
 ;; and figure out what the story is with Haskell checking.
 (use-package flycheck
   :hook (org-mode . flycheck-mode)
+  :bind (("C-c `" . flycheck-next-error))
   :config
   (setq-default flycheck-ghc-args
                 '( "-XDataKinds"
@@ -518,7 +527,7 @@
                    "-XRecordWildCards"
                    "-XStandaloneDeriving"
                    "-XTypeApplications"
-                 ))
+                   ))
 
 
   (global-flycheck-mode)
@@ -533,6 +542,10 @@
   :config
 
   (unbind-key "C-c C-s" haskell-mode-map)
+
+  (defun toggle-haskell-stylish-on-save ()
+    (interactive)
+    (setq haskell-stylish-on-save (not haskell-stylish-on-save)))
 
   (setq haskell-stylish-on-save t
         haskell-font-lock-symbols t
@@ -558,39 +571,45 @@
   (append-to-list haskell-font-lock-keywords '("capi" "via" "stock" "anyclass"))
 
   (append-to-list haskell-language-extensions
-      '("-XDataKinds"
-        "-XDeriveFoldable"
-        "-XDeriveFunctor"
-        "-XDeriveGeneric"
-        "-XDeriveTraversable"
-        "-XFlexibleContexts"
-        "-XFlexibleInstances"
-        "-XMonadFailDesugaring"
-        "-XMultiParamTypeClasses"
-        "-XOverloadedStrings"
-        "-XRecordWildCards"
-        "-XStandaloneDeriving"
-        "-XStrictData"
-        "-XTypeApplications"))
+                  '("-XDataKinds"
+                    "-XDeriveFoldable"
+                    "-XDeriveFunctor"
+                    "-XDeriveGeneric"
+                    "-XDeriveTraversable"
+                    "-XFlexibleContexts"
+                    "-XFlexibleInstances"
+                    "-XMonadFailDesugaring"
+                    "-XMultiParamTypeClasses"
+                    "-XOverloadedStrings"
+                    "-XRecordWildCards"
+                    "-XStandaloneDeriving"
+                    "-XStrictData"
+                    "-XTypeApplications"))
 
   :mode ("\\.hs$" . haskell-mode)
 
   :bind (:map haskell-mode-map
-         ("C-c a c" . haskell-cabal-visit-file)
-	 ("C-c a b" . haskell-mode-stylish-buffer)
-         ("C-c a i" . haskell-navigate-imports)
-         ("C-c a a" . haskell-mode-toggle-scc-at-point)
-         ("C-c a w" . stack-watch)))
+              ("C-c a c" . haskell-cabal-visit-file)
+              ("C-c a b" . haskell-mode-stylish-buffer)
+              ("C-c a i" . haskell-navigate-imports)
+              ("C-c a a" . haskell-mode-toggle-scc-at-point)
+              ("C-c a w" . stack-watch)))
 
 (use-package attrap
-  :bind (("C-c q" . attrap-attrap)))
+  :bind (("C-c q" . attrap-attrap))
+  :custom
+  (add-to-list 'attrap-haskell-extensions "DerivingStrategies"))
 
 (use-package dante
-  :after haskell-mode
   :hook (haskell-mode . dante-mode)
+  :after haskell-mode
+  :custom
+  (flymake-no-changes-timeout nil)
+  (flycheck-start-syntax-check-on-newline nil)
+  (flycheck-check-syntax-automatically '(save mode-enabled))
   :bind (:map dante-mode-map
               ("C-c /" . comment-dwim)
-         :map haskell-mode-map
+              :map haskell-mode-map
               ("C-c a t" . dante-type-at)
               ("C-c a n" . dante-info)
               ("C-c a s" . attrap-attrap)
@@ -605,6 +624,9 @@
 
 (use-package protobuf-mode)
 
+(use-package visual-regexp
+  :bind (("C-c 5" . vr/replace)))
+
 (use-package dockerfile-mode)
 
 (use-package web-mode
@@ -612,7 +634,10 @@
 
 (use-package dtrace-script-mode)
 
-(use-package rust-mode)
+(use-package rust-mode :defer)
+
+(use-package github-notifier
+  :hook (prog-mode . github-notifier-mode))
 
 (defun my-elisp-mode-hook ()
   "My elisp customizations."
@@ -691,7 +716,6 @@
 (bind-key "C-c e"      'open-init-file)
 (bind-key "C-c k"      'kill-all-buffers)
 (bind-key "s-<return>" 'eol-then-newline)
-(bind-key "C-c 5"      'query-replace-regexp) ;; stupid vestigial binding
 (bind-key "M-/"        'hippie-expand)
 (bind-key "C-c '"      'switch-to-previous-buffer)
 (bind-key "C-c \\"     'align-regexp)
