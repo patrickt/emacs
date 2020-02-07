@@ -69,8 +69,7 @@
 
 (prefer-coding-system 'utf-8)
 
-(ignore-errors
-  (set-frame-font "Iosevka-14"))
+(ignore-errors (set-frame-font "Iosevka-14"))
 
 ;; Any Customize-based settings should live in custom.el, not here.
 
@@ -119,6 +118,26 @@
 (use-package aggressive-indent
   :config (global-aggressive-indent-mode)
   :diminish)
+
+;; Icons are nice. We can't let VS Code have all the nice things
+(use-package all-the-icons)
+
+(use-package centaur-tabs
+  :after all-the-icons
+  :demand
+  :config
+  (centaur-tabs-mode t)
+  (centaur-tabs-group-by-projectile-project)
+  :custom
+  (centaur-tabs-gray-out-icons 'buffer)
+  (centaur-tabs-style "rounded")
+  (centaur-tabs-height 36)
+  (centaur-tabs-set-icons t)
+  (centaur-tabs-modified-marker "●")
+
+  :bind (("s-{" . centaur-tabs-backward)
+         ("s-}" . centaur-tabs-forward)))
+
 
 ;; Recentf comes with Emacs but it should always be enabled.
 
@@ -171,6 +190,10 @@
 (use-package exec-path-from-shell
   :config
   (exec-path-from-shell-initialize))
+
+(use-package volatile-highlights
+  :diminish
+  :config (volatile-highlights-mode))
 
 ;; fish is a good shell. You should try it.
 
@@ -591,6 +614,7 @@
   :bind (:map haskell-mode-map
               ("C-c a c" . haskell-cabal-visit-file)
               ("C-c a b" . haskell-mode-stylish-buffer)
+              ("C-c a e" . flycheck-list-errors)
               ("C-c a i" . haskell-navigate-imports)
               ("C-c a a" . haskell-mode-toggle-scc-at-point)
               ("C-c a w" . stack-watch)))
@@ -598,7 +622,7 @@
 (use-package attrap
   :bind (("C-c q" . attrap-attrap))
   :custom
-  (add-to-list 'attrap-haskell-extensions "DerivingStrategies"))
+  (append-to-list 'attrap-haskell-extensions '("DerivingStrategies" "LambdaCase")))
 
 (use-package dante
   :hook (haskell-mode . dante-mode)
@@ -613,6 +637,7 @@
               ("C-c a t" . dante-type-at)
               ("C-c a n" . dante-info)
               ("C-c a s" . attrap-attrap)
+              ("C-c c"   . attrap-attrap)
               ))
 
 ;; Someday I'm going to start using Idris again.
@@ -712,6 +737,16 @@
   (interactive)
   (insert (format-time-string "%Y-%m-%d")))
 
+(defun copy-file-name-to-clipboard ()
+  "Copy the current buffer file name to the clipboard."
+  (interactive)
+  (let ((filename (if (equal major-mode 'dired-mode)
+                      default-directory
+                    (buffer-file-name))))
+    (when filename
+      (kill-new filename)
+      (message "Copied buffer file name '%s' to the clipboard." filename))))
+
 (bind-key "C-x k"      'kill-buffer-with-prejudice)
 (bind-key "C-c e"      'open-init-file)
 (bind-key "C-c k"      'kill-all-buffers)
@@ -727,6 +762,7 @@
 (bind-key "M-,"        'other-window)
 (bind-key "M-i"        'delete-indentation)
 (bind-key "C-c /"      'comment-dwim)
+(bind-key "C-c P"      'copy-file-name-to-clipboard)
 
 ;; When tracking down slowness, opening ivy to start these functions
 ;; throws off the traces.
@@ -749,8 +785,6 @@
 (bind-key "M-_"    'em-dash)
 (bind-key "M-;"    'ellipsis)
 (bind-key "C-="    'next-error)
-(bind-key "s-{"    'previous-buffer)
-(bind-key "s-}"    'next-buffer)
 
 (unbind-key "C-z")     ;; I never want to suspend the frame
 (unbind-key "C-<tab>") ;; prevent switching to tab mode randomly

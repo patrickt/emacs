@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: syspath
+# key: syspath
+# --
+import qualified System.Path as Path
