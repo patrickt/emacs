@@ -14,7 +14,7 @@
 ;; important keybinding, C-;, provides counsel-M-x, which lets you
 ;; fuzzy-find through the space of available functions. Exploring
 ;; counsel-M-x is the best way to become familiar with the space of
-;; extensible functions, which is a sine qua non for being comfortable
+;; invokable functions, which is a sine qua non for being comfortable
 ;; with Emacs.
 
 ;;; Code:
@@ -119,7 +119,7 @@
   :config (global-aggressive-indent-mode)
   :diminish)
 
-;; Icons are nice. We can't let VS Code have all the nice things
+;; Icons are nice. We can't let VS Code have all the nice things.
 (use-package all-the-icons)
 
 (use-package centaur-tabs
@@ -127,8 +127,8 @@
   :demand
   :config
   (centaur-tabs-mode t)
-  (centaur-tabs-group-by-projectile-project)
   :custom
+  (centaur-tabs-buffer-groups-function 'centaur-tabs-projectile-buffer-groups)
   (centaur-tabs-gray-out-icons 'buffer)
   (centaur-tabs-style "rounded")
   (centaur-tabs-height 36)
@@ -140,7 +140,6 @@
 
 
 ;; Recentf comes with Emacs but it should always be enabled.
-
 (use-package recentf
   :init (recentf-mode t)
   :config
@@ -367,9 +366,9 @@
 ;; Avy is better than ace-jump.
 (use-package avy
   :defer ivy
-  :bind (("C-c l l" . avy-goto-line)
-         ("C-c l c" . avy-goto-char-timer)
-         ("C-c l w" . avy-goto-word-1)
+  :bind (("C-c l"   . avy-goto-line)
+         ("C-c L c" . avy-goto-char-timer)
+         ("C-c L w" . avy-goto-word-1)
          ("C-'"     . ivy-avy)))
 
 (use-package yaml-mode
@@ -395,7 +394,6 @@
   (guide-key-mode t)
   (setq guide-key/guide-key-sequence '("C-x v" ;; version control
                                        "C-c a" ;; my mode-specific bindings
-                                       "C-c l" ;; line-jumping
                                        "C-c o" ;; org-mode
                                        )))
 
@@ -760,6 +758,7 @@
 (bind-key "C-c ,"      'other-window)
 (bind-key "C-,"        'other-window)
 (bind-key "M-,"        'other-window)
+(bind-key "s-,"        'other-window)
 (bind-key "M-i"        'delete-indentation)
 (bind-key "C-c /"      'comment-dwim)
 (bind-key "C-c P"      'copy-file-name-to-clipboard)
