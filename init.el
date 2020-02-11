@@ -69,6 +69,8 @@
 
 (prefer-coding-system 'utf-8)
 
+;; Iosevka is my font of choice, but don't freak out if it's present.
+
 (ignore-errors (set-frame-font "Iosevka-14"))
 
 ;; Any Customize-based settings should live in custom.el, not here.
@@ -152,20 +154,22 @@
 
 (use-package ivy
   :ensure t
-  :init
+  :custom
+  (ivy-height 30)
+  (ivy-use-virtual-buffers t)
+  (ivy-use-selectable-prompt t)
+  :config
   (ivy-mode 1)
   (unbind-key "S-SPC" ivy-minibuffer-map)
-  (setq ivy-height 30
-        ivy-use-virtual-buffers t
-        ivy-use-selectable-prompt t)
   (defun swiper-at-point ()
+    "Start searching for the thing at point."
     (interactive)
     (swiper (thing-at-point 'word)))
+
   :bind (("C-x b"   . ivy-switch-buffer)
          ("C-c C-r" . ivy-resume)
          ("C-c s"   . swiper-at-point)
-         ("C-s"     . swiper))
-  :diminish)
+         ("C-s"     . swiper)))
 
 ;; ivy-rich makes Ivy look a little bit more like Helm.
 
@@ -175,7 +179,7 @@
   (ivy-virtual-abbreviate 'full)
   (ivy-rich-switch-buffer-align-virtual-buffer t)
   (ivy-rich-path-style 'abbrev)
-  :init
+  :config
   (ivy-rich-mode))
 
 ;; Provides visual interface to hydra layouts. I don't really
@@ -264,6 +268,7 @@
 (use-package company
   :bind (("C-." . company-complete))
   :diminish company-mode
+  :hook ((git-commit-mode . company-mode))
   :custom
   (company-dabbrev-downcase nil "Don't downcase returned candidates.")
   (company-show-numbers t "Numbers are helpful.")
@@ -623,12 +628,13 @@
   (append-to-list 'attrap-haskell-extensions '("DerivingStrategies" "LambdaCase")))
 
 (use-package dante
-  :hook (haskell-mode . dante-mode)
   :after haskell-mode
+  :hook (haskell-mode . dante-mode)
   :custom
   (flymake-no-changes-timeout nil)
   (flycheck-start-syntax-check-on-newline nil)
   (flycheck-check-syntax-automatically '(save mode-enabled))
+  (dante-tap-type-time 2)
   :bind (:map dante-mode-map
               ("C-c /" . comment-dwim)
               :map haskell-mode-map
