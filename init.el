@@ -154,6 +154,7 @@
 
 (use-package ivy
   :ensure t
+  :diminish
   :custom
   (ivy-height 30)
   (ivy-use-virtual-buffers t)
@@ -268,15 +269,13 @@
 (use-package company
   :bind (("C-." . company-complete))
   :diminish company-mode
-  :hook ((git-commit-mode . company-mode))
+  :hook ((prog-mode . company-mode))
   :custom
   (company-dabbrev-downcase nil "Don't downcase returned candidates.")
   (company-show-numbers t "Numbers are helpful.")
   (company-tooltip-limit 20 "The more the merrier.")
   (company-idle-delay 0.1 "Faster!")
   :config
-  (global-company-mode)
-
   ;; use numbers 0-9 to select company completion candidates
   (let ((map company-active-map))
     (mapc (lambda (x) (define-key map (format "%d" x)
@@ -640,7 +639,7 @@
               :map haskell-mode-map
               ("C-c a t" . dante-type-at)
               ("C-c a n" . dante-info)
-              ("C-c a s" . attrap-attrap)
+              ("C-c C-c" . attrap-attrap)
               ("C-c c"   . attrap-attrap)
               ))
 
@@ -686,7 +685,9 @@
   (interactive)
   (maybe-unset-buffer-modified)
   (save-some-buffers)
-  (mapc 'kill-buffer-with-prejudice (buffer-list)))
+  (let ((kill-buffer-query-functions '()))
+    (mapc 'kill-buffer-with-prejudice (buffer-list))))
+
 
 (defun split-right-and-enter ()
   "Split the window to the right and enter it."
