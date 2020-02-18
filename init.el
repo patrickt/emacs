@@ -11,7 +11,7 @@
 ;; A general note on keybindings: the custom keybindings applicable to
 ;; all major modes appear with the C-c prefix, as is standard.
 ;; Per-language commands appear with the C-c a prefix. The most
-;; important keybinding, C-;, provides counsel-M-x, which lets you
+;; important keybinding, C-c ;, provides counsel-M-x, which lets you
 ;; fuzzy-find through the space of available functions. Exploring
 ;; counsel-M-x is the best way to become familiar with the space of
 ;; invokable functions, which is a sine qua non for being comfortable
@@ -135,6 +135,7 @@
   (centaur-tabs-style "rounded")
   (centaur-tabs-height 36)
   (centaur-tabs-set-icons t)
+  (centaur-tabs-set-modified-marker t)
   (centaur-tabs-modified-marker "●")
 
   :bind (("s-{" . centaur-tabs-backward)
@@ -373,6 +374,7 @@
   :bind (("C-c l"   . avy-goto-line)
          ("C-c L c" . avy-goto-char-timer)
          ("C-c L w" . avy-goto-word-1)
+         :map minibuffer-local-completion-map
          ("C-'"     . ivy-avy)))
 
 (use-package yaml-mode
@@ -399,6 +401,7 @@
   (setq guide-key/guide-key-sequence '("C-x v" ;; version control
                                        "C-c a" ;; my mode-specific bindings
                                        "C-c o" ;; org-mode
+                                       "C-c"
                                        )))
 
 ;; Since the in-emacs Dash browser doesn't work on OS X, we have to settle for dash-at-point.
@@ -513,6 +516,8 @@
 (use-package iedit)
 
 (use-package vterm-toggle
+  :custom
+  (vterm-toggle-fullscreen-p nil)
   :bind (("C-c t" . vterm-toggle)))
 
 ;; Sometimes useful for putting the right piece of punctuation in there.
@@ -591,7 +596,7 @@
   ;; system a couple of hints.
 
   (append-to-list haskell-ghc-supported-extensions
-                  '("DerivingVia" "BlockArguments" "DerivingStrategies"))
+                  '("DerivingVia" "BlockArguments" "DerivingStrategies" "QuantifiedConstraints"))
 
   (append-to-list haskell-font-lock-keywords '("capi" "via" "stock" "anyclass"))
 
@@ -618,8 +623,7 @@
               ("C-c a b" . haskell-mode-stylish-buffer)
               ("C-c a e" . flycheck-list-errors)
               ("C-c a i" . haskell-navigate-imports)
-              ("C-c a a" . haskell-mode-toggle-scc-at-point)
-              ("C-c a w" . stack-watch)))
+              ("C-c a a" . haskell-mode-toggle-scc-at-point)))
 
 (use-package attrap
   :bind (("C-c q" . attrap-attrap))
@@ -663,6 +667,11 @@
 (use-package dtrace-script-mode)
 
 (use-package rust-mode :defer)
+
+(use-package smerge-mode
+  :custom
+  (smerge-command-prefix (kbd "C-c m"))
+  )
 
 (use-package github-notifier
   :hook (prog-mode . github-notifier-mode))
@@ -768,7 +777,7 @@
 (bind-key "s-,"        'other-window)
 (bind-key "M-i"        'delete-indentation)
 (bind-key "C-c /"      'comment-dwim)
-(bind-key "C-c P"      'copy-file-name-to-clipboard)
+(bind-key "C-c p"      'copy-file-name-to-clipboard)
 
 ;; When tracking down slowness, opening ivy to start these functions
 ;; throws off the traces.
@@ -791,6 +800,7 @@
 (bind-key "M-_"    'em-dash)
 (bind-key "M-;"    'ellipsis)
 (bind-key "C-="    'next-error)
+(bind-key "C-o"    'other-window)
 
 (unbind-key "C-z")     ;; I never want to suspend the frame
 (unbind-key "C-<tab>") ;; prevent switching to tab mode randomly
@@ -816,30 +826,30 @@
 (ignore-errors (mac-auto-operator-composition-mode))
 
 (setq
-  compilation-always-kill t              ; Never prompt to kill a compilation session.
-  compilation-scroll-output 'first-error ; Always scroll to the bottom.
-  make-backup-files nil                  ; No backups, thanks.
-  auto-save-default nil                  ; Or autosaves. What's the difference between autosaves and backups?
-  create-lockfiles nil                   ; Emacs sure loves to put lockfiles everywhere.
-  default-directory "~/src/"             ; My code lives here.
-  inhibit-startup-screen t               ; No need to see GNU agitprop.
-  kill-whole-line t                      ; Lets C-k delete the whole line
-  mac-command-modifier 'super            ; I'm not sure this is the right toggle, but whatever.
-  require-final-newline t                ; Auto-insert trailing newlines.
-  ring-bell-function 'ignore             ; Do not ding. Ever.
-  use-dialog-box nil                     ; Dialogues always go in the modeline.
-  frame-title-format "emacs – %b"        ; Put something useful in the status bar.
-  initial-scratch-message nil            ; SHUT UP SHUT UP SHUT UP
-  mac-option-modifier 'meta              ; why isn't this the default
-  save-interprogram-paste-before-kill t  ; preserve paste to system ring
-  enable-recursive-minibuffers t         ; don't fucking freak out if I use the minibuffer twice
-  sentence-end-double-space nil          ; are you fucking kidding me with this shit
-  confirm-kill-processes nil             ; don't whine at me when I'm quitting.
-  mac-mouse-wheel-smooth-scroll nil      ; no smooth scrolling
-  mac-drawing-use-gcd t                  ; and you can do it on other frames
-  mark-even-if-inactive nil              ; prevent really unintuitive undo behavior
-  auto-window-vscroll nil                ; may be connected to speed
-  )
+ compilation-always-kill t              ; Never prompt to kill a compilation session.
+ compilation-scroll-output 'first-error ; Always scroll to the bottom.
+ make-backup-files nil                  ; No backups, thanks.
+ auto-save-default nil                  ; Or autosaves. What's the difference between autosaves and backups?
+ create-lockfiles nil                   ; Emacs sure loves to put lockfiles everywhere.
+ default-directory "~/src/"             ; My code lives here.
+ inhibit-startup-screen t               ; No need to see GNU agitprop.
+ kill-whole-line t                      ; Lets C-k delete the whole line
+ mac-command-modifier 'super            ; I'm not sure this is the right toggle, but whatever.
+ require-final-newline t                ; Auto-insert trailing newlines.
+ ring-bell-function 'ignore             ; Do not ding. Ever.
+ use-dialog-box nil                     ; Dialogues always go in the modeline.
+ frame-title-format "emacs – %b"        ; Put something useful in the status bar.
+ initial-scratch-message nil            ; SHUT UP SHUT UP SHUT UP
+ mac-option-modifier 'meta              ; why isn't this the default
+ save-interprogram-paste-before-kill t  ; preserve paste to system ring
+ enable-recursive-minibuffers t         ; don't fucking freak out if I use the minibuffer twice
+ sentence-end-double-space nil          ; are you fucking kidding me with this shit
+ confirm-kill-processes nil             ; don't whine at me when I'm quitting.
+ mac-mouse-wheel-smooth-scroll nil      ; no smooth scrolling
+ mac-drawing-use-gcd t                  ; and you can do it on other frames
+ mark-even-if-inactive nil              ; prevent really unintuitive undo behavior
+ auto-window-vscroll nil                ; may be connected to speed
+ )
 
 ;; dired whines at you on macOS unless you do this.
 (when (eq system-type 'darwin)
