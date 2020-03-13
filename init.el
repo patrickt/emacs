@@ -39,7 +39,8 @@
 (append-to-list package-archives
                 '(("melpa" . "http://melpa.org/packages/")
                   ("melpa-stable" . "http://stable.melpa.org/packages/")
-                  ("org-elpa" . "https://orgmode.org/elpa/")))
+                  ("org-elpa" . "https://orgmode.org/elpa/")
+                  ("ublt" . "https://elpa.ubolonton.org/packages/")))
 
 (package-initialize)
 
@@ -71,7 +72,7 @@
 
 ;; Iosevka is my font of choice, but don't freak out if it's present.
 
-(ignore-errors (set-frame-font "Iosevka-14"))
+(ignore-errors (set-frame-font "Iosevka-13"))
 
 ;; Any Customize-based settings should live in custom.el, not here.
 
@@ -398,11 +399,12 @@
   :diminish guide-key-mode
   :config
   (guide-key-mode t)
-  (setq guide-key/guide-key-sequence '("C-x v" ;; version control
-                                       "C-c a" ;; my mode-specific bindings
-                                       "C-c o" ;; org-mode
-                                       "C-c"
-                                       )))
+  :custom
+  (guide-key/recursive-key-sequence-flag t)
+  (guide-key/guide-key-sequence '("C-x v" ;; version control
+                                  "C-c a" ;; my mode-specific bindings
+                                  "C-c o" ;; org-mode
+                                  )))
 
 ;; Since the in-emacs Dash browser doesn't work on OS X, we have to settle for dash-at-point.
 
@@ -412,7 +414,8 @@
 ;; Need to remember to use this more, though I have my issues with the UI.
 
 (use-package dumb-jump
-  :bind (("C-c j" . dumb-jump-go-prompt))
+  :bind (("C-c j" . dumb-jump-go)
+         ("C-c J" . dumb-jump-go-prompt))
   :config (setq dumb-jump-selector 'ivy))
 
 (use-package elec-pair
@@ -510,7 +513,8 @@
 (use-package org-ac :after org)
 
 ;; vterm is good.
-(use-package vterm)
+(use-package vterm
+  )
 
 ;; I forgot editors can do that
 (use-package iedit)
@@ -541,7 +545,8 @@
 ;; and figure out what the story is with Haskell checking.
 (use-package flycheck
   :hook (org-mode . flycheck-mode)
-  :bind (("C-c `" . flycheck-next-error))
+  :bind (("C-c `" . flycheck-next-error)
+         ("C-c a e" . flycheck-list-errors))
   :config
   (setq-default flycheck-ghc-args
                 '( "-XDataKinds"
@@ -621,7 +626,6 @@
   :bind (:map haskell-mode-map
               ("C-c a c" . haskell-cabal-visit-file)
               ("C-c a b" . haskell-mode-stylish-buffer)
-              ("C-c a e" . flycheck-list-errors)
               ("C-c a i" . haskell-navigate-imports)
               ("C-c a a" . haskell-mode-toggle-scc-at-point)))
 
@@ -666,7 +670,35 @@
 
 (use-package dtrace-script-mode)
 
-(use-package rust-mode :defer)
+(use-package rust-mode
+  :defer
+  :custom
+  (rust-format-on-save t)
+  (company-idle-delay 1.0)
+  :config
+  (defun rust-cargo-visit-file ()
+    "Visit the cargo.toml file at the project root."
+    (interactive)
+    (find-file (concat (projectile-project-root) "./Cargo.toml")))
+  :bind (:map rust-mode-map
+              ("C-c a c" . rust-cargo-visit-file)))
+
+(use-package racer
+  :hook (rust-mode . racer-mode)
+  :bind (:map racer-mode-map
+              ("C-c a i" . racer-desc)))
+
+(use-package flycheck-rust
+  :after rust-mode
+  :hook (rust-mode . flycheck-rust-setup))
+
+(use-package flycheck-inline
+  :hook (rust-mode . flycheck-inline-mode))
+
+(use-package cargo
+  :bind (:map rust-mode-map
+              ("C-c m"   . cargo-process-build)
+              ("C-c a d" . cargo-process-doc-open)))
 
 (use-package smerge-mode
   :custom
@@ -709,9 +741,15 @@
   (interactive)
   (switch-to-buffer (other-buffer (current-buffer) 1)))
 
+(defun random-choice (items)
+  "Choose a random element from ITEMS, which must be nonempty."
+  (nth (random (length items)) items))
+
 (defun display-startup-echo-area-message ()
   "Overrides the normally tedious error message."
-  (message "Welcome back."))
+  (message (random-choice '("Welcome back."
+                            "Center others today."
+                            "Be kind."))))
 
 (defun eol-then-newline ()
   "Go to end of line then return."
@@ -794,6 +832,7 @@
 (bind-key "s-a"	   'mark-whole-buffer)
 (bind-key "s-<"    'beginning-of-buffer)
 (bind-key "s-x"    'kill-region)
+(bind-key "s-w"    'kill-buffer)
 (bind-key "<home>" 'beginning-of-buffer)
 (bind-key "<end>"  'end-of-buffer)
 (bind-key "s->"    'end-of-buffer)
