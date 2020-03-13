@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: derive
+# key: derive
+# --
+#[derive(${Debug})]

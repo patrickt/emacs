@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: adt
+# key: adt
+# --
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
