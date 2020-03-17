@@ -183,6 +183,7 @@
   (ivy-rich-switch-buffer-align-virtual-buffer t)
   (ivy-rich-path-style 'abbrev)
   :config
+  (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line)
   (ivy-rich-mode))
 
 ;; Provides visual interface to hydra layouts. I don't really
