@@ -706,8 +706,9 @@
   :hook (rust-mode . flycheck-inline-mode))
 
 (use-package cargo
+  :custom (compile-command  "cargo build")
   :bind (:map rust-mode-map
-              ("C-c m"   . cargo-process-build)
+              ("C-c a b" . cargo-process-build)
               ("C-c a d" . cargo-process-doc-open)))
 
 (use-package smerge-mode
