@@ -22,7 +22,7 @@
 ;; To start, we adjust the garbage collection parameter up from a
 ;; measly 8 MB. We don't set it too high, though, lest GCs never happen.
 
-(setq gc-cons-threshold 32000000     ;; 32 MB
+(setq gc-cons-threshold (expt 2 28)
       garbage-collection-messages t) ;; indicator of thrashing
 
 ;; Bump up the recursion limit.
