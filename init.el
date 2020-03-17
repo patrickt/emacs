@@ -424,6 +424,10 @@
   (add-to-list 'electric-pair-pairs '(?` . ?`))  ; electric-quote backticks
   (add-to-list 'electric-pair-pairs '(?“ . ?”))) ; and curlies
 
+(use-package olivetti
+  :custom
+  (olivetti-minimum-body-width 60))
+
 ;; Some useful text-manipulation functions used later on in org-mode stuff.
 
 (defun em-dash ()
