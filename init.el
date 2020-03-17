@@ -221,6 +221,8 @@
          ("C-x f" . counsel-find-file)
          ("C-c y" . counsel-yank-pop)
 	 ("C-c r" . counsel-recentf)
+         ("C-c v" . counsel-switch-buffer-other-window)
+         ("C-h h" . counsel-command-history)
          :map ivy-minibuffer-map
          ("C-r" . counsel-minibuffer-history))
   :diminish)
@@ -243,7 +245,7 @@
 ;; Counsel and projectile should work together.
 
 (use-package counsel-projectile
-  :bind (("C-c f" . counsel-projectile))
+  :bind (("C-c f" . counsel-projectile-find-file-dwim))
   :init (counsel-projectile-mode))
 
 ;; Sort commands by recency in ivy windows.
