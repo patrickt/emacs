@@ -476,7 +476,9 @@
          ("C-c a l"  . lambduh)
          ("C-c a t"  . unindent-by-four))
 
-  :hook (org-mode . visual-line-mode)
+  :hook ((org-mode . visual-line-mode)
+         (org-mode . flyspell-mode))
+
 
   :config
 
@@ -516,6 +518,9 @@
 
 ;; Autocomplete for org tags.
 (use-package org-ac :after org)
+
+(use-package flyspell-correct-ivy
+  :after ivy)
 
 ;; vterm is good.
 (use-package vterm
@@ -893,6 +898,7 @@
  mac-drawing-use-gcd t                  ; and you can do it on other frames
  mark-even-if-inactive nil              ; prevent really unintuitive undo behavior
  auto-window-vscroll nil                ; may be connected to speed
+ ispell-program-name "hunspell"
  )
 
 ;; dired whines at you on macOS unless you do this.
