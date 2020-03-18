@@ -667,6 +667,9 @@
               ("C-c c"   . attrap-attrap)
               ))
 
+(use-package flycheck-posframe
+  :hook (dante-mode . flycheck-posframe-mode))
+
 ;; Someday I'm going to start using Idris again.
 (use-package idris-mode
   :disabled
