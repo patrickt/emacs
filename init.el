@@ -122,6 +122,10 @@
   :config (global-aggressive-indent-mode)
   :diminish)
 
+(use-package dimmer
+  :custom (dimmer-fraction 0.11)
+  :config (dimmer-mode))
+
 ;; Icons are nice. We can't let VS Code have all the nice things.
 (use-package all-the-icons)
 
