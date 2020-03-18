@@ -112,6 +112,7 @@
     (load-theme chosen-theme)
     (doom-themes-visual-bell-config)
     (doom-themes-org-config)
+    (setq doom-challenger-deep-brighter-modeline t)
 
     ;; Docstrings should be a bit lighter, since they're important.
     (custom-theme-set-faces
@@ -249,7 +250,7 @@
 ;; Counsel and projectile should work together.
 
 (use-package counsel-projectile
-  :bind (("C-c f" . counsel-projectile-find-file-dwim))
+  :bind (("C-c f" . counsel-projectile))
   :init (counsel-projectile-mode))
 
 ;; Sort commands by recency in ivy windows.
@@ -525,12 +526,21 @@
 ;; Autocomplete for org tags.
 (use-package org-ac :after org)
 
+(use-package flyspell
+  :config
+  (unbind-key "C-," flyspell-mode-map))
+
 (use-package flyspell-correct-ivy
   :after ivy)
 
 ;; vterm is good.
-(use-package vterm
-  )
+(use-package vterm)
+
+;; doom-modeline is really nice especially with all-the-icons.
+(use-package doom-modeline
+  :config (doom-modeline-mode)
+  :custom
+  (doom-modeline-github t))
 
 ;; I forgot editors can do that
 (use-package iedit)
