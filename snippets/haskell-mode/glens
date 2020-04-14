@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: Generic lens
+# key: glens
+# --
+
+${1:selector}_ :: Lens' ${2:parent} ${3:child}
+$1_ = field @"$1"

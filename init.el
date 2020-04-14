@@ -1,4 +1,4 @@
-;; init.el -- Patrick Thomson's emacs config. -*- lexical-binding: t; -*-
+;; init_mac.el -- Patrick Thomson's emacs config. -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 ;; This file is in the public domain.
@@ -23,7 +23,9 @@
 ;; measly 8 MB. We don't set it too high, though, lest GCs never happen.
 
 (setq gc-cons-threshold (expt 2 28)
-      garbage-collection-messages t) ;; indicator of thrashing
+      garbage-collection-messages t ;; indicator of thrashing
+      package-check-signature nil ;; TEMPORARY HACK UNTIL I FIGURE OUT HOW TO FIX spinner.el
+      )
 
 ;; Bump up the recursion limit.
 (setq max-lisp-eval-depth 2000)
@@ -211,6 +213,10 @@
 
 (use-package fish-mode)
 
+;; Emacs parenthesis support is lacking. Smartparens seems to fix that.
+
+(use-package smartparens)
+
 ;; Counsel applies Ivy-like behavior to other builtin features of
 ;; emacs, e.g. search.
 
@@ -284,7 +290,7 @@
   (company-dabbrev-downcase nil "Don't downcase returned candidates.")
   (company-show-numbers t "Numbers are helpful.")
   (company-tooltip-limit 20 "The more the merrier.")
-  (company-idle-delay 0.1 "Faster!")
+  (company-idle-delay 0.5 "Faster!")
   :config
   ;; use numbers 0-9 to select company completion candidates
   (let ((map company-active-map))
@@ -300,6 +306,7 @@
 ;; Magit is one of the best pieces of OSS I have ever used. It is truly esssential.
 
 (use-package magit
+  :ensure t
   :bind (("C-c g" . magit-status))
 
   :diminish magit-auto-revert-mode
@@ -322,10 +329,16 @@
 ;; Unclear whether this does anything at the moment.
 
 (use-package libgit
+  :ensure t
   :after magit)
 
 (use-package magit-libgit
+  :ensure t
   :after libgit)
+
+(use-package forge
+  :ensure t
+  :after magit)
 
 ;; Since I grew up on Textmate, I'm more-or-less reliant on snippets.
 
@@ -412,6 +425,7 @@
   (guide-key/guide-key-sequence '("C-x v" ;; version control
                                   "C-c a" ;; my mode-specific bindings
                                   "C-c o" ;; org-mode
+                                  "s-l"   ;; lsp-mode
                                   )))
 
 ;; Since the in-emacs Dash browser doesn't work on OS X, we have to settle for dash-at-point.
@@ -528,13 +542,39 @@
 
 (use-package flyspell
   :config
+  ;; NO spell check for embedded snippets
+  (defadvice org-mode-flyspell-verify (after org-mode-flyspell-verify-hack activate)
+    (let* ((rlt ad-return-value)
+           (begin-regexp "^[ \t]*#\\+begin_\\(src\\|html\\|latex\\|example\\|quote\\)")
+           (end-regexp "^[ \t]*#\\+end_\\(src\\|html\\|latex\\|example\\|quote\\)")
+           (case-fold-search t)
+           b e)
+      (when ad-return-value
+        (save-excursion
+          (setq b (re-search-backward begin-regexp nil t))
+          (if b (setq e (re-search-forward end-regexp nil t))))
+        (if (and b e (< (point) e)) (setq rlt nil)))
+      (setq ad-return-value rlt)))
+
   (unbind-key "C-," flyspell-mode-map))
 
 (use-package flyspell-correct-ivy
   :after ivy)
 
 ;; vterm is good.
-(use-package vterm)
+(use-package vterm
+  :config
+  (defun vterm-counsel-yank-pop-action (orig-fun &rest args)
+    (if (equal major-mode 'vterm-mode)
+        (let ((inhibit-read-only t)
+              (yank-undo-function #'(lambda(_start _end) (vterm-undo))))
+          (cl-letf (((symbol-function 'insert-for-yank)
+                     #'(lambda(str) (vterm-send-string str t))))
+            (apply orig-fun args)))
+      (apply orig-fun args)))
+
+  (advice-add 'counsel-yank-pop-action :around #'vterm-counsel-yank-pop-action)
+  )
 
 ;; doom-modeline is really nice especially with all-the-icons.
 (use-package doom-modeline
@@ -559,6 +599,8 @@
   :defer
   :config
   (ignore-errors (load-private-settings)))
+
+1
 
 (use-package go-mode
   :init
@@ -601,12 +643,20 @@
 ;; Haskell is my programming language of choice.
 (use-package haskell-mode
   :config
-
   (unbind-key "C-c C-s" haskell-mode-map)
 
-  (defun toggle-haskell-stylish-on-save ()
+  (defvar haskell-formatter 'ormolu "The Haskell formatter to use. One of: 'ormolu, 'stylish, nil")
+
+  (defun haskell-smart-format ()
+    "Format a buffer based on the value of 'haskell-formatter'."
     (interactive)
-    (setq haskell-stylish-on-save (not haskell-stylish-on-save)))
+    (cl-ecase haskell-formatter
+      ('ormolu (ormolu-format-buffer))
+      ('stylish (haskell-mode-stylish-buffer))
+      (nil nil)
+      ))
+
+  (add-hook 'before-save-hook #'haskell-smart-format t)
 
   (setq haskell-stylish-on-save t
         haskell-font-lock-symbols t
@@ -660,6 +710,8 @@
   :custom
   (append-to-list 'attrap-haskell-extensions '("DerivingStrategies" "LambdaCase")))
 
+(use-package spinner)
+
 (use-package dante
   :after haskell-mode
   :hook (haskell-mode . dante-mode)
@@ -676,6 +728,55 @@
               ("C-c C-c" . attrap-attrap)
               ("C-c c"   . attrap-attrap)
               ))
+
+(use-package lsp-mode
+  :custom
+  (lsp-auto-guess-root t)
+  (lsp-idle-delay 0.75)
+  (lsp-log-io t)
+  (lsp-rust-server 'rust-analyzer)
+  (lsp-prefer-capf t))
+
+(use-package lsp-ui
+  :custom
+  (lsp-ui-doc-delay 1.5)
+  (lsp-log-ui t)
+  :hook ((lsp-mode . lsp-ui-mode)))
+
+(use-package lsp-ivy)
+
+(use-package company-lsp
+  :config
+  (push 'company-lsp company-backends))
+
+(use-package lsp-haskell
+  :disabled ; doesn't work on semantic
+  :hook ((haskell-mode . lsp-deferred))
+  :bind (:map haskell-mode-map
+              ("C-c c" . lsp-execute-code-action)))
+
+(use-package ormolu
+  :after haskell-mode
+  :bind (:map haskell-mode-map
+              ("C-c a f" . ormolu-format-buffer)))
+
+(use-package prodigy
+  :bind (("C-c P" . prodigy))
+  :config
+  (prodigy-define-service
+    :name "semanticd"
+    :cwd "~/src/semanticd"
+    :command "cabal"
+    :args '("run" "semanticd")
+    )
+  (prodigy-define-service
+    :name "aleph-tags"
+    :cwd "~/src/aleph"
+    :command "bash"
+    :args '("-c" "bin/aleph-tags"))
+
+
+  )
 
 (use-package flycheck-posframe
   :hook (dante-mode . flycheck-posframe-mode))
@@ -700,7 +801,9 @@
 (use-package dtrace-script-mode)
 
 (use-package rust-mode
+  :after lsp
   :defer
+  :hook (rust-mode . lsp-deferred)
   :custom
   (rust-format-on-save t)
   (company-idle-delay 1.0)
@@ -713,6 +816,7 @@
               ("C-c a c" . rust-cargo-visit-file)))
 
 (use-package racer
+  :disabled
   :hook (rust-mode . racer-mode)
   :bind (:map racer-mode-map
               ("C-c a i" . racer-desc)))
@@ -736,7 +840,17 @@
   )
 
 (use-package github-notifier
+  :disabled
   :hook (prog-mode . github-notifier-mode))
+
+(use-package perspective
+  :disabled
+  :config (persp-mode)
+  :custom
+  (persp-interactive-completion-function 'ido-completing-read)
+  (persp-sort 'access)
+  :bind (("C-x b" . persp-counsel-switch-buffer)
+         ("C-c b" . persp-counsel-switch-buffer)))
 
 (defun my-elisp-mode-hook ()
   "My elisp customizations."
@@ -819,6 +933,14 @@
   (interactive)
   (insert (format-time-string "%Y-%m-%d")))
 
+(defun widescreen ()
+  "Divide the screen into three equally-sized buffers."
+  (interactive)
+  (delete-other-windows)
+  (split-window-right)
+  (split-window-right)
+  (balance-windows))
+
 (defun copy-file-name-to-clipboard ()
   "Copy the current buffer file name to the clipboard."
   (interactive)
@@ -846,11 +968,12 @@
 (bind-key "M-i"        'delete-indentation)
 (bind-key "C-c /"      'comment-dwim)
 (bind-key "C-c p"      'copy-file-name-to-clipboard)
+(bind-key "C-c w"      'widescreen)
 
 ;; When tracking down slowness, opening ivy to start these functions
 ;; throws off the traces.
 (bind-key "C-c a p" 'profiler-start)
-(bind-key "C-c a P" 'profiler-report)
+(bind-key "C-c a P" 'profiler-stop)
 
 ;; macOS-style bindings, too (no cua-mode, it's nasty)
 (bind-key "s-+"	   'text-scale-increase)
@@ -879,7 +1002,6 @@
 (unbind-key "M-o")     ;; facemenu mode is useless
 (unbind-key "C-x C-r") ;; as is find-file-read-only
 
-
 ;; I'm not made of time, I can't type "yes" for every choice
 (defalias 'yes-or-no-p 'y-or-n-p)
 
@@ -895,40 +1017,45 @@
 (ignore-errors (mac-auto-operator-composition-mode))
 
 (setq
- compilation-always-kill t              ; Never prompt to kill a compilation session.
- compilation-scroll-output 'first-error ; Always scroll to the bottom.
- make-backup-files nil                  ; No backups, thanks.
- auto-save-default nil                  ; Or autosaves. What's the difference between autosaves and backups?
- create-lockfiles nil                   ; Emacs sure loves to put lockfiles everywhere.
- default-directory "~/src/"             ; My code lives here.
- inhibit-startup-screen t               ; No need to see GNU agitprop.
- kill-whole-line t                      ; Lets C-k delete the whole line
- mac-command-modifier 'super            ; I'm not sure this is the right toggle, but whatever.
- require-final-newline t                ; Auto-insert trailing newlines.
- ring-bell-function 'ignore             ; Do not ding. Ever.
- use-dialog-box nil                     ; Dialogues always go in the modeline.
- frame-title-format "emacs – %b"        ; Put something useful in the status bar.
- initial-scratch-message nil            ; SHUT UP SHUT UP SHUT UP
- mac-option-modifier 'meta              ; why isn't this the default
- save-interprogram-paste-before-kill t  ; preserve paste to system ring
- enable-recursive-minibuffers t         ; don't fucking freak out if I use the minibuffer twice
- sentence-end-double-space nil          ; are you fucking kidding me with this shit
- confirm-kill-processes nil             ; don't whine at me when I'm quitting.
- mac-mouse-wheel-smooth-scroll nil      ; no smooth scrolling
- mac-drawing-use-gcd t                  ; and you can do it on other frames
- mark-even-if-inactive nil              ; prevent really unintuitive undo behavior
- auto-window-vscroll nil                ; may be connected to speed
- ispell-program-name "hunspell"
+ compilation-always-kill t               ; Never prompt to kill a compilation session.
+ compilation-scroll-output 'first-error  ; Always scroll to the bottom.
+ make-backup-files nil                   ; No backups, thanks.
+ auto-save-default nil                   ; Or autosaves. What's the difference between autosaves and backups?
+ create-lockfiles nil                    ; Emacs sure loves to put lockfiles everywhere.
+ default-directory "~/src/"              ; My code lives here.
+ inhibit-startup-screen t                ; No need to see GNU agitprop.
+ kill-whole-line t                       ; Lets C-k delete the whole line
+ mac-command-modifier 'super             ; I'm not sure this is the right toggle, but whatever.
+ require-final-newline t                 ; Auto-insert trailing newlines.
+ ring-bell-function 'ignore              ; Do not ding. Ever.
+ use-dialog-box nil                      ; Dialogues always go in the modeline.
+ frame-title-format "emacs – %b"         ; Put something useful in the status bar.
+ initial-scratch-message nil             ; SHUT UP SHUT UP SHUT UP
+ mac-option-modifier 'meta               ; why isn't this the default
+ save-interprogram-paste-before-kill t   ; preserve paste to system ring
+ enable-recursive-minibuffers t          ; don't fucking freak out if I use the minibuffer twice
+ sentence-end-double-space nil           ; are you fucking kidding me with this shit
+ confirm-kill-processes nil              ; don't whine at me when I'm quitting.
+ mark-even-if-inactive nil               ; prevent really unintuitive undo behavior
+ auto-window-vscroll nil                 ; may be connected to speed
+ ispell-program-name "hunspell"          ; the emacs spell-checking situation is so dire
+ case-fold-search nil                    ; why would I *ever* want case-insensitive search
  )
+
+(ignore-errors
+  (setq-default
+   mac-mouse-wheel-smooth-scroll nil      ; no smooth scrolling
+   mac-drawing-use-gcd t                  ; and you can do it on other frames
+   ))
 
 ;; dired whines at you on macOS unless you do this.
 (when (eq system-type 'darwin)
   (setq dired-use-ls-dired nil))
 
 (setq-default
-  cursor-type 'bar
-  indent-tabs-mode nil
-  cursor-in-non-selected-windows nil)
+ cursor-type 'bar
+ indent-tabs-mode nil
+ cursor-in-non-selected-windows nil)
 
 (set-fill-column 95)
 
@@ -943,5 +1070,5 @@
 
 ;; goodbye, thanks for reading
 
-(provide 'init)
+(provide 'init-mac)
 ;;; init.el ends here
