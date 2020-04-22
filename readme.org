@@ -1,6 +1,6 @@
 * About
 
-This is my Emacs configuration, assembled over the course of more than ten years. I first started using Emacs in earnest my sophomore year of college, which would be… 2009. As of this writing, it is 2020, and I have an incurable case of Emacs-related brain worms.
+This is my Emacs configuration, assembled over the course of more than ten years. I first started using Emacs in earnest my sophomore year of college, which would be… 2009. As of this writing, it is 2020, and I have an incurable case of Emacs-induced brain worms. Emacs, indeed, might be agar for brain worms.
 
 Take this file, for example. It's an org-mode document, like all the posts on my blog. And if you're reading it on my blog in HTML form, it is because my blog pulls in my Emacs configuration as a submodule, and a conveniently-placed symlink means that it is treated like any other post, and its embedded code is rendered in fancy code blocks. If you're reading it on my GitHub repository, you'll see it rendered inline in the repository, as its filename is ~readme.org~. And at Emacs boot time, Emacs itself runs ~org-babel~, generates elisp code out of the code snippets embedded herein, and loads it. I feel both delight and shame in equal quantities at this state of affairs.
 
@@ -25,8 +25,6 @@ We use ~use-package~ everywhere (it is loaded in ~init.el~), and by default we w
 
 #+begin_src emacs-lisp
   (setq use-package-always-ensure t)
-
-  (use-package use-package)
 #+end_src
 
 * OS-specific concerns
@@ -511,8 +509,8 @@ Most every nontrivial package provides projectile integration in some form or fa
     (ivy-mode 1)
 
     :bind (("C-c C-r" . #'ivy-resume)
-           ("C-c s"   . #'swiper-thing-at-point)
-           ("C-s"     . #'swiper)))
+	   ("C-c s"   . #'swiper-thing-at-point)
+	   ("C-s"     . #'swiper)))
 
   (use-package ivy-rich
     :custom
@@ -528,20 +526,20 @@ Most every nontrivial package provides projectile integration in some form or fa
     (counsel-mode 1)
 
     :bind (("C-c ;" . #'counsel-M-x)
-           ("C-c U" . #'counsel-unicode-char)
-           ("C-c i" . #'counsel-imenu)
-           ("C-x f" . #'counsel-find-file)
-           ("C-c y" . #'counsel-yank-pop)
-           ("C-c r" . #'counsel-recentf)
-           ("C-c v" . #'counsel-switch-buffer-other-window)
-           ("C-h h" . #'counsel-command-history)
-           :map ivy-minibuffer-map
-           ("C-r" . counsel-minibuffer-history))
+	   ("C-c U" . #'counsel-unicode-char)
+	   ("C-c i" . #'counsel-imenu)
+	   ("C-x f" . #'counsel-find-file)
+	   ("C-c y" . #'counsel-yank-pop)
+	   ("C-c r" . #'counsel-recentf)
+	   ("C-c v" . #'counsel-switch-buffer-other-window)
+	   ("C-h h" . #'counsel-command-history)
+	   :map ivy-minibuffer-map
+	   ("C-r" . counsel-minibuffer-history))
     :diminish)
 
   (use-package counsel-projectile
     :bind (("C-c f" . #'counsel-projectile)
-           ("C-c F" . #'counsel-projectile-switch-project)))
+	   ("C-c F" . #'counsel-projectile-switch-project)))
 
   (use-package smex)
 #+end_src
