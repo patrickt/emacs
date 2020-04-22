@@ -2,7 +2,7 @@
 
 This is my Emacs configuration, assembled over the course of more than ten years. I first started using Emacs in earnest my sophomore year of college, which would be… 2009. As of this writing, it is 2020, and I have an incurable case of Emacs-induced brain worms. Emacs, indeed, might be agar for brain worms.
 
-Take this file, for example. It's an org-mode document, like all the posts on my blog. And if you're reading it on my blog in HTML form, it is because my blog pulls in my Emacs configuration as a submodule, and a conveniently-placed symlink means that it is treated like any other post, and its embedded code is rendered in fancy code blocks. If you're reading it on my GitHub repository, you'll see it rendered inline in the repository, as its filename is ~readme.org~. And at Emacs boot time, Emacs itself runs ~org-babel~, generates elisp code out of the code snippets embedded herein, and loads it. I feel both delight and shame in equal quantities at this state of affairs.
+This file is an org-mode document, like all the posts on my blog. And if you're reading it on my blog in HTML form, it is because my blog pulls in my Emacs configuration as a submodule, and a conveniently-placed symlink means that it is treated like any other post, and its embedded code is rendered in fancy code blocks. If you're reading it on my GitHub repository, you'll see it rendered inline in the repository, as its filename is ~readme.org~. And at Emacs boot time, Emacs itself runs ~org-babel~, generates elisp code out of the code snippets embedded herein, and loads it; further updates to the blog entry are a ~git submodule~ command away. I feel both delight and shame in equal quantities at this state of affairs: having a really cherried-out Emacs setup is one of those things that's cool because of how not cool it is, like growing giant vegetables at a county fair, or
 
 * Preliminaries
 
@@ -457,6 +457,8 @@ When I hit, accidentally or purposefully, a key chord that forms the prefix of s
 
 * Org-mode
 
+Even though my whole-ass blogging workflow is built around org-mode, I still can't say that I know it very well. I don't take advantage of ~org-agenda~, ~org-timer~, ~org-calendar~, ~org-capture~, anything interesting to do with tags, et cetera. Someday I will learn these things, but not yet.
+
 #+begin_src emacs-lisp
   (use-package org
     :hook ((org-mode . visual-line-mode))
@@ -793,4 +795,15 @@ I occasionally write Go, generally as a glue language to munge things together. 
 #+begin_src emacs-lisp
 (use-package restclient
   :mode ("\\.restclient$" . restclient-mode))
+#+end_src
+
+* Adios
+
+If you made it this far, well, may your deity of choice bless you. If you don't use Emacs already, I hope I tempted you a little. If you do, I hope you learned a couple new tricks, just as I have learned so many tricks from reading dozens of other people's configs.
+
+Au revoir.
+
+#+begin_src emacs-lisp
+  (provide 'init)
+  ;;; init.el ends here
 #+end_src
