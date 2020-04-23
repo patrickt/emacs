@@ -1,5 +1,3 @@
-* About
-
 This is my Emacs configuration, assembled over the course of more than ten years. I first started using Emacs in 2009 out of sheer necessity---I first learned to code using [[https://github.com/textmate/textmate][TextMate]], but that wasn't an option upon, after arriving at college, being required to SSH into some creaky Sun boxes running geologically-old versions of Solaris. Even then, everything in Emacs was a struggle for me. As of this writing, it is 2020, and I have an incurable case of Emacs-induced brain worms; I've spent on the order of hundreds of hours tweaking and refining my configuration.
 
 If there's anything that convinced me to take on this lifelong Emacs habit, it's because both macOS and iOS come, out of the box, with support for Emacs keybindings in their text areas. Said keybindings aren't hugely exhaustive, but they're useful, especially given that the ~Ctrl-k~ and ~Ctrl-y~ inputs for copy and paste operate on a /different/ clipboard than do ~⌘C~ and ~⌘V~. Once I discovered that, and the dorkily exhiliating feeling of juggling information through the various system pasteboards, I was more or less entirely beholden to the Emacs way, despite the merits of modal editing[fn:1].
@@ -391,7 +389,7 @@ Given how often I tweak my config, I bind ~C-c e~ to take me to my config file.
   (bind-key "C-c e" #'open-init-file)
 #+end_src
 
-Emacs makes it weirdly hard to just, like, edit a file as root. Enter ~sudo-edit~.
+Emacs makes it weirdly hard to just, like, edit a file as root, probably due to supporting operating systems not built on ~sudo~. Enter the ~sudo-edit~ package.
 
 #+begin_src emacs-lisp
   (use-package sudo-edit)
@@ -469,9 +467,13 @@ Magit is one of the top three reasons anyone should use Emacs. What a brilliant 
     :diminish magit-auto-revert-mode
     :diminish auto-revert-mode
     :bind (("C-c g" . #'magit-status))
-    :config)
+    :config
+    (add-to-list 'magit-no-confirm 'stage-all-changes))
+#+end_src
 
+Pulling in the ~libgit~ module makes Magit a good deal faster. For some reason, Emacs has problems determining the correct file extension for the resulting build product; it chooses ~.so~ even though Emacs expects a ~dylib~. To fix this, change directory to where the offending module lives and change its file extension to what is expected.
 
+#+begin_src emacs-lisp
   (use-package libgit)
 
   (use-package magit-libgit
@@ -572,6 +574,8 @@ Most every nontrivial package provides projectile integration in some form or fa
 #+end_src
 
 ** Flycheck
+
+Flycheck performs in-buffer highlighting of errors and warnings, and is superior on many axes to the builtin ~flymake~ mode. The only configuration it needs is to add [[https://github.com/amperser/proselint][~proselint~]] support and to disable the documentation checking in ~org-src~ buffers.
 
 #+begin_src emacs-lisp
   (use-package flycheck
@@ -701,7 +705,7 @@ Haskell is my day-to-day programming language, so I've tinkered with it a good d
     :defer)
 #+end_src
 
-~haskell-language-server~ is the new hotness, but it doesn't appear to handle autocompletion properly, so ~haskell~ide~engine~ it is.
+~haskell-language-server~ is the new hotness, but it doesn't appear to handle autocompletion properly, so ~haskell-ide-engine~ it is.
 
 #+begin_src emacs-lisp
   (use-package lsp-haskell
