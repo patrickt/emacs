@@ -798,6 +798,7 @@ I grew up writing in TextMate, so I got extremely used to text-expansion snippet
 Elm is a good language.
 
 #+begin_src emacs-lisp
+  (use-package elm-mode)
 #+end_src
 
 *** Configuration
@@ -825,7 +826,7 @@ Elm is a good language.
    (use-package fish-mode)
  #+end_src
 
-*** Miscellany
+** Miscellany
 
  ~restclient~ is a terrific interface for running HTTP requests against local or remote services.
 
