@@ -81,13 +81,17 @@ It's good that Emacs supports such a wide variety of file encodings as it does, 
   (setq default-process-coding-system '(utf-8-unix . utf-8-unix))
 #+end_src
 
-We also need to turn on a few modes to have behavior that's even remotely modern.
+We also need to turn on a few modes to have behavior that's even remotely modern. ~global-hl-line-mode~ is close to but not quite the right thing, as it plays poorly with ~vterm~ and ~vterm-toggle~.
 
 #+begin_src emacs-lisp
   (delete-selection-mode t)
-  (global-hl-line-mode t)
   (global-display-line-numbers-mode t)
   (column-number-mode)
+
+  (require 'hl-line)
+  (add-hook 'prog-mode-hook #'hl-line-mode)
+  (add-hook 'text-mode-hook #'hl-line-mode)
+  (set-face-attribute 'hl-line nil :background "gray26")
 #+end_src
 
 Emacs is super fond of littering filesystems with backups and autosaves, since it was built with the assumption that multiple users could be using the same Emacs instance on the same filesystem. This was valid in 1980. It is no longer the case.
@@ -218,10 +222,6 @@ I use the [[https://github.com/hlissner/emacs-doom-themes][Doom Emacs themes]], 
 
 I like to highlight the current line a little more vividly than most themes do.
 
-#+begin_src emacs-lisp
-   (set-face-attribute 'hl-line nil :background "gray26")
-#+end_src
-
 Most major modes pollute the modeline, so we pull in diminish.el to quiesce them.
 
 #+begin_src emacs-lisp
@@ -296,6 +296,12 @@ I'm not interested in calling anything associated with ~facemenu-mode~.
   (unbind-key "M-o")
 #+end_src
 
+Emacs's keybinding for ~comment-dwim~ is ~M-;~, which is not convenient to type or particularly mnemonic outside of an elisp context (where commenting is indeed ~;~). Better to bind it somewhere sensible.
+
+#+begin_src emacs-lisp
+  (bind-key "C-c /" #'comment-dwim)
+#+end_src
+
 ** Buffer management
 
 Bufler is a new addition here; I'm still not 100% sold, but given that I work on an ultra-widescreen monitor, I need to start figuring out some better buffer layout mechanism, because the situation is not particularly good.
@@ -368,6 +374,13 @@ Normally I bind ~other-window~ to ~C-c ,~, but on my ultra-wide-screen monitor, 
     :custom
     (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l) "Designate windows by home row keys, not numbers.")
     (aw-background nil))
+#+end_src
+
+Emacs allows you to, while the minibuffer is active, invoke another command that uses the minibuffer, in essence making the minibuffer from a single editing action into a stack of editing actions. In this particular instance, I think it's appropriate to have it off by default, simply for the sake of beginners who don't have a mental model of the minibuffer yet. But at this point, it's too handy for me to discard. Handily enough, Emacs can report your current depth of recursive minibuffer invocations in the modeline.
+
+#+begin_src emacs-lisp
+  (setq enable-recursive-minibuffers t)
+  (minibuffer-depth-indicate-mode)
 #+end_src
 
 ** Quality-of-life improvements
@@ -653,7 +666,8 @@ Before Emacs 27, the LSP experience on large projects was not particularly good.
     :custom
     (lsp-print-performance t)
     (lsp-log-io t)
-    (lsp-diagnostics-modeline-scope :project))
+    (lsp-diagnostics-modeline-scope :project)
+    (lsp-file-watch-threshold 5000))
 
   (use-package lsp-ui
     :custom (lsp-ui-doc-delay 0.75)
@@ -678,27 +692,29 @@ Haskell is my day-to-day programming language, so I've tinkered with it a good d
     (defvar haskell-formatter 'ormolu
       "The Haskell formatter to use. One of: 'ormolu, 'stylish, nil. Set it per-project in .dir-locals.")
 
+    (put 'haskell-formatter 'safe-local-variable #'symbolp)
+
     (defun haskell-smart-format ()
       "Format a buffer based on the value of 'haskell-formatter'."
       (interactive)
       (cl-ecase haskell-formatter
-	('ormolu (ormolu-format-buffer))
-	('stylish (haskell-mode-stylish-buffer))
-	(nil nil)
-	))
+        ('ormolu (ormolu-format-buffer))
+        ('stylish (haskell-mode-stylish-buffer))
+        (nil nil)
+        ))
 
     (defun haskell-switch-formatters ()
       "Switch from ormolu to stylish-haskell, or vice versa."
       (interactive)
       (setq haskell-formatter
-	    (cl-ecase haskell-formatter
-	      ('ormolu 'stylish)
-	      ('stylish 'ormolu)
-	      (nil nil))))
+            (cl-ecase haskell-formatter
+              ('ormolu 'stylish)
+              ('stylish 'ormolu)
+              (nil nil))))
 
     :bind (("C-c a c" . haskell-cabal-visit-file)
-	   ("C-c a i" . haskell-navigate-imports)
-	   ("C-c a I" . haskell-navigate-imports-return)))
+           ("C-c a i" . haskell-navigate-imports)
+           ("C-c a I" . haskell-navigate-imports-return)))
 
   (use-package haskell-snippets
     :after (haskell-mode yasnippet)
@@ -727,14 +743,19 @@ The state of terminal emulation is, as a whole, a mess. The only recent bright s
 A thing I want to do someday is to write a framework for sending things like compile commands to a running vterm buffer with ~vterm-send-string~.
 
 #+begin_src emacs-lisp
-  (use-package vterm)
+  (use-package vterm
+    :config
+    (defun stop-highlighting ()
+      (message "turning off hl line mode allegedly")
+      (hl-line-mode -1))
+    :hook (vterm-mode . stop-highlighting))
 
   (use-package vterm-toggle
     :custom
     (vterm-toggle-fullscreen-p nil "Open a vterm in another window.")
     :bind (("C-c t" . #'vterm-toggle-cd)
-	   :map vterm-mode-map
-	   ("<C-return>" . #'vterm-toggle-insert-cd)))
+           :map vterm-mode-map
+           ("<C-return>" . #'vterm-toggle-insert-cd)))
 #+end_src
 
 ** Process management
@@ -773,6 +794,11 @@ I grew up writing in TextMate, so I got extremely used to text-expansion snippet
 
    (use-package go-snippets)
  #+end_src
+
+Elm is a good language.
+
+#+begin_src emacs-lisp
+#+end_src
 
 *** Configuration
 
