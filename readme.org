@@ -585,7 +585,7 @@ Most every nontrivial package provides projectile integration in some form or fa
     :bind (("C-c f" . #'counsel-projectile)
            ("C-c F" . #'counsel-projectile-switch-project)))
 
-  (use-package smex)
+  (use-package amx)
 #+end_src
 
 ** Flycheck
@@ -800,7 +800,9 @@ I grew up writing in TextMate, so I got extremely used to text-expansion snippet
 Elm is a good language.
 
 #+begin_src emacs-lisp
-  (use-package elm-mode)
+  (use-package elm-mode
+    :ensure t
+    :hook (elm-mode . elm-format-on-save-mode))
 #+end_src
 
 *** Configuration
