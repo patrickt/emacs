@@ -87,7 +87,11 @@ We also need to turn on a few modes to have behavior that's even remotely modern
   (delete-selection-mode t)
   (global-display-line-numbers-mode t)
   (column-number-mode)
+#+end_src
 
+Emacs 27 comes with fast current-line highlight functionality, but it can produce some visual feedback in ~vterm~ or ~ivy~ buffers, so we only activate it in programming or text modes.
+
+#+begin_src emacs-lisp
   (require 'hl-line)
   (add-hook 'prog-mode-hook #'hl-line-mode)
   (add-hook 'text-mode-hook #'hl-line-mode)
@@ -219,8 +223,6 @@ I use the [[https://github.com/hlissner/emacs-doom-themes][Doom Emacs themes]], 
             doom-challenger-deep-brighter-modeline t)
       (load-theme chosen-theme)))
 #+end_src
-
-I like to highlight the current line a little more vividly than most themes do.
 
 Most major modes pollute the modeline, so we pull in diminish.el to quiesce them.
 
