@@ -65,6 +65,7 @@ Fixing Emacs's defaults is a nontrivial problem. We'll start with UI concerns.
 
 (defalias 'yes-or-no-p 'y-or-n-p) ; Accept 'y' in lieu of 'yes'.
 
+(set-fill-column 110) ;; 70 is too low, especially given my UWS monitor.
 #+end_src
 
 It's good that Emacs supports the wide variety of file encodings it does, but UTF-8 should always, /always/ be the default.
@@ -132,10 +133,13 @@ Emoji don't work on Emacs versions < 27 (aside from the Mitsuharu Yamamoto emacs
     (warn "This Emacs version is too old to properly support emoji."))
 #+end_src
 
-I genuinely can't imagine having a use for ~find-file-read-only~---why am I opening Emacs if I don't want to edit text?---and it certainly doesn't deserve its own keybinding.
+There are a great many keybindings that are actively hostile, in that they are bound to useless or obsolete functions that are really easy to trigger accidentally.
 
 #+begin_src emacs-lisp
-  (unbind-key "C-x C-f")
+  (unbind-key "C-x C-f") ;; find-file-read-only
+  (unbind-key "C-x C-d") ;; list-directory
+  (unbind-key "C-z") ;; suspend-frame
+  (unbind-key "M-o") ;; facemenu-mode
 #+end_src
 
 The out-of-the-box treatment of whitespace is unfortunate, but fixable.
@@ -302,12 +306,6 @@ Textmate-style tap-to-expand-into-the-current-delimiter is very useful and curio
     :bind (("C-c n" . er/expand-region)))
 #+end_src
 
-I'm not interested in calling anything associated with ~facemenu-mode~.
-
-#+begin_src emacs-lisp
-  (unbind-key "M-o")
-#+end_src
-
 Emacs's keybinding for ~comment-dwim~ is ~M-;~, which is not convenient to type or particularly mnemonic outside of an elisp context (where commenting is indeed ~;~). Better to bind it somewhere sensible.
 
 #+begin_src emacs-lisp
@@ -352,7 +350,7 @@ Emacs makes it weirdly hard to just, like, edit a file as root, probably due to 
   (use-package sudo-edit)
 #+end_src
 
-By default, Emacs uses a new buffer for every directory you visit in dired. This is not only terrible from a UI perspective---Emacs warns you if you try to use the sensible behavior (the ~a~ key, ~dired-find-alternate-file~). Willfully obtuse. The ~dired+.el~ library fixes this, but because it's not on MELPA, I refuse to use it out of principle (this man's refusal to compromise is nothing short of crankery, and it would be intellectually remiss of me to abet his crankery). But, as always, we can make Emacs do the right thing. Manually.
+By default, Emacs uses a new buffer for every directory you visit in dired. This is not only terrible from a UI perspective---Emacs warns you if you try to use the sensible behavior (the ~a~ key, ~dired-find-alternate-file~). Willfully obtuse. The ~dired+.el~ library fixes this, but because it's not on MELPA, I refuse to use it out of principle (this man's refusal to compromise is nothing short of crankery, and it would be intellectually remiss of me to abet his crankery). But, as always, we can make Emacs do the right thing. Manually. Furthermore, dired complains every time it's opened on Darwin, so we should fix that.
 
 #+begin_src emacs-lisp
   (defun dired-up-directory-same-buffer ()
@@ -365,6 +363,8 @@ By default, Emacs uses a new buffer for every directory you visit in dired. This
     (define-key dired-mode-map (kbd "^") 'dired-up-directory-same-buffer))
 
   (add-hook 'dired-mode-hook #'my-dired-mode-hook)
+
+  (setq dired-use-ls-dired nil)
 #+end_src
 
 Emacs has problems with very long lines. ~so-long~ detects them and takes appropriate action. Good for minified code and whatnot.
@@ -501,36 +501,6 @@ Emacs allows you to, while the minibuffer is active, invoke another command that
   (minibuffer-depth-indicate-mode)
 #+end_src
 
-* Packages
-** Magit
-
-Magit is one of the top three reasons anyone should use Emacs. What a brilliant piece of software it is. I never thought I'd be faster with a git GUI than with the command line, since I've been using git for thirteen years at this point, but wonders really never cease. Magit is as good as everyone says, and more.
-
-#+begin_src emacs-lisp
-  (use-package magit
-    :diminish magit-auto-revert-mode
-    :diminish auto-revert-mode
-    :bind (("C-c g" . #'magit-status))
-    :config
-    (add-to-list 'magit-no-confirm 'stage-all-changes))
-#+end_src
-
-Pulling in the ~libgit~ module makes Magit a good deal faster. For some reason, Emacs has problems determining the correct file extension for the resulting build product; it chooses ~.so~ even though Emacs expects a ~dylib~. To fix this, change directory to where the offending module lives and change its file extension to what is expected.
-
-#+begin_src emacs-lisp
-  (use-package libgit)
-
-  (use-package magit-libgit
-    :after (magit libgit))
-#+end_src
-
-Magit also allows integration with GitHub and other such forges (though I hate that term).
-
-#+begin_src emacs-lisp
-  (use-package forge
-    :after magit)
-#+end_src
-
 ** Org-mode
 
 Even though my whole-ass blogging workflow is built around org-mode, I still can't say that I know it very well. I don't take advantage of ~org-agenda~, ~org-timer~, ~org-calendar~, ~org-capture~, anything interesting to do with tags, et cetera. Someday I will learn these things, but not yet.
@@ -559,6 +529,35 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
 
   (use-package org-bullets
     :hook (org-mode . org-bullets-mode))
+#+end_src
+* IDE features
+** Magit
+
+Magit is one of the top three reasons anyone should use Emacs. What a brilliant piece of software it is. I never thought I'd be faster with a git GUI than with the command line, since I've been using git for thirteen years at this point, but wonders really never cease. Magit is as good as everyone says, and more.
+
+#+begin_src emacs-lisp
+  (use-package magit
+    :diminish magit-auto-revert-mode
+    :diminish auto-revert-mode
+    :bind (("C-c g" . #'magit-status))
+    :config
+    (add-to-list 'magit-no-confirm 'stage-all-changes))
+#+end_src
+
+Pulling in the ~libgit~ module makes Magit a good deal faster. For some reason, Emacs has problems determining the correct file extension for the resulting build product; it chooses ~.so~ even though Emacs expects a ~dylib~. To fix this, change directory to where the offending module lives and change its file extension to what is expected.
+
+#+begin_src emacs-lisp
+  (use-package libgit)
+
+  (use-package magit-libgit
+    :after (magit libgit))
+#+end_src
+
+Magit also allows integration with GitHub and other such forges (though I hate that term).
+
+#+begin_src emacs-lisp
+  (use-package forge
+    :after magit)
 #+end_src
 
 ** Projectile
