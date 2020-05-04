@@ -1,5 +1,8 @@
 custom.el
 readme.el
+.lsp-session*
+amx-items
+*.sqlite
 elpa
 games
 recentf

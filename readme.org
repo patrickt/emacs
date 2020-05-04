@@ -181,12 +181,16 @@ It's 2020, we don't paste with mouse-wheel-click anymore.
   (unbind-key "<mouse-2>")
 #+end_src
 
+#+begin_src emacs-lisp
+  (setq enable-local-variables :all)
+#+end_src
+
 ** Visuals
 
 Emacs looks a lot better when it has a modern monospaced font and VSCode-esque icons.
 
 #+begin_src emacs-lisp
-  (ignore-errors (set-frame-font "SF Mono-12"))
+  (ignore-errors (set-frame-font "Menlo-14"))
 
   (use-package all-the-icons)
 
@@ -310,7 +314,8 @@ Bufler is a new addition here; I'm still not 100% sold, but given that I work on
 
 #+begin_src emacs-lisp
   (use-package bufler
-    :bind (("C-x b" . #'bufler-switch-buffer)))
+    :bind (("C-x b" . #'bufler-switch-buffer)
+           ("C-x B" . #'counsel-switch-buffer)))
 #+end_src
 
 I almost always want to default to a two-buffer setup.
@@ -493,6 +498,13 @@ Pulling in the ~libgit~ module makes Magit a good deal faster. For some reason, 
 
   (use-package magit-libgit
     :after (magit libgit))
+#+end_src
+
+Magit also allows integration with GitHub and other such forges (though I hate that term).
+
+#+begin_src emacs-lisp
+  (use-package forge
+    :after magit)
 #+end_src
 
 ** Org-mode
@@ -691,10 +703,9 @@ Haskell is my day-to-day programming language, so I've tinkered with it a good d
   (use-package haskell-mode
 
     :config
-    (defvar haskell-formatter 'ormolu
-      "The Haskell formatter to use. One of: 'ormolu, 'stylish, nil. Set it per-project in .dir-locals.")
-
-    (put 'haskell-formatter 'safe-local-variable #'symbolp)
+    (defcustom haskell-formatter 'ormolu
+      "The Haskell formatter to use. One of: 'ormolu, 'stylish, nil. Set it per-project in .dir-locals."
+      :safe 'symbolp)
 
     (defun haskell-smart-format ()
       "Format a buffer based on the value of 'haskell-formatter'."
@@ -713,6 +724,8 @@ Haskell is my day-to-day programming language, so I've tinkered with it a good d
               ('ormolu 'stylish)
               ('stylish 'ormolu)
               (nil nil))))
+
+    (add-to-list 'haskell-ghc-supported-extensions "QuantifiedConstraints")
 
     :bind (("C-c a c" . haskell-cabal-visit-file)
            ("C-c a i" . haskell-navigate-imports)
@@ -747,10 +760,10 @@ A thing I want to do someday is to write a framework for sending things like com
 #+begin_src emacs-lisp
   (use-package vterm
     :config
-    (defun stop-highlighting ()
-      (message "turning off hl line mode allegedly")
-      (hl-line-mode -1))
-    :hook (vterm-mode . stop-highlighting))
+    (defun turn-off-chrome ()
+      (hl-line-mode -1)
+      (display-line-numbers-mode -1))
+    :hook (vterm-mode . turn-off-chrome))
 
   (use-package vterm-toggle
     :custom
@@ -809,6 +822,8 @@ Elm is a good language.
 
  #+begin_src emacs-lisp
    (use-package yaml-mode)
+   (use-package dockerfile-mode)
+   (use-package toml-mode)
  #+end_src
 
 *** Interchange
