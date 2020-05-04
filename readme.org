@@ -1,4 +1,4 @@
-This is my Emacs configuration, assembled over the course of more than ten years. I first started using Emacs in 2009 out of sheer necessity---I first learned to code using [[https://github.com/textmate/textmate][TextMate]], but that wasn't an option upon, after arriving at college, being required to SSH into some creaky Sun boxes running geologically-old versions of Solaris. Even then, everything in Emacs was a struggle for me. As of this writing, it is 2020, and I have an incurable case of Emacs-induced brain worms; I've spent on the order of hundreds of hours tweaking and refining my configuration.
+This is my Emacs configuration, assembled over the course of more than ten years. I first started using Emacs in 2009 out of sheer necessity---I first learned to code using [[https://github.com/textmate/textmate][TextMate]], but that wasn't an option upon, after arriving at college, being required to SSH into some creaky Sun boxes running geologically-old versions of Solaris. Even then, everything in Emacs was a struggle for me. As of this writing, it is 2020, and I have an incurable case of Emacs-induced brain worms; I've spent on the order of hundreds of hours tweaking and refining my configuration. This file is the result of that.
 
 If there's anything that convinced me to take on this lifelong Emacs habit, it's because both macOS and iOS come, out of the box, with support for Emacs keybindings in their text areas. Said keybindings aren't hugely exhaustive, but they're useful, especially given that the ~Ctrl-k~ and ~Ctrl-y~ inputs for copy and paste operate on a /different/ clipboard than do ~⌘C~ and ~⌘V~. Once I discovered that, and the dorkily exhiliating feeling of juggling information through the various system pasteboards, I was more or less entirely beholden to the Emacs way, despite the merits of modal editing[fn:1].
 
@@ -20,8 +20,6 @@ I'll say it: modern Emacs Lisp is unfairly maligned. However, it was pretty fair
  #+begin_src emacs-lisp
    (setq lexical-binding t)
  #+end_src
-
- #+RESULTS:
 
  We use ~use-package~ everywhere (it is loaded in the [[https://github.com/patrickt/emacs/blob/master/init.el][~init.el~]] that bootstraps this whole enterprise), and by default we want it to install all mentioned packages.
 
@@ -53,7 +51,7 @@ Fixing Emacs's defaults is a nontrivial problem. We'll start with UI concerns.
    ;; Never ding at me, ever.
    ring-bell-function 'ignore
    ;; Prompts should go in the minibuffer, not in a GUI.
-   use-dialog-box nil ;
+   use-dialog-box nil
    ;; Fix undo in commands affecting the mark.
    mark-even-if-inactive nil
    ;; Let C-k delete the whole line.
@@ -69,7 +67,7 @@ Fixing Emacs's defaults is a nontrivial problem. We'll start with UI concerns.
 
 #+end_src
 
-It's good that Emacs supports such a wide variety of file encodings as it does, but UTF-8 should always, /always/ be the default.
+It's good that Emacs supports the wide variety of file encodings it does, but UTF-8 should always, /always/ be the default.
 
 #+begin_src emacs-lisp
   (set-charset-priority 'unicode)
@@ -81,7 +79,7 @@ It's good that Emacs supports such a wide variety of file encodings as it does, 
   (setq default-process-coding-system '(utf-8-unix . utf-8-unix))
 #+end_src
 
-We also need to turn on a few modes to have behavior that's even remotely modern. ~global-hl-line-mode~ is close to but not quite the right thing, as it plays poorly with ~vterm~ and ~vterm-toggle~.
+We also need to turn on a few modes to have behavior that's even remotely modern.
 
 #+begin_src emacs-lisp
   (delete-selection-mode t)
@@ -169,7 +167,7 @@ Emacs is also in love with showing you its NEWS file; it's bound to like four di
   (defalias 'describe-gnu-project 'do-nothing)
 #+end_src
 
-Undo has always been problematic for me in Emacs, and I only just learned why: a redo action marks itself as undoable. This binds a better default.
+Undo has always been problematic for me in Emacs. I'm trying to wean myself off of ~undo-tree-mode~ due to its proclivity for losing my history. This binding seems to improve the aesthetics of undo/redo, though it's certainly not perfect.
 
 #+begin_src emacs-lisp
   (bind-key "s-y" #'undo-redo)
@@ -180,6 +178,8 @@ It's 2020, we don't paste with mouse-wheel-click anymore.
 #+begin_src emacs-lisp
   (unbind-key "<mouse-2>")
 #+end_src
+
+I define a couple of my own configuration variables with ~defvar~, and no matter how many times I mark the variable as safe, it warns me every time I set it in the ~.dir-locals~ file. Disabling these warnings is probably the right thing to do.
 
 #+begin_src emacs-lisp
   (setq enable-local-variables :all)
@@ -250,6 +250,12 @@ I find it useful to have a slightly more apparent indicator of which buffer is a
     :config (dimmer-mode))
 #+end_src
 
+Highlighting the closing/opening pair associated with a given parenthesis is essential.
+
+#+begin_src emacs-lisp
+  (show-paren-mode)
+#+end_src
+
 *** Tabs
 
 The long-awaited Emacs 27 support for native tabs is shaky, both visually and in terms of functionality. As such, ~centaur-tabs~ is the best way forwards.
@@ -308,86 +314,17 @@ Emacs's keybinding for ~comment-dwim~ is ~M-;~, which is not convenient to type 
   (bind-key "C-c /" #'comment-dwim)
 #+end_src
 
-** Buffer management
-
-Bufler is a new addition here; I'm still not 100% sold, but given that I work on an ultra-widescreen monitor, I need to start figuring out some better buffer layout mechanism, because the situation is not particularly good.
+~avy~ gives us fluent jump-to-line commands mapped to the home row.
 
 #+begin_src emacs-lisp
-  (use-package bufler
-    :bind (("C-x b" . #'bufler-switch-buffer)
-           ("C-x B" . #'counsel-switch-buffer)))
+  (use-package avy
+    :bind ("C-c l" . avy-goto-line))
 #+end_src
 
-I almost always want to default to a two-buffer setup.
+~iedit~ gives us the very popular idiom of automatically deploying multiple cursors to edit all occurrences of a particular word.
 
 #+begin_src emacs-lisp
-  (defun revert-to-two-windows ()
-    "Delete all other windows and split it into two."
-    (interactive)
-    (delete-other-windows)
-    (split-window-right))
-
-  (bind-key "C-x 1" #'revert-to-two-windows)
-  (bind-key "C-x !" #'delete-other-windows) ;; Access to the old keybinding.
-#+end_src
-
-Ivy makes ~kill-buffer~ give you a list of possible results, which isn't generally what I want.
-
-#+begin_src emacs-lisp
-  (defun kill-this-buffer ()
-    "Kill the current buffer."
-    (interactive)
-    (kill-buffer nil)
-    )
-
-  (bind-key "C-x k" #'kill-this-buffer)
-  (bind-key "C-x K" #'kill-buffer)
-#+end_src
-
-VS Code has a great feature where you can just copy a filename to the clipboard.
-
-#+begin_src emacs-lisp
-  (defun copy-file-name-to-clipboard ()
-    "Copy the current buffer file name to the clipboard."
-    (interactive)
-    (let ((filename (if (equal major-mode 'dired-mode) default-directory (buffer-file-name))))
-      (when filename
-        (kill-new filename)
-        (message "Copied buffer file name '%s' to the clipboard." filename))))
-
-  (bind-key "C-c P" #'copy-file-name-to-clipboard)
-#+end_src
-
-Normally I bind ~other-window~ to ~C-c ,~, but on my ultra-wide-screen monitor, which supports up to 8 buffers comfortably, holding that key to move around buffers is kind of a drag. Some useful commands to remember here are ~aw-ignore-current~ and ~aw-ignore-on~.
-
-#+begin_src emacs-lisp
-  (use-package ace-window
-    :config
-    ;; Show the window designators in the modeline.
-    (ace-window-display-mode)
-
-     ;; Make the number indicators a little larger. I'm getting old.
-    (set-face-attribute 'aw-leading-char-face nil :height 2.0 :background "black")
-
-    (defun my-ace-window (args)
-      "As ace-window, but hiding the cursor while the action is active."
-      (interactive "P")
-      (cl-letf ((cursor-type nil)
-		(cursor-in-non-selected-window nil))
-	(ace-window nil)))
-
-
-    :bind (("C-," . my-ace-window))
-    :custom
-    (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l) "Designate windows by home row keys, not numbers.")
-    (aw-background nil))
-#+end_src
-
-Emacs allows you to, while the minibuffer is active, invoke another command that uses the minibuffer, in essence making the minibuffer from a single editing action into a stack of editing actions. In this particular instance, I think it's appropriate to have it off by default, simply for the sake of beginners who don't have a mental model of the minibuffer yet. But at this point, it's too handy for me to discard. Handily enough, Emacs can report your current depth of recursive minibuffer invocations in the modeline.
-
-#+begin_src emacs-lisp
-  (setq enable-recursive-minibuffers t)
-  (minibuffer-depth-indicate-mode)
+  (use-package iedit)
 #+end_src
 
 ** Quality-of-life improvements
@@ -476,6 +413,93 @@ When I hit, accidentally or purposefully, a key chord that forms the prefix of s
     (which-key-setup-minibuffer))
 #+end_src
 
+Being able to switch into distraction-free center-aligned text is really good for editing blog posts and such.
+
+#+begin_src emacs-lisp
+  (use-package olivetti)
+#+end_src
+
+** Buffer management
+
+Bufler is a new addition here; I'm still not 100% sold, but given that I work on an ultra-widescreen monitor, I need to start figuring out some better buffer layout mechanism, because the situation is not particularly good.
+
+#+begin_src emacs-lisp
+  (use-package bufler
+    :bind (("C-x b" . #'bufler-switch-buffer)
+           ("C-x B" . #'counsel-switch-buffer)))
+#+end_src
+
+I almost always want to default to a two-buffer setup.
+
+#+begin_src emacs-lisp
+  (defun revert-to-two-windows ()
+    "Delete all other windows and split it into two."
+    (interactive)
+    (delete-other-windows)
+    (split-window-right))
+
+  (bind-key "C-x 1" #'revert-to-two-windows)
+  (bind-key "C-x !" #'delete-other-windows) ;; Access to the old keybinding.
+#+end_src
+
+Ivy makes ~kill-buffer~ give you a list of possible results, which isn't generally what I want.
+
+#+begin_src emacs-lisp
+  (defun kill-this-buffer ()
+    "Kill the current buffer."
+    (interactive)
+    (kill-buffer nil)
+    )
+
+  (bind-key "C-x k" #'kill-this-buffer)
+  (bind-key "C-x K" #'kill-buffer)
+#+end_src
+
+VS Code has a great feature where you can just copy a filename to the clipboard.
+
+#+begin_src emacs-lisp
+  (defun copy-file-name-to-clipboard ()
+    "Copy the current buffer file name to the clipboard."
+    (interactive)
+    (let ((filename (if (equal major-mode 'dired-mode) default-directory (buffer-file-name))))
+      (when filename
+        (kill-new filename)
+        (message "Copied buffer file name '%s' to the clipboard." filename))))
+
+  (bind-key "C-c P" #'copy-file-name-to-clipboard)
+#+end_src
+
+Normally I bind ~other-window~ to ~C-c ,~, but on my ultra-wide-screen monitor, which supports up to 8 buffers comfortably, holding that key to move around buffers is kind of a drag. Some useful commands to remember here are ~aw-ignore-current~ and ~aw-ignore-on~.
+
+#+begin_src emacs-lisp
+  (use-package ace-window
+    :config
+    ;; Show the window designators in the modeline.
+    (ace-window-display-mode)
+
+     ;; Make the number indicators a little larger. I'm getting old.
+    (set-face-attribute 'aw-leading-char-face nil :height 2.0 :background "black")
+
+    (defun my-ace-window (args)
+      "As ace-window, but hiding the cursor while the action is active."
+      (interactive "P")
+      (cl-letf ((cursor-type nil)
+		(cursor-in-non-selected-window nil))
+	(ace-window nil)))
+
+
+    :bind (("C-," . my-ace-window))
+    :custom
+    (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l) "Designate windows by home row keys, not numbers.")
+    (aw-background nil))
+#+end_src
+
+Emacs allows you to, while the minibuffer is active, invoke another command that uses the minibuffer, in essence making the minibuffer from a single editing action into a stack of editing actions. In this particular instance, I think it's appropriate to have it off by default, simply for the sake of beginners who don't have a mental model of the minibuffer yet. But at this point, it's too handy for me to discard. Handily enough, Emacs can report your current depth of recursive minibuffer invocations in the modeline.
+
+#+begin_src emacs-lisp
+  (setq enable-recursive-minibuffers t)
+  (minibuffer-depth-indicate-mode)
+#+end_src
 
 * Packages
 ** Magit
@@ -519,7 +543,8 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
                 ("C-c a f" . #'org-shifttab))
     :custom
     (org-return-follows-link t)
-    (org-src-ask-before-returning-to-edit-buffer nil)
+    (org-src-ask-before-returning-to-edit-buffer nil "org-src is kinda needy out of the box")
+    (org-src-window-setup 'split-window-below)
     (org-footnote-section "" "Footnotes don't get their own section.")
 
     :config
@@ -551,7 +576,7 @@ Most every nontrivial package provides projectile integration in some form or fa
 
 ** Ivy, counsel, and swiper
 
-"Should I use Helm or Ivy?" It's one of the biggest questions everyone with a nice Emacs setup has to answer. Helm is more featureful and fancier out of the box, whereas Ivy is more minimal, requiring a few packages to approach how nice Helm looks. However, Ivy is still worth it to me, given that I spend a lot of time cursing Emacs's performance on macOS. And with ~ivy-rich~, things even look nice.
+"Should I use Helm or Ivy?" It's one of the biggest questions everyone with a nice Emacs setup has to answer. Helm is more featureful and fancier out of the box, whereas Ivy is more minimal, requiring a few packages to approach how nice Helm looks. However, Ivy is still worth it to me, given that I spend a lot of time cursing Emacs's performance on macOS. And with ~ivy-rich~, things even look nice. ~counsel~ provides nice UI chrome for built-in commands, ~counsel-projectile~ provides project integration, and ~amx~ provides most-recently-used information and keeps track of which commands I use and which I don't.
 
 #+begin_src emacs-lisp
   (use-package ivy
@@ -631,7 +656,7 @@ deadgrep is the bee's knees for project-wide search, as it uses ~ripgrep~.
     :bind (("C-c h" . #'deadgrep)))
 #+end_src
 
-I remember the days before Emacs had real regular expressions. Nowadays, we have them, but the find-and-replace UI is bad. ~visual-regexp~ fixes this. I have this bound to an incredibly stupid keybinding because I simply do not want to take the time to catabolize/forget that particular muscle memory
+I remember the days before Emacs had real regular expressions. Nowadays, we have them, but the find-and-replace UI is bad. ~visual-regexp~ fixes this. I have this bound to an incredibly stupid keybinding because I simply do not want to take the time to catabolize/forget that particular muscle memory.
 
 #+begin_src emacs-lisp
   (use-package visual-regexp
@@ -725,7 +750,14 @@ Haskell is my day-to-day programming language, so I've tinkered with it a good d
               ('stylish 'ormolu)
               (nil nil))))
 
-    (add-to-list 'haskell-ghc-supported-extensions "QuantifiedConstraints")
+    ;; haskell-mode doesn't know about newer GHC features.
+    (let ((new-extensions '("QuantifiedConstraints"
+                            "DerivingVia"
+                            "BlockArguments"
+                            "DerivingStrategies")))
+      (setq
+       haskell-ghc-supported-extensions
+       (append haskell-ghc-supported-extensions new-extensions)))
 
     :bind (("C-c a c" . haskell-cabal-visit-file)
            ("C-c a i" . haskell-navigate-imports)
