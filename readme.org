@@ -41,31 +41,33 @@ Since subsequent packages like ~libgit~ may depend on executables like ~cmake~, 
 Fixing Emacs's defaults is a nontrivial problem. We'll start with UI concerns.
 
 #+begin_src emacs-lisp
-  (setq
-   ;; No need to see GNU agitprop.
-   inhibit-startup-screen t
-   ;; No need to remind me what a scratch buffer is.
-   initial-scratch-message nil
-   ;; Double-spaces after periods is morally wrong.
-   sentence-end-double-space nil
-   ;; Never ding at me, ever.
-   ring-bell-function 'ignore
-   ;; Prompts should go in the minibuffer, not in a GUI.
-   use-dialog-box nil
-   ;; Fix undo in commands affecting the mark.
-   mark-even-if-inactive nil
-   ;; Let C-k delete the whole line.
-   kill-whole-line t
-   )
+    (setq
+     ;; No need to see GNU agitprop.
+     inhibit-startup-screen t
+     ;; No need to remind me what a scratch buffer is.
+     initial-scratch-message nil
+     ;; Double-spaces after periods is morally wrong.
+     sentence-end-double-space nil
+     ;; Never ding at me, ever.
+     ring-bell-function 'ignore
+     ;; Prompts should go in the minibuffer, not in a GUI.
+     use-dialog-box nil
+     ;; Fix undo in commands affecting the mark.
+     mark-even-if-inactive nil
+     ;; Let C-k delete the whole line.
+     kill-whole-line t
+     ;; search should be case-sensitive by default
+     case-fold-search nil
+     )
 
-;; Never mix tabs and spaces. Never use tabs, period.
-;; We need the setq-default here because this becomes
-;; a buffer-local variable when set.
-(setq-default indent-tabs-mode nil)
+  ;; Never mix tabs and spaces. Never use tabs, period.
+  ;; We need the setq-default here because this becomes
+  ;; a buffer-local variable when set.
+  (setq-default indent-tabs-mode nil)
 
-(defalias 'yes-or-no-p 'y-or-n-p) ; Accept 'y' in lieu of 'yes'.
+  (defalias 'yes-or-no-p 'y-or-n-p) ; Accept 'y' in lieu of 'yes'.
 
-(set-fill-column 110) ;; 70 is too low, especially given my UWS monitor.
+  (set-fill-column 110) ;; 70 is too low, especially given my UWS monitor.
 #+end_src
 
 It's good that Emacs supports the wide variety of file encodings it does, but UTF-8 should always, /always/ be the default.
@@ -260,6 +262,23 @@ Highlighting the closing/opening pair associated with a given parenthesis is ess
   (show-paren-mode)
 #+end_src
 
+The Emacs dashboard looks okay once you disable its cutesy messages. Unfortunately, since I haven't yet figured out how to make macOS open Emacs on another screen, which makes the visual effect of seeing a dashboard before clicking-and-dragging an Emacs window around somewhat underwhelming. It also looks a little goofy on UWS screens, so I'm disabling it for now.
+
+#+begin_src emacs-lisp
+  (use-package dashboard
+    :disabled ;; for now
+    :custom
+    (dashboard-banner-logo-title "Welcome back.")
+    (dashboard-startup-banner 'logo)
+    (dashboard-center-content t)
+    (dashboard-items '((projects . 10)
+                       (recents . 10)
+                       (agenda . 5)))
+    (dashboard-set-navigator t)
+    (dashboard-set-footer nil)
+    :config (dashboard-setup-startup-hook))
+#+end_src
+
 *** Tabs
 
 The long-awaited Emacs 27 support for native tabs is shaky, both visually and in terms of functionality. As such, ~centaur-tabs~ is the best way forwards.
@@ -292,13 +311,6 @@ Any modern editor should include multiple-cursor support. Sure, keyboard macros 
            ("C-c m d" . #'mc/mark-all-dwim )))
 #+end_src
 
-I know I'm repeating myself re. the inadequacy of stock Emacs defaults, but lack of parenthesis-matching is pretty egregious. It even comes with ~electric-pair-mode~, which is not turned on by default, even in ~prog-mode.~
-
-#+begin_src emacs-lisp
-  (use-package smartparens
-    :config (smartparens-global-mode))
-#+end_src
-
 Textmate-style tap-to-expand-into-the-current-delimiter is very useful and curiously absent.
 
 #+begin_src emacs-lisp
@@ -323,6 +335,12 @@ Emacs's keybinding for ~comment-dwim~ is ~M-;~, which is not convenient to type 
 
 #+begin_src emacs-lisp
   (use-package iedit)
+#+end_src
+
+Parenthesis matching is one of the flaws in my Emacs setup as of this writing. I know that there are a lot of options out there---~paredit~, ~smartparens~, etc.---but I haven't sat down and really capital-L Learned a better solution than the TextMate-style bracket completion (which Emacs calls, somewhat fancifully, 'electric').
+
+#+begin_src emacs-lisp
+  (electric-pair-mode)
 #+end_src
 
 ** Quality-of-life improvements
@@ -380,7 +398,7 @@ Using an ephemeral buffer to indicate what commands are available makes discover
     :config
     (which-key-mode)
     (which-key-setup-side-window-bottom)
-    :custom (which-key-idle-delay 2))
+    :custom (which-key-idle-delay 1.2))
 #+end_src
 
 I've never needed a font panel in Emacs, not even once.
@@ -411,12 +429,6 @@ When I hit, accidentally or purposefully, a key chord that forms the prefix of s
     (which-key-enable-extended-define-key t)
     :config
     (which-key-setup-minibuffer))
-#+end_src
-
-Being able to switch into distraction-free center-aligned text is really good for editing blog posts and such.
-
-#+begin_src emacs-lisp
-  (use-package olivetti)
 #+end_src
 
 ** Buffer management
@@ -508,10 +520,13 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
 #+begin_src emacs-lisp
   (use-package org
     :hook ((org-mode . visual-line-mode))
-    :bind (:map org-mode-map
+    :bind (("C-c o c" . counsel-org-capture)
+
                 ("C-c c" . #'org-mode-insert-code)
                 ("C-c a f" . #'org-shifttab))
     :custom
+    (org-directory "~/txt")
+    (org-default-notes-file (concat org-directory "/notes.org"))
     (org-return-follows-link t)
     (org-src-ask-before-returning-to-edit-buffer nil "org-src is kinda needy out of the box")
     (org-src-window-setup 'split-window-below)
@@ -677,7 +692,7 @@ TODO: C-n and C-p should work in the company completion map, but I'm so tired of
     (company-dabbrev-downcase nil "Don't downcase returned candidates.")
     (company-show-numbers t "Numbers are helpful.")
     (company-tooltip-limit 20 "The more the merrier.")
-    (company-idle-delay 0.1 "Faster!")
+    (company-tooltip-idle-delay 0.4 "Faster!")
     (company-async-timeout 20 "Some requests can take a long time. That's fine.")
     :config
 
@@ -784,7 +799,7 @@ My statements about Haskell autoformatters have, in the past, attracted controve
 
 ** vterm
 
-The state of terminal emulation is, as a whole, a mess. The only recent bright spot has been libvterm, which, when integrated with Emacs's new dynamic module support, enables us to have a very, very fast terminal inside Emacs.
+The state of terminal emulation is, as a whole, a mess. Not just within Emacs, but across all of Unix. The only recent bright spot has been libvterm, which, when integrated with Emacs's new dynamic module support, enables us to have a very, very fast terminal inside Emacs.
 
 A thing I want to do someday is to write a framework for sending things like compile commands to a running vterm buffer with ~vterm-send-string~.
 
@@ -831,7 +846,7 @@ I grew up writing in TextMate, so I got extremely used to text-expansion snippet
 
 *** General-purpose
 
- I occasionally write Go, generally as a glue language to munge things together. I find ertain aspects of its creators' philosophies to be repellent, but it's hard to argue with the success it's found in industry.
+ I occasionally write Go, generally as a glue language to munge things together. I find certain aspects of its creators' philosophies to be repellent, but a language is more than its creators, and it's hard to argue with the success it's found in industry or the degree to which people find it easy to pick up.
 
  #+begin_src emacs-lisp
    (use-package go-mode
@@ -846,7 +861,8 @@ Elm is a good language.
 #+begin_src emacs-lisp
   (use-package elm-mode
     :ensure t
-    :hook (elm-mode . elm-format-on-save-mode))
+    :hook ((elm-mode . elm-format-on-save-mode)
+           (elm-mode . elm-indent-mode)))
 #+end_src
 
 *** Configuration
@@ -884,6 +900,13 @@ Elm is a good language.
  (use-package restclient
    :mode ("\\.restclient$" . restclient-mode))
  #+end_src
+
+~Dash~ is the foremost documentation browser for macOS.
+
+#+begin_src emacs-lisp
+  (use-package dash-at-point
+    :bind ("C-c d" . dash-at-point))
+#+end_src
 
 * Adios
 
