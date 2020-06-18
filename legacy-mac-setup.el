@@ -1,6 +1,9 @@
 ;; init.el -- Patrick Thomson's emacs config. -*- lexical-binding: t; -*-
 
 ;;; Commentary:
+;;
+;; THIS FILE IS DEPRECATED: PLEASE CONSULT README.ORG FOR THE LATEST VERSION
+;;
 ;; This file is in the public domain.
 ;;
 ;; If you want to give this file a try, you can just drop it into

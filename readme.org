@@ -21,7 +21,7 @@ I'll say it: modern Emacs Lisp is unfairly maligned. However, it was pretty fair
    (setq lexical-binding t)
  #+end_src
 
- We use ~use-package~ everywhere (it is loaded in the [[https://github.com/patrickt/emacs/blob/master/init.el][~init.el~]] that bootstraps this whole enterprise), and by default we want it to install all mentioned packages.
+ We use ~use-package~ everywhere (it is loaded in the [[https://github.com/patrickt/emacs/blob/master/init.el][~init.el~]] that bootstraps this whole enterprise), and by default we want it to install all mentioned packages. @jkachmar tells me there are bugs in this setting. I should look into that before I publish this as a post.
 
  #+begin_src emacs-lisp
    (setq use-package-always-ensure t)
@@ -173,10 +173,16 @@ Emacs is also in love with showing you its NEWS file; it's bound to like four di
   (defalias 'describe-gnu-project 'do-nothing)
 #+end_src
 
-Undo has always been problematic for me in Emacs. I'm trying to wean myself off of ~undo-tree-mode~ due to its proclivity for losing my history. This binding seems to improve the aesthetics of undo/redo, though it's certainly not perfect.
+Undo has always been problematic for me in Emacs. The beauty of undo-tree is that it means that, once you've typed something into a buffer, you'll always be able to get it back. At least in theory. undo-tree has long-standing data loss bugs that are unlikely to be fixed. But no other package provodes a comparable
+experience.
 
 #+begin_src emacs-lisp
-  (bind-key "s-y" #'undo-redo)
+  (use-package undo-tree
+    :diminish
+    :bind (("C-c _" . undo-tree-visualize))
+    :config
+    (global-undo-tree-mode +1)
+    (unbind-key "M-_" undo-tree-map))
 #+end_src
 
 It's 2020, we don't paste with mouse-wheel-click anymore.
@@ -262,23 +268,6 @@ Highlighting the closing/opening pair associated with a given parenthesis is ess
   (show-paren-mode)
 #+end_src
 
-The Emacs dashboard looks okay once you disable its cutesy messages. Unfortunately, since I haven't yet figured out how to make macOS open Emacs on another screen, which makes the visual effect of seeing a dashboard before clicking-and-dragging an Emacs window around somewhat underwhelming. It also looks a little goofy on UWS screens, so I'm disabling it for now.
-
-#+begin_src emacs-lisp
-  (use-package dashboard
-    :disabled ;; for now
-    :custom
-    (dashboard-banner-logo-title "Welcome back.")
-    (dashboard-startup-banner 'logo)
-    (dashboard-center-content t)
-    (dashboard-items '((projects . 10)
-                       (recents . 10)
-                       (agenda . 5)))
-    (dashboard-set-navigator t)
-    (dashboard-set-footer nil)
-    :config (dashboard-setup-startup-hook))
-#+end_src
-
 *** Tabs
 
 The long-awaited Emacs 27 support for native tabs is shaky, both visually and in terms of functionality. As such, ~centaur-tabs~ is the best way forwards.
@@ -311,6 +300,11 @@ Any modern editor should include multiple-cursor support. Sure, keyboard macros 
            ("C-c m d" . #'mc/mark-all-dwim )))
 #+end_src
 
+The ~fill-paragraph~ (~M-q~) command can be useful for formatting long text lines in a pleasing matter. I don't do it in every document, but when I do, I want more columns than the default 70.
+
+#+begin_src emacs-lisp
+  (set-fill-column 135)
+#+end_src
 Textmate-style tap-to-expand-into-the-current-delimiter is very useful and curiously absent.
 
 #+begin_src emacs-lisp
@@ -411,7 +405,12 @@ It's genuinely shocking that there's no "duplicate whatever's marked" command bu
 
 #+begin_src emacs-lisp
   (use-package duplicate-thing
-    :bind (("C-c u" . duplicate-thing)))
+    :init
+    (defun my-duplicate-thing ()
+      "Duplicate thing at point without changing the mark."
+      (interactive)
+      (save-mark-and-excursion (duplicate-thing 1)))
+    :bind (("C-c u" . my-duplicate-thing)))
 #+end_src
 
 We need to support reading large blobs of data for LSP's sake.
@@ -454,6 +453,12 @@ I almost always want to default to a two-buffer setup.
   (bind-key "C-x !" #'delete-other-windows) ;; Access to the old keybinding.
 #+end_src
 
+~keyboard-quit~ doesn't exit the minibuffer, so I give ~abort-recursive-edit~, which does, a more convenient keybinding.
+
+#+begin_src emacs-lisp
+  (bind-key "s-g" #'abort-recursive-edit)
+#+end_src
+
 Ivy makes ~kill-buffer~ give you a list of possible results, which isn't generally what I want.
 
 #+begin_src emacs-lisp
@@ -465,6 +470,18 @@ Ivy makes ~kill-buffer~ give you a list of possible results, which isn't general
 
   (bind-key "C-x k" #'kill-this-buffer)
   (bind-key "C-x K" #'kill-buffer)
+#+end_src
+
+Also, it's nice to be able to kill all buffers.
+
+#+begin_src emacs-lisp
+  (defun kill-all-buffers ()
+    "Close all buffers."
+    (interactive)
+    ;; (maybe-unset-buffer-modified)
+    (save-some-buffers)
+    (let ((kill-buffer-query-functions '()))
+      (mapc 'kill-buffer (buffer-list))))
 #+end_src
 
 VS Code has a great feature where you can just copy a filename to the clipboard.
@@ -513,6 +530,19 @@ Emacs allows you to, while the minibuffer is active, invoke another command that
   (minibuffer-depth-indicate-mode)
 #+end_src
 
+It's useful to have a scratch buffer around, and more useful to have a key chord to switch to it.
+
+#+begin_src emacs-lisp
+  (defun switch-to-scratch-buffer ()
+    "Switch to the current session's scratch buffer."
+    (interactive)
+    (switch-to-buffer "*scratch*"))
+
+  (bind-key "C-c a s" #'switch-to-scratch-buffer)
+#+end_src
+
+(bind-key "C-c a s")
+
 ** Org-mode
 
 Even though my whole-ass blogging workflow is built around org-mode, I still can't say that I know it very well. I don't take advantage of ~org-agenda~, ~org-timer~, ~org-calendar~, ~org-capture~, anything interesting to do with tags, et cetera. Someday I will learn these things, but not yet.
@@ -555,6 +585,8 @@ Magit is one of the top three reasons anyone should use Emacs. What a brilliant 
     :diminish magit-auto-revert-mode
     :diminish auto-revert-mode
     :bind (("C-c g" . #'magit-status))
+    :custom
+    (magit-repository-directories '(("~/src" . 1)))
     :config
     (add-to-list 'magit-no-confirm 'stage-all-changes))
 #+end_src
@@ -768,7 +800,9 @@ Haskell is my day-to-day programming language, so I've tinkered with it a good d
     (let ((new-extensions '("QuantifiedConstraints"
                             "DerivingVia"
                             "BlockArguments"
-                            "DerivingStrategies")))
+                            "DerivingStrategies"
+                            "StandaloneKindSignatures"
+                            )))
       (setq
        haskell-ghc-supported-extensions
        (append haskell-ghc-supported-extensions new-extensions)))
@@ -846,10 +880,18 @@ I grew up writing in TextMate, so I got extremely used to text-expansion snippet
 
 *** General-purpose
 
- I occasionally write Go, generally as a glue language to munge things together. I find certain aspects of its creators' philosophies to be repellent, but a language is more than its creators, and it's hard to argue with the success it's found in industry or the degree to which people find it easy to pick up.
+Rust is one of my favorite languages in the world.
+
+#+begin_src emacs-lisp
+  (use-package rust-mode)
+#+end_src
+
+I occasionally write Go, generally as a glue language to munge things together. I find certain aspects of its creators' philosophies to be repellent, but a language is more than its creators, and it's hard to argue with the success it's found in industry or the degree to which people find it easy to pick up.
 
  #+begin_src emacs-lisp
    (use-package go-mode
+     :custom
+     (lsp-enable-links nil)
      :config
      (add-hook 'before-save-hook #'gofmt-before-save))
 
@@ -865,6 +907,17 @@ Elm is a good language.
            (elm-mode . elm-indent-mode)))
 #+end_src
 
+I don't write a lot of Python, but when I do I like to use the extremely opinionated ~black~ formatter.
+
+#+begin_src emacs-lisp
+  (use-package blacken
+    :hook ((python-mode . blacken-mode)))
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package typescript-mode)
+#+end_src
+
 *** Configuration
 
  #+begin_src emacs-lisp
@@ -872,6 +925,14 @@ Elm is a good language.
    (use-package dockerfile-mode)
    (use-package toml-mode)
  #+end_src
+
+I use Bazel for some Haskell projects.
+
+#+begin_src emacs-lisp
+  (use-package bazel-mode
+    :config
+    (add-hook 'bazel-mode-hook (lambda () (add-hook 'before-save-hook #'bazel-mode-buildifier nil t))))
+#+end_src
 
 *** Interchange
 
@@ -906,6 +967,15 @@ Elm is a good language.
 #+begin_src emacs-lisp
   (use-package dash-at-point
     :bind ("C-c d" . dash-at-point))
+#+end_src
+
+* Initial screen setup
+
+#+begin_src emacs-lisp
+  (split-window-right)
+  (other-window 1)
+  (find-file "~/txt/todo.org")
+  (other-window 1)
 #+end_src
 
 * Adios
