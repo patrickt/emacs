@@ -356,6 +356,12 @@ Given how often I tweak my config, I bind ~C-c e~ to take me to my config file.
   (bind-key "C-c e" #'open-init-file)
 #+end_src
 
+Standard macOS conventions would have ~s-w~ close the current buffer, not the whole window.
+
+#+begin_src emacs-lisp
+  (bind-key "s-w" #'kill-this-buffer)
+#+end_src
+
 Emacs makes it weirdly hard to just, like, edit a file as root, probably due to supporting operating systems not built on ~sudo~. Enter the ~sudo-edit~ package.
 
 #+begin_src emacs-lisp
@@ -410,7 +416,8 @@ It's genuinely shocking that there's no "duplicate whatever's marked" command bu
       "Duplicate thing at point without changing the mark."
       (interactive)
       (save-mark-and-excursion (duplicate-thing 1)))
-    :bind (("C-c u" . my-duplicate-thing)))
+    :bind (("C-c u" . my-duplicate-thing)
+           ("C-c C-u" . my-duplicate-thing)))
 #+end_src
 
 We need to support reading large blobs of data for LSP's sake.
@@ -428,6 +435,12 @@ When I hit, accidentally or purposefully, a key chord that forms the prefix of s
     (which-key-enable-extended-define-key t)
     :config
     (which-key-setup-minibuffer))
+#+end_src
+
+#+begin_src emacs-lisp
+  (defun display-startup-echo-area-message ()
+    "Override the normally tedious error message."
+    (message "Welcome back."))
 #+end_src
 
 ** Buffer management
@@ -745,14 +758,15 @@ Before Emacs 27, the LSP experience on large projects was not particularly good.
   (use-package lsp-mode
     :commands (lsp lsp-execute-code-action)
     :hook ((go-mode . lsp-deferred)
-	   (lsp-mode . lsp-enable-which-key-integration)
-	   (lsp-mode . lsp-diagnostics-modeline-mode))
+           (lsp-mode . lsp-enable-which-key-integration)
+           (lsp-mode . lsp-diagnostics-modeline-mode))
     :bind ("C-c C-c" . #'lsp-execute-code-action)
     :custom
     (lsp-print-performance t)
     (lsp-log-io t)
     (lsp-diagnostics-modeline-scope :project)
-    (lsp-file-watch-threshold 5000))
+    (lsp-file-watch-threshold 5000)
+    (lsp-enable-file-watchers nil))
 
   (use-package lsp-ui
     :custom (lsp-ui-doc-delay 0.75)
@@ -821,7 +835,10 @@ Haskell is my day-to-day programming language, so I've tinkered with it a good d
 #+begin_src emacs-lisp
   (use-package lsp-haskell
     :hook (haskell-mode . lsp)
-    :custom (lsp-haskell-process-path-hie "hie-wrapper")
+    :custom
+    (lsp-haskell-process-path-hie "ghcide")
+    (lsp-haskell-process-args-hie '())
+    (lsp-log-io t)
     )
 #+end_src
 
@@ -931,7 +948,13 @@ I use Bazel for some Haskell projects.
 #+begin_src emacs-lisp
   (use-package bazel-mode
     :config
-    (add-hook 'bazel-mode-hook (lambda () (add-hook 'before-save-hook #'bazel-mode-buildifier nil t))))
+    (add-hook 'bazel-mode-hook (lambda () (add-hook 'before-save-hook #'bazel-mode-buildifier nil t)))
+
+    (defun bazel-workspace-find ()
+      "Jump to the WORKSPACE file located at the project root."
+      )
+
+    )
 #+end_src
 
 *** Interchange
@@ -944,6 +967,7 @@ I use Bazel for some Haskell projects.
 
  #+begin_src emacs-lisp
    (use-package markdown-mode
+     :bind (("C-c C-s a" . markdown-table-align))
      :mode ("\\.md$" . gfm-mode))
  #+end_src
 
@@ -954,6 +978,13 @@ I use Bazel for some Haskell projects.
  #+end_src
 
 ** Miscellany
+
+I guess I'm using a tree view again?
+
+#+begin_src emacs-lisp
+  (use-package neotree
+    :config (neotree-mode))
+#+end_src
 
  ~restclient~ is a terrific interface for running HTTP requests against local or remote services.
 
