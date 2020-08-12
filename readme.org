@@ -15,6 +15,12 @@ Yet I don't feel bad about publishing something this self-indulgent. Not only be
 
 ** Preliminaries
 
+We need to start by bumping up the gc threshold.
+
+#+begin_src emacs-lisp
+  (setq gc-cons-threshold 100000000)
+#+end_src
+
 I'll say it: modern Emacs Lisp is unfairly maligned. However, it was pretty fairly maligned before Emacs 24, which introduced lexical scoping. For reasons of compatibility, it's not on by default, and the documentation states that "unlike other file-local variables, this must be set in the first line of a file."
 
  #+begin_src emacs-lisp
@@ -223,8 +229,7 @@ Window chrome both wastes space and looks unappealing.
   (when (window-system)
     (tool-bar-mode -1)
     (scroll-bar-mode -1)
-    (tooltip-mode -1)
-    (fringe-mode -1))
+    (tooltip-mode -1))
 #+end_src
 
 I use the [[https://github.com/hlissner/emacs-doom-themes][Doom Emacs themes]], which are gorgeous.
@@ -266,6 +271,18 @@ Highlighting the closing/opening pair associated with a given parenthesis is ess
 
 #+begin_src emacs-lisp
   (show-paren-mode)
+#+end_src
+
+*** Tree-sitter
+
+#+begin_src emacs-lisp
+  (use-package tree-sitter
+    :init (global-tree-sitter-mode)
+    :hook ((ruby-mode . tree-sitter-hl-mode)
+           (js-mode . tree-sitter-hl-mode)
+           (typescript-mode . tree-sitter-hl-mode)
+           (go-mode . tree-sitter-hl-mode)))
+  (use-package tree-sitter-langs)
 #+end_src
 
 *** Tabs
@@ -691,18 +708,22 @@ Flycheck performs in-buffer highlighting of errors and warnings, and is superior
 #+begin_src emacs-lisp
   (use-package flycheck
     :after org
-    :hook (org-src-mode . disable-flycheck-for-elisp)
+    :hook
+    (org-src-mode . disable-flycheck-for-elisp)
     :custom
     (flycheck-emacs-lisp-initialize-packages t)
+    (flycheck-display-errors-delay 0.1)
     :config
     (global-flycheck-mode)
+    (flycheck-set-indication-mode 'left-margin)
 
     (defun disable-flycheck-for-elisp ()
       (setq-local flycheck-disabled-checkers '(emacs-lisp-checkdoc)))
 
     (add-to-list 'flycheck-checkers 'proselint))
 
-  (use-package flycheck-inline)
+  (use-package flycheck-inline
+    :config (global-flycheck-inline-mode))
 
 #+end_src
 
@@ -769,7 +790,9 @@ Before Emacs 27, the LSP experience on large projects was not particularly good.
     (lsp-enable-file-watchers nil))
 
   (use-package lsp-ui
-    :custom (lsp-ui-doc-delay 0.75)
+    :custom
+    (lsp-ui-doc-delay 0.75)
+    (lsp-ui-doc-max-height 200)
     :after lsp-mode)
 
   (use-package lsp-ivy
@@ -867,6 +890,7 @@ A thing I want to do someday is to write a framework for sending things like com
     (vterm-toggle-fullscreen-p nil "Open a vterm in another window.")
     :bind (("C-c t" . #'vterm-toggle-cd)
            :map vterm-mode-map
+           ("s-t" . #'vterm) ; Open up new tabs quickly
            ("<C-return>" . #'vterm-toggle-insert-cd)))
 #+end_src
 
@@ -913,6 +937,10 @@ I occasionally write Go, generally as a glue language to munge things together. 
      (add-hook 'before-save-hook #'gofmt-before-save))
 
    (use-package go-snippets)
+
+   (use-package gotest
+     :bind (:map go-mode-map
+                 ("C-c a t" . #'go-test-current-test)))
  #+end_src
 
 Elm is a good language.
