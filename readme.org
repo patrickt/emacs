@@ -86,6 +86,8 @@ It's good that Emacs supports the wide variety of file encodings it does, but UT
   (set-selection-coding-system 'utf-8)
   (prefer-coding-system 'utf-8)
   (setq default-process-coding-system '(utf-8-unix . utf-8-unix))
+
+  (use-package gnu-elpa-keyring-update)
 #+end_src
 
 We also need to turn on a few modes to have behavior that's even remotely modern.
@@ -340,6 +342,8 @@ Emacs's keybinding for ~comment-dwim~ is ~M-;~, which is not convenient to type 
 #+begin_src emacs-lisp
   (use-package avy
     :bind ("C-c l" . avy-goto-line))
+
+  (use-package ivy-avy)
 #+end_src
 
 ~iedit~ gives us the very popular idiom of automatically deploying multiple cursors to edit all occurrences of a particular word.
@@ -466,6 +470,7 @@ Bufler is a new addition here; I'm still not 100% sold, but given that I work on
 
 #+begin_src emacs-lisp
   (use-package bufler
+    :disabled
     :bind (("C-x b" . #'bufler-switch-buffer)
            ("C-x B" . #'counsel-switch-buffer)))
 #+end_src
@@ -961,6 +966,8 @@ I don't write a lot of Python, but when I do I like to use the extremely opinion
 
 #+begin_src emacs-lisp
   (use-package typescript-mode)
+  (use-package smalltalk-mode
+    :mode ("\\.md$" . gfm-mode))
 #+end_src
 
 *** Configuration
@@ -1011,6 +1018,7 @@ I guess I'm using a tree view again?
 
 #+begin_src emacs-lisp
   (use-package neotree
+    :disabled
     :config (neotree-mode))
 #+end_src
 
