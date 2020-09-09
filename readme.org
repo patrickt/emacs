@@ -893,10 +893,11 @@ A thing I want to do someday is to write a framework for sending things like com
   (use-package vterm-toggle
     :custom
     (vterm-toggle-fullscreen-p nil "Open a vterm in another window.")
-    :bind (("C-c t" . #'vterm-toggle-cd)
+    (vterm-toggle-scope 'projectile)
+    :bind (("C-c t" . #'vterm-toggle)
            :map vterm-mode-map
            ("s-t" . #'vterm) ; Open up new tabs quickly
-           ("<C-return>" . #'vterm-toggle-insert-cd)))
+           ))
 #+end_src
 
 ** Process management
