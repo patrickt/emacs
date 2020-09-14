@@ -1,25 +1,20 @@
-This is my Emacs configuration, assembled over the course of more than ten years. I first started using Emacs in 2009 out of sheer necessity---I first learned to code using [[https://github.com/textmate/textmate][TextMate]], but that wasn't an option upon, after arriving at college, being required to SSH into some creaky Sun boxes running geologically-old versions of Solaris. Even then, everything in Emacs was a struggle for me. As of this writing, it is 2020, and I have an incurable case of Emacs-induced brain worms; I've spent on the order of hundreds of hours tweaking and refining my configuration. This file is the result of that.
+This is my Emacs configuration, assembled over the course of more than ten years. I first started using Emacs in 2009 out of sheer necessity---I first learned to code using [[https://github.com/textmate/textmate][TextMate]], but that wasn't an option upon, after arriving at college, being required to SSH into some creaky Sun boxes running geologically-ancient versions of Solaris. As of this writing, it is 2020, some eleven years into my Emacs journey, and I have an incurable case of Emacs-induced brain worms; I've spent on the order of hundreds of hours tweaking and refining my configuration. This file is the result of that process.
 
-If there's anything that convinced me to take on this lifelong Emacs habit, it's because both macOS and iOS come, out of the box, with support for Emacs keybindings in their text areas. Said keybindings aren't hugely exhaustive, but they're useful, especially given that the ~Ctrl-k~ and ~Ctrl-y~ inputs for copy and paste operate on a /different/ clipboard than do ~⌘C~ and ~⌘V~. Once I discovered that, and the dorkily exhiliating feeling of juggling information through the various system pasteboards, I was more or less entirely beholden to the Emacs way, despite the merits of modal editing[fn:1].
+If there's anything that convinced me to take on this lifelong Emacs habit, it's because both macOS and iOS come, out of the box, with support for Emacs keybindings in their text areas. Said keybindings aren't hugely exhaustive, but they're useful, especially given that the ~Ctrl-k~ and ~Ctrl-y~ inputs for copy and paste operate on a /different/ pasteboard than do ~⌘C~ and ~⌘V~. Once I discovered that, and the dorkily exhiliating feeling of juggling information through the various system pasteboards, I was more or less entirely beholden to the Emacs way, despite the merits of modal editing[fn:1]. But the forcing factor was, after I left Apple, arriving at a job where I had to test C code on macOS, Linux, FreeBSD, and SmartOS. The difficulty of remembering keyboard shortcuts between TextMate, Sublime Text, and Emacs was leagues beyond insupportable, and as such I took the Emacs plunge.
 
-This file is an org-mode document, like all the posts on my blog. And if you're reading it on my blog in HTML form, it is because my blog pulls in my Emacs configuration as a submodule, and a conveniently-placed symlink means that it is treated like any other post, and its embedded code is rendered in fancy code blocks. If you're reading it on [[https://github.com/patrickt/emacs][its GitHub repository]], you'll see it rendered inline in the repository, as its filename is ~readme.org~. And at Emacs boot time, Emacs itself runs ~org-babel~, generates elisp code out of the code snippets embedded herein, and loads it; further updates to the blog entry are a ~git submodule~ command away. I feel both delight and shame in equal quantities at this state of affairs: having a really cherried-out, custom-built[fn:2] Emacs setup is one of those things that's cool because of how uncool it is, like growing giant vegetables at a county fair, or being really good at Connect Four.
+This file is an [[https://en.wikipedia.org/wiki/Org-mode][Org-mode]][fn:4] document, like all the posts on my blog. And if you're reading it on my blog in HTML form, it is because my blog pulls in my Emacs configuration as a submodule, and a conveniently-placed symlink means that it is treated like any other post, and its embedded code is rendered in fancy code blocks. If you're reading it on [[https://github.com/patrickt/emacs][its GitHub repository]], you'll see it rendered inline in the repository, as its filename is ~readme.org~. And at Emacs boot time, Emacs itself runs ~org-babel~, generates elisp code out of the code snippets embedded herein, and loads it; further updates to the blog entry are a ~git submodule~ command away. I feel both delight and shame in equal quantities at this state of affairs: having a really cherried-out, custom-built[fn:2] Emacs setup is one of those things that's cool because of how uncool it is, like growing giant vegetables at a county fair, or being really good at Connect Four.
 
-Yet I don't feel bad about publishing something this self-indulgent. Not only because maybe it'll demystify what the care and feeding of a very-intense Emacs setup looks like, and also because yak-shaving is an excellent way to occupy myself in quarantine.
-
+Yet I don't feel bad about publishing something this self-indulgent. Not only because maybe it'll demystify what the care and feeding of a very-intense Emacs setup looks like, and also because yak-shaving is an excellent way to occupy myself in quarantine [fn:3]. In addition, I have been thanked by strangers for the quality of my config, and my coworker described it as "inspiring", which seems like sufficient justification to continue, at least with respect to my ego.
 
 [fn:1] I've tried to reconfigure my brain to use modal editing, to little avail, but the its model of a domain-specific-language for text editing is a hugely exciting one to me.
 
 [fn:2] My configuration is not built atop one of the all-in-one Emacs distributions like [[https://www.spacemacs.org][Spacemacs]] or [[https://github.com/hlissner/doom-emacs][Doom Emacs]]. I probably would have if either had been around at the beginning of my Emacs journey, but at this point my own personal set of key bindings is burnt into my brain.
 
+[fn:3] Hello, future generations! If you're reading this, allow me to tell you this: *:2020* was a truly enervating time to be a human being.
+
 * Configuration: start!
 
 ** Preliminaries
-
-We need to start by bumping up the gc threshold.
-
-#+begin_src emacs-lisp
-  (setq gc-cons-threshold 100000000)
-#+end_src
 
 I'll say it: modern Emacs Lisp is unfairly maligned. However, it was pretty fairly maligned before Emacs 24, which introduced lexical scoping. For reasons of compatibility, it's not on by default, and the documentation states that "unlike other file-local variables, this must be set in the first line of a file."
 
@@ -27,7 +22,13 @@ I'll say it: modern Emacs Lisp is unfairly maligned. However, it was pretty fair
    (setq lexical-binding t)
  #+end_src
 
- We use ~use-package~ everywhere (it is loaded in the [[https://github.com/patrickt/emacs/blob/master/init.el][~init.el~]] that bootstraps this whole enterprise), and by default we want it to install all mentioned packages. @jkachmar tells me there are bugs in this setting. I should look into that before I publish this as a post.
+Many of Emacs's defaults are ill-suited for my purposes, but the first one that needs fixing is the shockingly low garbage-collection threshold, which defaults to a paltry *:0.8* MB. Setting it to 100 MB seems to strike a nice balance between GC pauses and performance. I also like to turn on the messages associated therewith, since thrashing GC is a good indicator of runaway processes or similar weirdness.
+
+#+begin_src emacs-lisp
+  (setq gc-cons-threshold 100000000)
+#+end_src
+
+ We use ~use-package~ everywhere (it is loaded in the [[https://github.com/patrickt/emacs/blob/master/init.el][~init.el~]] that bootstraps this whole enterprise), and by default we want it to install all mentioned packages. There are some bugs associated with this approach, I am told, but it tends to work for me, and if I get a message about a missing package I just call ~package-install~.
 
  #+begin_src emacs-lisp
    (setq use-package-always-ensure t)
@@ -40,6 +41,12 @@ Since subsequent packages like ~libgit~ may depend on executables like ~cmake~, 
 #+begin_src emacs-lisp
   (use-package exec-path-from-shell
     :config (exec-path-from-shell-initialize))
+#+end_src
+
+There appears to be some sort of kerfuffle regarding ELPA's GPG keys. The details are beyond me, but installing this package silences associated warnings.
+
+#+begin_src emacs-lisp
+  (use-package gnu-elpa-keyring-update)
 #+end_src
 
 ** Fixing broken defaults
@@ -86,8 +93,6 @@ It's good that Emacs supports the wide variety of file encodings it does, but UT
   (set-selection-coding-system 'utf-8)
   (prefer-coding-system 'utf-8)
   (setq default-process-coding-system '(utf-8-unix . utf-8-unix))
-
-  (use-package gnu-elpa-keyring-update)
 #+end_src
 
 We also need to turn on a few modes to have behavior that's even remotely modern.
@@ -104,7 +109,7 @@ Emacs 27 comes with fast current-line highlight functionality, but it can produc
   (require 'hl-line)
   (add-hook 'prog-mode-hook #'hl-line-mode)
   (add-hook 'text-mode-hook #'hl-line-mode)
-  (set-face-attribute 'hl-line nil :background "gray26")
+  (set-face-attribute 'hl-line nil :background "gray21")
 #+end_src
 
 Emacs is super fond of littering filesystems with backups and autosaves, since it was built with the assumption that multiple users could be using the same Emacs instance on the same filesystem. This was valid in 1980. It is no longer the case.
@@ -150,6 +155,7 @@ There are a great many keybindings that are actively hostile, in that they are b
   (unbind-key "C-x C-d") ;; list-directory
   (unbind-key "C-z") ;; suspend-frame
   (unbind-key "M-o") ;; facemenu-mode
+  (unbind-key "<mouse-2>") ;; pasting with mouse-wheel click
 #+end_src
 
 The out-of-the-box treatment of whitespace is unfortunate, but fixable.
@@ -181,8 +187,7 @@ Emacs is also in love with showing you its NEWS file; it's bound to like four di
   (defalias 'describe-gnu-project 'do-nothing)
 #+end_src
 
-Undo has always been problematic for me in Emacs. The beauty of undo-tree is that it means that, once you've typed something into a buffer, you'll always be able to get it back. At least in theory. undo-tree has long-standing data loss bugs that are unlikely to be fixed. But no other package provodes a comparable
-experience.
+Undo has always been problematic for me in Emacs. The beauty of undo-tree is that it means that, once you've typed something into a buffer, you'll always be able to get it back. At least in theory. undo-tree has long-standing data loss bugs that are unlikely to be fixed. But no other package provodes a comparable experience.
 
 #+begin_src emacs-lisp
   (use-package undo-tree
@@ -195,11 +200,7 @@ experience.
 
 It's 2020, we don't paste with mouse-wheel-click anymore.
 
-#+begin_src emacs-lisp
-  (unbind-key "<mouse-2>")
-#+end_src
-
-I define a couple of my own configuration variables with ~defvar~, and no matter how many times I mark the variable as safe, it warns me every time I set it in the ~.dir-locals~ file. Disabling these warnings is probably the right thing to do.
+I define a couple of my own configuration variables with ~defvar~, and no matter how many times I mark the variable as safe, it warns me every time I set it in the ~.dir-locals~ file. Disabling these warnings is probably (?) the right thing to do.
 
 #+begin_src emacs-lisp
   (setq enable-local-variables :all)
@@ -239,7 +240,7 @@ I use the [[https://github.com/hlissner/emacs-doom-themes][Doom Emacs themes]], 
 #+begin_src emacs-lisp
   (use-package doom-themes
     :config
-    (let ((chosen-theme 'doom-challenger-deep))
+    (let ((chosen-theme 'doom-oceanic-next))
       (doom-themes-visual-bell-config)
       (doom-themes-org-config)
       (setq doom-challenger-deep-brighter-comments t
@@ -269,10 +270,13 @@ I find it useful to have a slightly more apparent indicator of which buffer is a
     :config (dimmer-mode))
 #+end_src
 
-Highlighting the closing/opening pair associated with a given parenthesis is essential.
+Highlighting the closing/opening pair associated with a given parenthesis is essential. Furthermore, parentheses should be delimited by color. I may be colorblind, but it's good enough, usually.
 
 #+begin_src emacs-lisp
   (show-paren-mode)
+
+  (use-package rainbow-delimiters
+    :hook ((prog-mode . rainbow-delimiters-mode)))
 #+end_src
 
 *** Tree-sitter
@@ -586,9 +590,9 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
   (use-package org
     :hook ((org-mode . visual-line-mode))
     :bind (("C-c o c" . counsel-org-capture)
-
-                ("C-c c" . #'org-mode-insert-code)
-                ("C-c a f" . #'org-shifttab))
+           :map org-mode-map
+           ("C-c c" . #'org-mode-insert-code)
+           ("C-c a f" . #'org-shifttab))
     :custom
     (org-directory "~/txt")
     (org-default-notes-file (concat org-directory "/notes.org"))
@@ -604,8 +608,17 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
     (unbind-key "C-c ," org-mode-map)
 
     (defun org-mode-insert-code ()
+      "Like markdown-insert-code, but for org instead."
       (interactive)
-      (org-emphasize ?~)))
+      (org-emphasize ?~))
+
+    (defun tufte-css-numeralify (with-underscores)
+      "Express the provided underscore-grouped numeral quantity in old-style capitals."
+      ;; e.g. 10_000_000 becomes 10,000,000 (except fancy in the browser)
+      (format
+       "@@html:<span class=\"numeral\">%s</span>@@"
+       (replace-regexp-in-string "_" "," with-underscore)))
+    )
 
   (use-package org-bullets
     :hook (org-mode . org-bullets-mode))
@@ -657,7 +670,7 @@ Most every nontrivial package provides projectile integration in some form or fa
 
 ** Ivy, counsel, and swiper
 
-"Should I use Helm or Ivy?" It's one of the biggest questions everyone with a nice Emacs setup has to answer. Helm is more featureful and fancier out of the box, whereas Ivy is more minimal, requiring a few packages to approach how nice Helm looks. However, Ivy is still worth it to me, given that I spend a lot of time cursing Emacs's performance on macOS. And with ~ivy-rich~, things even look nice. ~counsel~ provides nice UI chrome for built-in commands, ~counsel-projectile~ provides project integration, and ~amx~ provides most-recently-used information and keeps track of which commands I use and which I don't.
+Now that Helm  And with ~ivy-rich~, things even look nice. ~counsel~ provides nice UI chrome for built-in commands, ~counsel-projectile~ provides project integration, and ~amx~ provides most-recently-used information and keeps track of which commands I use and which I don't.
 
 #+begin_src emacs-lisp
   (use-package ivy
@@ -702,8 +715,6 @@ Most every nontrivial package provides projectile integration in some form or fa
   (use-package counsel-projectile
     :bind (("C-c f" . #'counsel-projectile)
            ("C-c F" . #'counsel-projectile-switch-project)))
-
-  (use-package amx)
 #+end_src
 
 ** Flycheck
@@ -985,11 +996,6 @@ I use Bazel for some Haskell projects.
   (use-package bazel-mode
     :config
     (add-hook 'bazel-mode-hook (lambda () (add-hook 'before-save-hook #'bazel-mode-buildifier nil t)))
-
-    (defun bazel-workspace-find ()
-      "Jump to the WORKSPACE file located at the project root."
-      )
-
     )
 #+end_src
 
@@ -1040,10 +1046,15 @@ I guess I'm using a tree view again?
 * Initial screen setup
 
 #+begin_src emacs-lisp
-  (split-window-right)
-  (other-window 1)
-  (find-file "~/txt/todo.org")
-  (other-window 1)
+  (defun my-default-window-setup ()
+    "Called by emacs-startup-hook to set up my initial window configuration."
+
+    (split-window-right)
+    (other-window 1)
+    (find-file "~/txt/todo.org")
+    (other-window 1))
+
+  (add-hook 'emacs-startup-hook #'my-default-window-setup)
 #+end_src
 
 * Adios
