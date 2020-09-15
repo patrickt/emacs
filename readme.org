@@ -4,7 +4,7 @@ If there's anything that convinced me to take on this lifelong Emacs habit, it's
 
 This file is an [[https://en.wikipedia.org/wiki/Org-mode][Org-mode]][fn:4] document, like all the posts on my blog. And if you're reading it on my blog in HTML form, it is because my blog pulls in my Emacs configuration as a submodule, and a conveniently-placed symlink means that it is treated like any other post, and its embedded code is rendered in fancy code blocks. If you're reading it on [[https://github.com/patrickt/emacs][its GitHub repository]], you'll see it rendered inline in the repository, as its filename is ~readme.org~. And at Emacs boot time, Emacs itself runs ~org-babel~, generates elisp code out of the code snippets embedded herein, and loads it; further updates to the blog entry are a ~git submodule~ command away. I feel both delight and shame in equal quantities at this state of affairs: having a really cherried-out, custom-built[fn:2] Emacs setup is one of those things that's cool because of how uncool it is, like growing giant vegetables at a county fair, or being really good at Connect Four.
 
-Yet I don't feel bad about publishing something this self-indulgent. Not only because maybe it'll demystify what the care and feeding of a very-intense Emacs setup looks like, and also because yak-shaving is an excellent way to occupy myself in quarantine [fn:3]. In addition, I have been thanked by strangers for the quality of my config, and my coworker described it as "inspiring", which seems like sufficient justification to continue, at least with respect to my ego.
+Yet I don't feel bad about publishing something this self-indulgent. Not only because maybe it'll demystify what the care and feeding of a very-intense Emacs setup looks like, and also because yak-shaving is an excellent way to occupy myself in quarantine [fn:3]. Furthermore, I'm happier with my setup as an org-mode document, as Emacs configurations generally have a high propensity for entropy: it's easy to leave a few computer-specific hacks in some dusty corner of a config, and then, upon returning years later, having absolutely no idea what that hack does. Forcing a literate style guilts me into documenting every inch of it. In addition, I have been thanked by strangers for the quality of my config, and my coworker described it as "inspiring", which seems like sufficient justification to continue, at least with respect to my ego.
 
 [fn:1] I've tried to reconfigure my brain to use modal editing, to little avail, but the its model of a domain-specific-language for text editing is a hugely exciting one to me.
 
@@ -22,7 +22,7 @@ I'll say it: modern Emacs Lisp is unfairly maligned. However, it was pretty fair
    (setq lexical-binding t)
  #+end_src
 
-Many of Emacs's defaults are ill-suited for my purposes, but the first one that needs fixing is the shockingly low garbage-collection threshold, which defaults to a paltry *:0.8* MB. Setting it to 100 MB seems to strike a nice balance between GC pauses and performance. I also like to turn on the messages associated therewith, since thrashing GC is a good indicator of runaway processes or similar weirdness.
+Many of Emacs's defaults are ill-suited for my purposes, but the first one that needs fixing is the shockingly low garbage-collection threshold, which defaults to a paltry *:8kb*. Setting it to *:100mb* seems to strike a nice balance between GC pauses and performance. I also like to turn on the messages associated therewith, since thrashing GC is a good indicator of runaway processes or similar weirdness.
 
 #+begin_src emacs-lisp
   (setq gc-cons-threshold 100000000)
@@ -325,7 +325,7 @@ Any modern editor should include multiple-cursor support. Sure, keyboard macros 
            ("C-c m d" . #'mc/mark-all-dwim )))
 #+end_src
 
-The ~fill-paragraph~ (~M-q~) command can be useful for formatting long text lines in a pleasing matter. I don't do it in every document, but when I do, I want more columns than the default 70.
+The ~fill-paragraph~ (~M-q~) command can be useful for formatting long text lines in a pleasing matter. I don't do it in every document, but when I do, I want more columns than the default *:70*.
 
 #+begin_src emacs-lisp
   (set-fill-column 135)
@@ -581,8 +581,6 @@ It's useful to have a scratch buffer around, and more useful to have a key chord
 
   (bind-key "C-c a s" #'switch-to-scratch-buffer)
 #+end_src
-
-(bind-key "C-c a s")
 
 ** Org-mode
 
@@ -978,10 +976,11 @@ I don't write a lot of Python, but when I do I like to use the extremely opinion
     :hook ((python-mode . blacken-mode)))
 #+end_src
 
+Some other miscellaneous languages that I don't write often but for which I need syntax highlighting, at least.
+
 #+begin_src emacs-lisp
   (use-package typescript-mode)
-  (use-package smalltalk-mode
-    :mode ("\\.md$" . gfm-mode))
+  (use-package csharp-mode)
 #+end_src
 
 *** Configuration
