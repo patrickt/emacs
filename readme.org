@@ -79,8 +79,6 @@ Fixing Emacs's defaults is a nontrivial problem. We'll start with UI concerns.
   (setq-default indent-tabs-mode nil)
 
   (defalias 'yes-or-no-p 'y-or-n-p) ; Accept 'y' in lieu of 'yes'.
-
-  (set-fill-column 110) ;; 70 is too low, especially given my UWS monitor.
 #+end_src
 
 It's good that Emacs supports the wide variety of file encodings it does, but UTF-8 should always, /always/ be the default.
