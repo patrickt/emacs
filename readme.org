@@ -10,7 +10,7 @@ Yet I don't feel bad about publishing something this self-indulgent. Not only be
 
 [fn:2] My configuration is not built atop one of the all-in-one Emacs distributions like [[https://www.spacemacs.org][Spacemacs]] or [[https://github.com/hlissner/doom-emacs][Doom Emacs]]. I probably would have if either had been around at the beginning of my Emacs journey, but at this point my own personal set of key bindings is burnt into my brain.
 
-[fn:3] Hello, future generations! If you're reading this, allow me to tell you this: *:2020* was a truly enervating time to be a human being.
+[fn:3] Hello, future generations! If you're reading this, please believe me when I say that *:2020* was a truly enervating time to be a human being.
 
 * Configuration: start!
 
@@ -22,7 +22,7 @@ I'll say it: modern Emacs Lisp is unfairly maligned. However, it was pretty fair
    (setq lexical-binding t)
  #+end_src
 
-Many of Emacs's defaults are ill-suited for my purposes, but the first one that needs fixing is the shockingly low garbage-collection threshold, which defaults to a paltry *:0.8* MB. Setting it to 100 MB seems to strike a nice balance between GC pauses and performance. I also like to turn on the messages associated therewith, since thrashing GC is a good indicator of runaway processes or similar weirdness.
+Many of Emacs's defaults are ill-suited for my purposes, but the first one that needs fixing is the shockingly low garbage-collection threshold, which defaults to a paltry *:8kb*. Setting it to *:100mb* seems to strike a nice balance between GC pauses and performance. I also like to turn on the messages associated therewith, since thrashing GC is a good indicator of runaway processes or similar weirdness.
 
 #+begin_src emacs-lisp
   (setq gc-cons-threshold 100000000)
@@ -156,6 +156,7 @@ There are a great many keybindings that are actively hostile, in that they are b
   (unbind-key "C-z") ;; suspend-frame
   (unbind-key "M-o") ;; facemenu-mode
   (unbind-key "<mouse-2>") ;; pasting with mouse-wheel click
+  (unbind-key "<C-wheel-down>") ;; text scale adjust
 #+end_src
 
 The out-of-the-box treatment of whitespace is unfortunate, but fixable.
@@ -311,8 +312,9 @@ The long-awaited Emacs 27 support for native tabs is shaky, both visually and in
     (centaur-tabs-modified-marker "●")
     (centaur-tabs-buffer-groups-function #'centaur-tabs-projectile-buffer-groups)
 
-    :bind (("s-{" . #'centaur-tabs-backward)
-	   ("s-}" . #'centaur-tabs-forward)))
+    :bind
+    (("s-{" . #'centaur-tabs-backward)
+     ("s-}" . #'centaur-tabs-forward)))
 #+end_src
 
 ** Text manipulation
@@ -325,7 +327,7 @@ Any modern editor should include multiple-cursor support. Sure, keyboard macros 
            ("C-c m d" . #'mc/mark-all-dwim )))
 #+end_src
 
-The ~fill-paragraph~ (~M-q~) command can be useful for formatting long text lines in a pleasing matter. I don't do it in every document, but when I do, I want more columns than the default 70.
+The ~fill-paragraph~ (~M-q~) command can be useful for formatting long text lines in a pleasing matter. I don't do it in every document, but when I do, I want more columns than the default *:70*.
 
 #+begin_src emacs-lisp
   (set-fill-column 135)
@@ -553,9 +555,10 @@ Normally I bind ~other-window~ to ~C-c ,~, but on my ultra-wide-screen monitor, 
     (defun my-ace-window (args)
       "As ace-window, but hiding the cursor while the action is active."
       (interactive "P")
-      (cl-letf ((cursor-type nil)
-		(cursor-in-non-selected-window nil))
-	(ace-window nil)))
+      (cl-letf
+          ((cursor-type nil)
+           (cursor-in-non-selected-window nil))
+        (ace-window nil)))
 
 
     :bind (("C-," . my-ace-window))
@@ -581,8 +584,6 @@ It's useful to have a scratch buffer around, and more useful to have a key chord
 
   (bind-key "C-c a s" #'switch-to-scratch-buffer)
 #+end_src
-
-(bind-key "C-c a s")
 
 ** Org-mode
 
