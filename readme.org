@@ -119,10 +119,10 @@ Emacs is super fond of littering filesystems with backups and autosaves, since i
    create-lockfiles nil)
 #+end_src
 
-By default, Emacs stores any configuration you make through its UI by writing ~custom-set-variables~ invocations to your init file, or to the file specified by ~custom-file~. Though this is convenient, it's also an excellent way to cause aggravation when the variable you keep trying to modify is being set in some ~custom-set-variables~ invocation. We can't disable this behavior, and the ~custom-file~ variable can't be nil, but we can make it look in a different place every time.
+By default, Emacs stores any configuration you make through its UI by writing ~custom-set-variables~ invocations to your init file, or to the file specified by ~custom-file~. Though this is convenient, it's also an excellent way to cause aggravation when the variable you keep trying to modify is being set in some ~custom-set-variables~ invocation. We can disable this by mapping it to the null device.
 
 #+begin_src emacs-lisp
-(setq custom-file (make-temp-file ""))
+(setq custom-file null-device)
 #+end_src
 
 However, because Emacs stores theme-safety information in that file, we have to disable the warnings entirely. This is not particularly secure, but if someone has uploaded malicious code to MELPA inside a theme, I have bigger problems. (Besides, Emacs is not a secure system, and I see no need to try overmuch to make it one.)
@@ -155,6 +155,7 @@ There are a great many keybindings that are actively hostile, in that they are b
   (unbind-key "M-o") ;; facemenu-mode
   (unbind-key "<mouse-2>") ;; pasting with mouse-wheel click
   (unbind-key "<C-wheel-down>") ;; text scale adjust
+  (unbind-key "<C-wheel-up>") ;; ditto
 #+end_src
 
 The out-of-the-box treatment of whitespace is unfortunate, but fixable.
@@ -181,9 +182,8 @@ Host *
 Emacs is also in love with showing you its NEWS file; it's bound to like four different keybindings. Overriding the function makes it a no-op. You might say… no news is good news. For that matter, we can elide more GNU agitprop.
 
 #+begin_src emacs-lisp
-  (defun do-nothing (interactive))
-  (defalias 'view-emacs-news 'do-nothing)
-  (defalias 'describe-gnu-project 'do-nothing)
+  (defalias 'view-emacs-news 'ignore)
+  (defalias 'describe-gnu-project 'ignore)
 #+end_src
 
 Undo has always been problematic for me in Emacs. The beauty of undo-tree is that it means that, once you've typed something into a buffer, you'll always be able to get it back. At least in theory. undo-tree has long-standing data loss bugs that are unlikely to be fixed. But no other package provodes a comparable experience.
@@ -418,16 +418,6 @@ Emacs has problems with very long lines. ~so-long~ detects them and takes approp
   (global-so-long-mode)
 #+end_src
 
-Using an ephemeral buffer to indicate what commands are available makes discovering functionality a breeze.
-
-#+begin_src emacs-lisp
-  (use-package which-key
-    :config
-    (which-key-mode)
-    (which-key-setup-side-window-bottom)
-    :custom (which-key-idle-delay 1.2))
-#+end_src
-
 I've never needed a font panel in Emacs, not even once.
 
 #+begin_src emacs-lisp
@@ -471,15 +461,6 @@ When I hit, accidentally or purposefully, a key chord that forms the prefix of s
 #+end_src
 
 ** Buffer management
-
-Bufler is a new addition here; I'm still not 100% sold, but given that I work on an ultra-widescreen monitor, I need to start figuring out some better buffer layout mechanism, because the situation is not particularly good.
-
-#+begin_src emacs-lisp
-  (use-package bufler
-    :disabled
-    :bind (("C-x b" . #'bufler-switch-buffer)
-           ("C-x B" . #'counsel-switch-buffer)))
-#+end_src
 
 I almost always want to default to a two-buffer setup.
 
@@ -664,8 +645,10 @@ Most every nontrivial package provides projectile integration in some form or fa
   (use-package projectile
     :diminish
     :bind (("C-c k" . #'projectile-kill-buffers)
-	   ("C-c M" . #'projectile-compile-project))
-    :custom (projectile-completion-system 'ivy)
+           ("C-c M" . #'projectile-compile-project))
+    :custom
+    (projectile-completion-system 'ivy)
+    (projectile-enable-caching t)
     :config (projectile-mode))
 #+end_src
 
@@ -769,7 +752,7 @@ TODO: C-n and C-p should work in the company completion map, but I'm so tired of
 #+begin_src emacs-lisp
   (use-package company
     :diminish
-    :bind (("C-." . #'company-complete))
+    :bind (("C-." . #'company-capf))
     :hook (prog-mode . company-mode)
     :custom
     (company-dabbrev-downcase nil "Don't downcase returned candidates.")
@@ -816,6 +799,7 @@ Before Emacs 27, the LSP experience on large projects was not particularly good.
     :after (ivy lsp-mode))
 
   (use-package company-lsp
+    :disabled
     :custom (company-lsp-enable-snippet t)
     :after (company lsp-mode))
 #+end_src
@@ -955,6 +939,8 @@ I occasionally write Go, generally as a glue language to munge things together. 
      (add-hook 'before-save-hook #'gofmt-before-save))
 
    (use-package go-snippets)
+
+   (use-package go-projectile)
 
    (use-package gotest
      :bind (:map go-mode-map
