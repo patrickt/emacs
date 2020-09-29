@@ -364,6 +364,18 @@ Parenthesis matching is one of the flaws in my Emacs setup as of this writing. I
   (electric-pair-mode)
 #+end_src
 
+I got used to a number of convenient TextMate-style commands.
+
+#+begin_src emacs-lisp
+  (defun pt/eol-then-newline ()
+    "Go to end of line, then newline-and-indent."
+    (interactive)
+    (move-end-of-line nil)
+    (newline-and-indent))
+
+  (bind-key "s-<return>" #'pt/eol-then-newline)
+#+end_src
+
 ** Quality-of-life improvements
 
 We start by binding a few builtin commands to more-convenient keystrokes.
@@ -451,6 +463,7 @@ When I hit, accidentally or purposefully, a key chord that forms the prefix of s
     (which-key-setup-side-window-bottom)
     (which-key-enable-extended-define-key t)
     :config
+    (which-key-mode)
     (which-key-setup-minibuffer))
 #+end_src
 
@@ -690,6 +703,7 @@ Now that Helm  And with ~ivy-rich~, things even look nice. ~counsel~ provides ni
            ("C-c y" . #'counsel-yank-pop)
            ("C-c r" . #'counsel-recentf)
            ("C-c v" . #'counsel-switch-buffer-other-window)
+           ("C-c H" . #'counsel-projectile-rg)
            ("C-h h" . #'counsel-command-history)
            ("C-x C-f" . #'counsel-find-file)
            :map ivy-minibuffer-map
@@ -840,6 +854,7 @@ Haskell is my day-to-day programming language, so I've tinkered with it a good d
                             "BlockArguments"
                             "DerivingStrategies"
                             "StandaloneKindSignatures"
+                            "ImportQualifiedPost"
                             )))
       (setq
        haskell-ghc-supported-extensions
@@ -854,13 +869,11 @@ Haskell is my day-to-day programming language, so I've tinkered with it a good d
     :defer)
 #+end_src
 
-~haskell-language-server~ is the new hotness, but it doesn't appear to handle autocompletion properly, so ~haskell-ide-engine~ it is.
-
 #+begin_src emacs-lisp
   (use-package lsp-haskell
     :hook (haskell-mode . lsp)
     :custom
-    (lsp-haskell-process-path-hie "ghcide")
+    (lsp-haskell-process-path-hie "hls-wrapper")
     (lsp-haskell-process-args-hie '())
     (lsp-log-io t)
     )
@@ -968,6 +981,7 @@ Some other miscellaneous languages that I don't write often but for which I need
 #+begin_src emacs-lisp
   (use-package typescript-mode)
   (use-package csharp-mode)
+  (setq-default js-indent-level 2)
 #+end_src
 
 *** Configuration
