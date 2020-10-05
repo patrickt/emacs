@@ -40,7 +40,7 @@ Since subsequent packages like ~libgit~ may depend on executables like ~cmake~, 
 
 #+begin_src emacs-lisp
   (use-package exec-path-from-shell
-    :config (exec-path-from-shell-initialize))
+    :init (exec-path-from-shell-initialize))
 #+end_src
 
 There appears to be some sort of kerfuffle regarding ELPA's GPG keys. The details are beyond me, but installing this package silences associated warnings.
@@ -71,6 +71,8 @@ Fixing Emacs's defaults is a nontrivial problem. We'll start with UI concerns.
      kill-whole-line t
      ;; search should be case-sensitive by default
      case-fold-search nil
+     ;; no need to prompt for the read command _every_ time
+     compilation-read-command nil
      )
 
   ;; Never mix tabs and spaces. Never use tabs, period.
@@ -734,7 +736,8 @@ Flycheck performs in-buffer highlighting of errors and warnings, and is superior
     (defun disable-flycheck-for-elisp ()
       (setq-local flycheck-disabled-checkers '(emacs-lisp-checkdoc)))
 
-    (add-to-list 'flycheck-checkers 'proselint))
+    (add-to-list 'flycheck-checkers 'proselint)
+    (setq-default flycheck-disabled-checkers '(haskell-stack-ghc)))
 
   (use-package flycheck-inline
     :config (global-flycheck-inline-mode))
@@ -873,7 +876,7 @@ Haskell is my day-to-day programming language, so I've tinkered with it a good d
   (use-package lsp-haskell
     :hook (haskell-mode . lsp)
     :custom
-    (lsp-haskell-process-path-hie "hls-wrapper")
+    (lsp-haskell-process-path-hie "haskell-language-server-wrapper")
     (lsp-haskell-process-args-hie '())
     (lsp-log-io t)
     )
@@ -939,7 +942,8 @@ I grew up writing in TextMate, so I got extremely used to text-expansion snippet
 Rust is one of my favorite languages in the world.
 
 #+begin_src emacs-lisp
-  (use-package rust-mode)
+  (use-package rust-mode
+    :custom (rust-format-on-save t))
 #+end_src
 
 I occasionally write Go, generally as a glue language to munge things together. I find certain aspects of its creators' philosophies to be repellent, but a language is more than its creators, and it's hard to argue with the success it's found in industry or the degree to which people find it easy to pick up.
@@ -1046,6 +1050,13 @@ I guess I'm using a tree view again?
 #+end_src
 
 * Initial screen setup
+
+Because macOS stores its various configurations inside the developer directory, the standard value of ~man-header-file-path~ is not sufficient.
+
+#+begin_src emacs-lisp
+  (require 'woman)
+  (add-to-list 'woman-manpath "/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/usr/share/man")
+#+end_src
 
 #+begin_src emacs-lisp
   (defun my-default-window-setup ()
