@@ -73,6 +73,10 @@ Fixing Emacs's defaults is a nontrivial problem. We'll start with UI concerns.
      case-fold-search nil
      ;; no need to prompt for the read command _every_ time
      compilation-read-command nil
+     ;; always scroll
+     compilation-scroll-output t
+     ;; my source directory
+     default-directory "~/src"
      )
 
   ;; Never mix tabs and spaces. Never use tabs, period.
@@ -516,6 +520,7 @@ Also, it's nice to be able to kill all buffers.
     "Close all buffers."
     (interactive)
     ;; (maybe-unset-buffer-modified)
+    (delete-other-windows)
     (save-some-buffers)
     (let ((kill-buffer-query-functions '()))
       (mapc 'kill-buffer (buffer-list))))
@@ -800,8 +805,6 @@ Before Emacs 27, the LSP experience on large projects was not particularly good.
            (lsp-mode . lsp-diagnostics-modeline-mode))
     :bind ("C-c C-c" . #'lsp-execute-code-action)
     :custom
-    (lsp-print-performance t)
-    (lsp-log-io t)
     (lsp-diagnostics-modeline-scope :project)
     (lsp-file-watch-threshold 5000)
     (lsp-enable-file-watchers nil))
@@ -878,7 +881,6 @@ Haskell is my day-to-day programming language, so I've tinkered with it a good d
     :custom
     (lsp-haskell-process-path-hie "haskell-language-server-wrapper")
     (lsp-haskell-process-args-hie '())
-    (lsp-log-io t)
     )
 #+end_src
 
@@ -905,7 +907,7 @@ A thing I want to do someday is to write a framework for sending things like com
   (use-package vterm-toggle
     :custom
     (vterm-toggle-fullscreen-p nil "Open a vterm in another window.")
-    (vterm-toggle-scope 'projectile)
+    (vterm-toggle-scope 'project)
     :bind (("C-c t" . #'vterm-toggle)
            :map vterm-mode-map
            ("s-t" . #'vterm) ; Open up new tabs quickly
@@ -943,7 +945,12 @@ Rust is one of my favorite languages in the world.
 
 #+begin_src emacs-lisp
   (use-package rust-mode
-    :custom (rust-format-on-save t))
+    :hook ((rust-mode . lsp)
+           (rust-mode . lsp-lens-mode)
+           )
+    :custom
+    (rust-format-on-save t)
+    (lsp-rust-server 'rust-analyzer))
 #+end_src
 
 I occasionally write Go, generally as a glue language to munge things together. I find certain aspects of its creators' philosophies to be repellent, but a language is more than its creators, and it's hard to argue with the success it's found in industry or the degree to which people find it easy to pick up.
@@ -1013,11 +1020,19 @@ I use Bazel for some Haskell projects.
 
 *** Markup
 
+I generally use GitHub-flavored Markdown, so we default to that.
+
  #+begin_src emacs-lisp
    (use-package markdown-mode
      :bind (("C-c C-s a" . markdown-table-align))
      :mode ("\\.md$" . gfm-mode))
  #+end_src
+
+I usually use curly quotes when writing in markup languages, which ~typo-mode~ makes easy.
+
+#+begin_src emacs-lisp
+  (use-package typo)
+#+end_src
 
 *** Shell
 

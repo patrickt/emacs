@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: tlens
+# key: tlens
+# --
+$1 :: Lens' $2 $3
+$1 = typed
