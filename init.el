@@ -12,6 +12,7 @@
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/") t)
 (add-to-list 'package-archives '("ublt" . "https://elpa.ubolonton.org/packages/"))
+(add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/") t)
 
 (package-initialize)
 
@@ -21,6 +22,9 @@
 
 (require 'org-install)
 (require 'ob-tangle)
+
+(when (boundp 'comp-speed)
+  (setq comp-speed 2))
 
 (defun reload-config ()
   "Reload the literate config from ~/.config/emacs/readme.org."
