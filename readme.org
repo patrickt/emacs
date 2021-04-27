@@ -641,7 +641,7 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
       (defun org-mode-insert-code ()
         "Like markdown-insert-code, but for org instead."
         (interactive)
-        (org-emphasize ?~))
+        (org-emphasize ?~)))
 
     (use-package org-bullets
       :hook (org-mode . org-bullets-mode))
