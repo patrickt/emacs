@@ -429,6 +429,12 @@ Standard macOS conventions would have ~s-w~ close the current buffer, not the wh
   (bind-key "s-w" #'kill-this-buffer)
 #+end_src
 
+Ibuffer mode is a dired-esque package for managing buffers. It allows convenient selection of multiple buffers at the time for killing/reorganization purposes. I don't really know how to use it, but it's pretty useful.
+
+#+begin_src emacs-lisp
+  (bind-key "C-c B" #'ibuffer)
+#+end_src
+
 Emacs makes it weirdly hard to just, like, edit a file as root, probably due to supporting operating systems not built on ~sudo~. Enter the ~sudo-edit~ package.
 
 #+begin_src emacs-lisp
@@ -637,14 +643,6 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
         (interactive)
         (org-emphasize ?~))
 
-      (defun tufte-css-numeralify (with-underscores)
-        "Express the provided underscore-grouped numeral quantity in old-style capitals."
-        ;; e.g. 10_000_000 becomes 10,000,000 (except fancy in the browser)
-        (format
-         "@@html:<span class=\"numeral\">%s</span>@@"
-         (replace-regexp-in-string "_" "," with-underscore)))
-      )
-
     (use-package org-bullets
       :hook (org-mode . org-bullets-mode))
 
@@ -800,12 +798,13 @@ I remember the days before Emacs had real regular expressions. Nowadays, we have
 
 Completion in Emacs is sort of a fraught enterprise, given the existence of ~pcomplete~, ~hippie-expand~, and ~complete.el~. ~company~ is the least problematic and most modern of these alternatives, though it's kind of a bear to configure. Its interface is not so nice by default but all the frontends flicker terribly if you're typing quickly, which is just spectacularly distracting.
 
-TODO: C-n and C-p should work in the company completion map, but I'm so tired of wrestling with company that I truly don't care.
-
 #+begin_src emacs-lisp
   (use-package company
     :diminish
     :bind (("C-." . #'company-capf))
+    :bind (:map company-active-map
+           ("C-n" . #'company-select-next)
+           ("C-p" . #'company-select-previous))
     :hook (prog-mode . company-mode)
     :custom
     (company-dabbrev-downcase nil "Don't downcase returned candidates.")
@@ -818,8 +817,8 @@ TODO: C-n and C-p should work in the company completion map, but I'm so tired of
     ;; Use the numbers 0-9 to select company completion candidates
     (let ((map company-active-map))
       (mapc (lambda (x) (define-key map (format "%d" x)
-			  `(lambda () (interactive) (company-complete-number ,x))))
-	    (number-sequence 0 9))))
+                          `(lambda () (interactive) (company-complete-number ,x))))
+            (number-sequence 0 9))))
 #+end_src
 
 ** Debugging
@@ -828,6 +827,11 @@ In Haskell, my language of choice, I rarely need a step-through debugger, as des
 
 #+begin_src emacs-lisp
   (use-package dap-mode
+    :bind
+    (("C-c b b" . dap-breakpoint-toggle)
+     ("C-c b r" . dap-debug-restart)
+     ("C-c b l" . dap-debug-last)
+     ("C-c b d" . dap-debug))
     :init
     (require 'dap-go)
     ;; NB: dap-go-setup appears to be broken, so you have to download the extension from GH, rename its file extension
@@ -837,8 +841,8 @@ In Haskell, my language of choice, I rarely need a step-through debugger, as des
     (dap-mode)
     (dap-auto-configure-mode)
     (dap-ui-mode)
-    (dap-ui-controls-mode))
-
+    (dap-ui-controls-mode)
+    )
 #+end_src
 
 ** LSP
@@ -859,12 +863,14 @@ Before Emacs 27, the LSP experience on large projects was not particularly good.
     (lsp-enable-file-watchers nil))
 
   (use-package lsp-ui
+    :disabled
     :custom
+    (lsp-ui-doc-mode nil)
     (lsp-ui-doc-delay 0.75)
     (lsp-ui-doc-max-height 200)
-    (lsp-ui-peek-always-show t)
+    (lsp-ui-peek-always-show nil)
     (lsp-ui-doc-position 'at-point)
-    (lsp-ui-sideline-show-hover t)
+    (lsp-ui-sideline-show-hover nil)
     :after lsp-mode)
 
   (use-package lsp-ivy
