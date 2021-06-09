@@ -168,6 +168,10 @@ There are a great many keybindings that are actively hostile, in that they are b
   (unbind-key "<mouse-2>") ;; pasting with mouse-wheel click
   (unbind-key "<C-wheel-down>") ;; text scale adjust
   (unbind-key "<C-wheel-up>") ;; ditto
+  (unbind-key "s-n") ;; make-frame
+
+  (require 'mhtml-mode)
+  (unbind-key "C-c 8" mhtml-mode-map)
 #+end_src
 
 The out-of-the-box treatment of whitespace is unfortunate, but fixable.
@@ -222,7 +226,7 @@ I define a couple of my own configuration variables with ~defvar~, and no matter
 Emacs looks a lot better when it has a modern monospaced font and VSCode-esque icons.
 
 #+begin_src emacs-lisp
-  (ignore-errors (set-frame-font "Menlo-14"))
+  (ignore-errors (set-frame-font "Menlo-12"))
 
   (use-package all-the-icons)
 
@@ -251,11 +255,12 @@ I use the [[https://github.com/hlissner/emacs-doom-themes][Doom Emacs themes]], 
 #+begin_src emacs-lisp
   (use-package doom-themes
     :config
-    (let ((chosen-theme 'doom-oceanic-next))
+    (let ((chosen-theme 'doom-dark+))
       (doom-themes-visual-bell-config)
       (doom-themes-org-config)
       (setq doom-challenger-deep-brighter-comments t
-            doom-challenger-deep-brighter-modeline t)
+            doom-challenger-deep-brighter-modeline t
+            doom-dark+-blue-modeline nil)
       (load-theme chosen-theme)))
 #+end_src
 
@@ -316,9 +321,10 @@ As part of my day job, I hack on the [[https://tree-sitter.github.io][~tree-sitt
 
 The long-awaited Emacs 27 support for native tabs is shaky, both visually and in terms of functionality. As such, ~centaur-tabs~ is the best way to simulate a conventional tabs setup, in which tab sets are grouped by the toplevel project working directory.
 
+I'm trying out native tab-bar stuff. It's looking better.
+
 #+begin_src emacs-lisp
   (use-package centaur-tabs
-    :demand
     :config
     (centaur-tabs-mode t)
     :custom
@@ -503,8 +509,13 @@ When I hit, accidentally or purposefully, a key chord that forms the prefix of s
 
 #+begin_src emacs-lisp
   (defun display-startup-echo-area-message ()
-    "Override the normally tedious error message."
+    "Override the normally tedious startup message."
     (message "Welcome back."))
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package s)
+  (use-package dash)
 #+end_src
 
 ** Buffer management
@@ -552,6 +563,8 @@ Also, it's nice to be able to kill all buffers.
     (save-some-buffers)
     (let ((kill-buffer-query-functions '()))
       (mapc 'kill-buffer (buffer-list))))
+
+  (bind-key "C-c K" #'kill-all-buffers)
 #+end_src
 
 VS Code has a great feature where you can just copy a filename to the clipboard.
@@ -617,38 +630,50 @@ It's useful to have a scratch buffer around, and more useful to have a key chord
 Even though my whole-ass blogging workflow is built around org-mode, I still can't say that I know it very well. I don't take advantage of ~org-agenda~, ~org-timer~, ~org-calendar~, ~org-capture~, anything interesting to do with tags, et cetera. Someday I will learn these things, but not yet.
 
 #+begin_src emacs-lisp
-    (use-package org
-      :pin org
-      :hook ((org-mode . visual-line-mode))
-      :bind (("C-c o c" . counsel-org-capture)
-             :map org-mode-map
-             ("C-c c" . #'org-mode-insert-code)
-             ("C-c a f" . #'org-shifttab))
-      :custom
-      (org-directory "~/txt")
-      (org-default-notes-file (concat org-directory "/notes.org"))
-      (org-return-follows-link t)
-      (org-src-ask-before-returning-to-edit-buffer nil "org-src is kinda needy out of the box")
-      (org-src-window-setup 'split-window-below)
-      (org-footnote-section "" "Footnotes don't get their own section.")
+  (use-package org
+    :pin org
+    :hook ((org-mode . visual-line-mode))
+    :bind (("C-c o c" . counsel-org-capture)
+           :map org-mode-map
+           ("C-c c" . #'org-mode-insert-code)
+           ("C-c a f" . #'org-shifttab))
+    :custom
+    (org-adapt-indentation nil)
+    (org-directory "~/txt")
+    (org-default-notes-file (concat org-directory "/notes.org"))
+    (org-return-follows-link t)
+    (org-src-ask-before-returning-to-edit-buffer nil "org-src is kinda needy out of the box")
+    (org-src-window-setup 'split-window-below)
+    (org-footnote-section "" "Footnotes don't get their own section.")
 
-      :config
-      ;; Putting these in a loop or in :bind generates invalid code and I have no idea why.
-      (unbind-key "C-," org-mode-map)
-      (unbind-key "C-c ;" org-mode-map)
-      (unbind-key "C-c ," org-mode-map)
+    :config
+    ;; Putting these in a loop or in :bind generates invalid code and I have no idea why.
+    (unbind-key "C-," org-mode-map)
+    (unbind-key "C-c ;" org-mode-map)
+    (unbind-key "C-c ," org-mode-map)
 
-      (defun org-mode-insert-code ()
-        "Like markdown-insert-code, but for org instead."
-        (interactive)
-        (org-emphasize ?~)))
+    (defun org-mode-insert-code ()
+      "Like markdown-insert-code, but for org instead."
+      (interactive)
+      (org-emphasize ?~)))
 
-    (use-package org-bullets
-      :hook (org-mode . org-bullets-mode))
+  (use-package org-bullets
+    :hook (org-mode . org-bullets-mode))
 
-    (use-package org-ref
-      :config (defalias 'dnd-unescape-uri 'dnd--unescape-uri))
+  (use-package org-ref
+    :config (defalias 'dnd-unescape-uri 'dnd--unescape-uri))
 #+end_src
+
+* Keymacs support
+
+I recently acquired a [[https://keymacs.com][Keymacs A620N]], a reproduction of the [[https://deskthority.net/wiki/Symbolics_365407][Symbolics 365407]], from 1983. Though it's expensive, it's unquestionably the nicest keyboard I've ever used, given its vintage ALPS switches; of the keyboards I've used, only the keyboard.io comes close. However, since the keyboard is simply massive, we need to unbind some of the function keys, as I keep hitting them.
+
+#+begin_src emacs-lisp
+  (bind-key "<f1>" #'other-window)
+  (bind-key "C-(" #'centaur-tabs-backward)
+  (bind-key "C-)" #'centaur-tabs-forward)
+#+end_src
+
 * IDE features
 ** Magit
 
@@ -750,6 +775,13 @@ Now that Helm  And with ~ivy-rich~, things even look nice. ~counsel~ provides ni
   (use-package smex)
 #+end_src
 
+Dumb-jump is pretty good at figuring out where declarations of things might be. I'm using it with C because I'm too lazy to set up true C LSP integration.
+
+#+begin_src emacs-lisp
+  (use-package dumb-jump
+    :bind (("C-c J" . #'dumb-jump-go)))
+#+end_src
+
 ** Flycheck
 
 Flycheck performs in-buffer highlighting of errors and warnings, and is superior on many axes to the builtin ~flymake~ mode. The only configuration it needs is to add [[https://github.com/amperser/proselint][~proselint~]] support and to disable the documentation checking in ~org-src~ buffers.
@@ -812,6 +844,7 @@ Completion in Emacs is sort of a fraught enterprise, given the existence of ~pco
     (company-tooltip-limit 20 "The more the merrier.")
     (company-tooltip-idle-delay 0.4 "Faster!")
     (company-async-timeout 20 "Some requests can take a long time. That's fine.")
+    (company-idle-delay 1.5 "Default is way too low.")
     :config
 
     ;; Use the numbers 0-9 to select company completion candidates
@@ -860,18 +893,13 @@ Before Emacs 27, the LSP experience on large projects was not particularly good.
     (lsp-diagnostics-modeline-scope :project)
     (lsp-file-watch-threshold 5000)
     (lsp-response-timeout 2)
+    (lsp-ui-doc-mode nil)
     (lsp-enable-file-watchers nil))
 
-  (use-package lsp-ui
-    :disabled
-    :custom
-    (lsp-ui-doc-mode nil)
-    (lsp-ui-doc-delay 0.75)
-    (lsp-ui-doc-max-height 200)
-    (lsp-ui-peek-always-show nil)
-    (lsp-ui-doc-position 'at-point)
-    (lsp-ui-sideline-show-hover nil)
-    :after lsp-mode)
+  ;; (use-package lsp-ui
+  ;;   :custom
+  ;;   (lsp-ui-doc-mode nil)
+  ;;   :after lsp-mode)
 
   (use-package lsp-ivy
     :after (ivy lsp-mode))
@@ -882,7 +910,7 @@ Before Emacs 27, the LSP experience on large projects was not particularly good.
     :after (company lsp-mode))
 #+end_src
 
-** Haskell
+* Haskell
 
 Haskell is my day-to-day programming language, so I've tinkered with it a good deal. Featuring automatic ~ormolu~ or ~stylish-haskell~ invocation, as based on a per-project variable, so I can default to ~ormolu~ but choose ~stylish-haskell~ for the projects that don't.
 
@@ -950,7 +978,7 @@ My statements about Haskell autoformatters have, in the past, attracted controve
   (use-package ormolu)
 #+end_src
 
-** vterm
+* vterm
 
 The state of terminal emulation is, as a whole, a mess. Not just within Emacs, but across all of Unix. (To be fair, terminals are a fascinating study in backwards compatibility and generations upon generations of standards and conventions.) A recent bright spot has been libvterm, which, when integrated with Emacs's new dynamic module support, enables us to have a very, very fast terminal inside Emacs.
 
@@ -967,25 +995,28 @@ A thing I want to do someday is to write a framework for sending things like com
   (use-package vterm-toggle
     :custom
     (vterm-toggle-fullscreen-p nil "Open a vterm in another window.")
-    (vterm-toggle-scope 'project)
+    (vterm-toggle-scope 'dedicated)
     :bind (("C-c t" . #'vterm-toggle)
            :map vterm-mode-map
            ("s-t" . #'vterm) ; Open up new tabs quickly
            ))
 #+end_src
 
-** Process management
+* Process management
 
 ~prodigy~ is a great and handsome frontend for managing long-running services. Since many of the services I need to run are closed-source, the calls to ~prodigy-define-service~ are located in an adjacent file. Unfortunately, ~prodigy~ doesn't really have any good support for managing Homebrew services. Maybe I'll write one, in my copious spare time.
 
 #+begin_src emacs-lisp
   (use-package prodigy
-    :bind ("C-c 8" . #'prodigy)
+    :bind (("C-c 8" . #'prodigy)
+           :map prodigy-view-mode-map
+           ("$" . #'end-of-buffer))
+    :custom (prodigy-view-truncate-by-default t)
     :config
     (load "~/.config/emacs/services.el" 'noerror))
 #+end_src
 
-** Snippets
+* Snippets
 
 I grew up writing in TextMate, so I got extremely used to text-expansion snippets. I also think they're extremely underrated for learning a new language's idioms: one of the reasons I was able to get up to speed so fast with Rails (back in the 1.2 days) was because the TextMate snippets indicated pretty much everything you needed to know about things like ActiveRecord.
 
@@ -997,7 +1028,7 @@ I grew up writing in TextMate, so I got extremely used to text-expansion snippet
     :custom (yas-prompt-functions '(yas-completing-prompt)))
 #+end_src
 
-** Other Languages
+* Other Languages
 
 *** General-purpose
 
@@ -1019,8 +1050,10 @@ I occasionally write Go, generally as a glue language to munge things together. 
    (use-package go-mode
      :custom
      (lsp-enable-links nil)
+     (lsp-ui-doc-mode nil)
      :config
-     (add-hook 'before-save-hook #'gofmt-before-save))
+     (add-hook 'before-save-hook #'gofmt-before-save)
+     )
 
    (use-package go-snippets)
 
@@ -1053,6 +1086,12 @@ Some other miscellaneous languages that I don't write often but for which I need
   (use-package typescript-mode)
   (use-package csharp-mode)
   (setq-default js-indent-level 2)
+#+end_src
+
+I'm trying to learn APL, because I've lost control of my life.
+
+#+begin_src emacs-lisp
+  (use-package dyalog-mode)
 #+end_src
 
 *** Configuration
@@ -1088,6 +1127,13 @@ I generally use GitHub-flavored Markdown, so we default to that.
      :mode ("\\.md$" . gfm-mode))
  #+end_src
 
+Occasionally I need to edit Rails .erb templates, God help me.
+
+#+begin_src emacs-lisp
+  (use-package web-mode
+    :mode ("\\.html.erb$" . web-mode))
+#+end_src
+
 I usually use curly quotes when writing in markup languages, which ~typo-mode~ makes easy.
 
 #+begin_src emacs-lisp
@@ -1100,15 +1146,7 @@ I usually use curly quotes when writing in markup languages, which ~typo-mode~ m
    (use-package fish-mode)
  #+end_src
 
-** Miscellany
-
-I guess I'm using a tree view again?
-
-#+begin_src emacs-lisp
-  (use-package neotree
-    :disabled
-    :config (neotree-mode))
-#+end_src
+* Miscellany
 
  ~restclient~ is a terrific interface for running HTTP requests against local or remote services.
 
