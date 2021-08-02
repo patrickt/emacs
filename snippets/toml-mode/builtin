@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: builtin
+# key: builtin
+# --
+
+["builtins.$1"]
+docs = "https://docs.python.org/3/library/functions.html#$1"
+
+builtin$0

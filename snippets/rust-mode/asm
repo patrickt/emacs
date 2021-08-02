@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: asm
+# key: asm
+# --
+#[cfg(feature = "asm")]

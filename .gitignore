@@ -26,3 +26,5 @@ flycheck_init.el
 eln-cache
 .dap-breakpoints
 .extension
+services.el
+projects
