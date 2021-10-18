@@ -16,10 +16,10 @@ Yet I don't feel bad about publishing something this self-indulgent. Not only be
 
 ** Preliminaries
 
-I'll say it: modern Emacs Lisp is unfairly maligned. However, it was pretty fairly maligned before Emacs 24, which introduced lexical scoping. For reasons of compatibility, it's not on by default, and the documentation states that "unlike other file-local variables, this must be set in the first line of a file."
+I'll say it: modern Emacs Lisp is unfairly maligned. However, it was pretty fairly maligned before Emacs 24, which introduced lexical scoping.
 
  #+begin_src emacs-lisp
-   (setq lexical-binding t)
+   ;;; -*- lexical-binding: t -*-
  #+end_src
 
 Many of Emacs's defaults are ill-suited for my purposes, but the first one that needs fixing is the shockingly low garbage-collection threshold, which defaults to a paltry *:8kb*. Setting it to *:100mb* seems to strike a nice balance between GC pauses and performance. I also like to turn on the messages associated therewith, since thrashing GC is a good indicator of runaway processes or similar weirdness.
@@ -209,8 +209,6 @@ Undo has always been problematic for me in Emacs. The beauty of undo-tree is tha
     (unbind-key "M-_" undo-tree-map))
 #+end_src
 
-It's 2020, we don't paste with mouse-wheel-click anymore.
-
 I define a couple of my own configuration variables with ~defvar~, and no matter how many times I mark the variable as safe, it warns me every time I set it in the ~.dir-locals~ file. Disabling these warnings is probably (?) the right thing to do.
 
 #+begin_src emacs-lisp
@@ -251,7 +249,7 @@ I use the [[https://github.com/hlissner/emacs-doom-themes][Doom Emacs themes]], 
 #+begin_src emacs-lisp
   (use-package doom-themes
     :config
-    (let ((chosen-theme 'doom-dark+))
+    (let ((chosen-theme 'doom-homage-black))
       (doom-themes-visual-bell-config)
       (doom-themes-org-config)
       (setq doom-challenger-deep-brighter-comments t
@@ -264,14 +262,17 @@ Most major modes pollute the modeline, so we pull in diminish.el to quiesce them
 
 #+begin_src emacs-lisp
   (use-package diminish
-    :config (diminish 'eldoc-mode))
+    :config
+    (diminish 'eldoc-mode)
+    (diminish 'visual-line-mode))
 #+end_src
 
-The default modeline is pretty uninspiring, and doom-modeline doesn't appear to be particularly slow.
+The default modeline is pretty uninspiring, and nano-modeline is very minimal and pleasing.
 
 #+begin_src emacs-lisp
-  (use-package doom-modeline
-    :config (doom-modeline-mode))
+  (use-package nano-modeline
+    :config (nano-modeline-mode)
+    :custom (nano-modeline-position 'bottom))
 #+end_src
 
 I find it useful to have a slightly more apparent indicator of which buffer is active at the moment.
@@ -433,6 +434,19 @@ Given how often I tweak my config, I bind ~C-c e~ to take me to my config file.
   (bind-key "C-c e" #'open-init-file)
 #+end_src
 
+Navigating forward and back through the history of recently visited files is pretty essential when jumping around a project with LSP.
+
+#+begin_src emacs-lisp
+  (use-package history
+    :diminish
+    :config
+    (history-mode)
+    (advice-add #'lsp-find-definition-mouse :before #'history-add-history)
+
+    :bind (("s-[" . #'history-prev-history)
+           ("s-]" . #'history-next-history)))
+#+end_src
+
 Standard macOS conventions would have ~s-w~ close the current buffer, not the whole window.
 
 #+begin_src emacs-lisp
@@ -503,6 +517,7 @@ When I hit, accidentally or purposefully, a key chord that forms the prefix of s
 
 #+begin_src emacs-lisp
   (use-package which-key
+    :diminish
     :custom
     (which-key-setup-side-window-bottom)
     (which-key-enable-extended-define-key t)
@@ -806,7 +821,7 @@ Flycheck performs in-buffer highlighting of errors and warnings, and is superior
     (org-src-mode . disable-flycheck-for-elisp)
     :custom
     (flycheck-emacs-lisp-initialize-packages t)
-    (flycheck-display-errors-delay 0.1)
+    (flycheck-display-errors-delay 0.9)
     :config
     (global-flycheck-mode)
     (flycheck-set-indication-mode 'left-margin)
@@ -1011,7 +1026,7 @@ A thing I want to do someday is to write a framework for sending things like com
   (use-package vterm-toggle
     :custom
     (vterm-toggle-fullscreen-p nil "Open a vterm in another window.")
-    (vterm-toggle-scope 'dedicated)
+    (vterm-toggle-scope 'project)
     :bind (("C-c t" . #'vterm-toggle)
            :map vterm-mode-map
            ("s-t" . #'vterm) ; Open up new tabs quickly
@@ -1072,6 +1087,10 @@ I occasionally write Go, generally as a glue language to munge things together. 
      )
 
    (use-package go-snippets)
+
+   (defun fix-messed-up-gofmt-path ()
+     (interactive)
+     (setq gofmt-command (string-trim (shell-command-to-string "which gofmt"))))
 
    (use-package go-projectile)
 
@@ -1182,7 +1201,33 @@ TRAMP mode is excellent for editing files on a remote machine or Docker containe
 
 #+begin_src emacs-lisp
   (require 'tramp)
-  (setq tramp-default-method "ssh")
+  (setq tramp-default-method "ssh"
+        tramp-verbose 1
+        tramp-default-remote-shell "/bin/bash"
+        tramp-connection-local-default-shell-variables
+          '((shell-file-name . "/bin/bash")
+            (shell-command-switch . "-c")))
+
+  (connection-local-set-profile-variables 'tramp-connection-local-default-shell-profile
+    '((shell-file-name . "/bin/bash")
+     (shell-command-switch . "-c")))
+
+  (lsp-register-client
+   (make-lsp-client :new-connection (lsp-stdio-connection "gopls")
+                    :major-modes '(go-mode go-dot-mod-mode)
+                    :language-id "go"
+                    :remote? t
+                    :priority 0
+                    :server-id 'gopls-remote
+                    :completion-in-comments? t
+                    :library-folders-fn #'lsp-go--library-default-directories
+                    :after-open-fn (lambda ()
+                                     ;; https://github.com/golang/tools/commit/b2d8b0336
+                                     (setq-local lsp-completion-filter-on-incomplete nil))))
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package direnv :config (direnv-mode))
 #+end_src
 
 * Initial screen setup
