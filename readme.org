@@ -438,6 +438,7 @@ Navigating forward and back through the history of recently visited files is pre
 
 #+begin_src emacs-lisp
   (use-package history
+    :disabled
     :diminish
     :config
     (history-mode)
@@ -792,6 +793,7 @@ Now that Helm  And with ~ivy-rich~, things even look nice. ~counsel~ provides ni
            ("C-c H" . #'counsel-projectile-rg)
            ("C-h h" . #'counsel-command-history)
            ("C-x C-f" . #'counsel-find-file)
+           ("C-x b" . #'counsel-switch-buffer)
            :map ivy-minibuffer-map
            ("C-r" . counsel-minibuffer-history))
     :diminish)
@@ -800,7 +802,7 @@ Now that Helm  And with ~ivy-rich~, things even look nice. ~counsel~ provides ni
     :bind (("C-c f" . #'counsel-projectile)
            ("C-c F" . #'counsel-projectile-switch-project)))
 
-  (use-package smex)
+  (use-package amx :config (amx-mode))
 #+end_src
 
 Dumb-jump is pretty good at figuring out where declarations of things might be. I'm using it with C because I'm too lazy to set up true C LSP integration.
@@ -1140,7 +1142,7 @@ I'm trying to learn APL, because I've lost control of my life.
 I use Bazel for some Haskell projects.
 
 #+begin_src emacs-lisp
-  (use-package bazel-mode
+  (use-package bazel
     :config
     (add-hook 'bazel-mode-hook (lambda () (add-hook 'before-save-hook #'bazel-mode-buildifier nil t)))
     )
