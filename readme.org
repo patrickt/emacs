@@ -165,6 +165,21 @@ There are a great many keybindings that are actively hostile, in that they are b
   (unbind-key "s-n") ;; make-frame
 #+end_src
 
+By default, I want paste operations to indent their results.
+
+#+begin_src emacs-lisp
+  (defun pt/yank ()
+    "Call counsel-yank-pop, then indent the pasted region, as TextMate does."
+    (interactive)
+    (let ((point-before (point)))
+      (yank)
+      (indent-region point-before (point))))
+
+  (bind-key "C-y" #'pt/yank)
+  (bind-key "s-v" #'pt/yank)
+  (bind-key "C-Y" #'yank)
+#+end_src
+
 The out-of-the-box treatment of whitespace is unfortunate, but fixable.
 
 #+begin_src emacs-lisp
@@ -215,7 +230,7 @@ I define a couple of my own configuration variables with ~defvar~, and no matter
 Emacs looks a lot better when it has a modern monospaced font and VSCode-esque icons.
 
 #+begin_src emacs-lisp
-  (ignore-errors (set-frame-font "Menlo-12"))
+  (ignore-errors (set-frame-font "Menlo-14"))
 
   (use-package all-the-icons)
 
@@ -562,18 +577,21 @@ Also, it's nice to be able to kill all buffers.
   (bind-key "C-c K" #'kill-all-buffers)
 #+end_src
 
-VS Code has a great feature where you can just copy a filename to the clipboard.
+VS Code has a great feature where you can just copy a filename to the clipboard. We can write it in a more sophisticated manner in Emacs, which is nice.
 
 #+begin_src emacs-lisp
-  (defun copy-file-name-to-clipboard ()
-    "Copy the current buffer file name to the clipboard."
-    (interactive)
-    (let ((filename (if (equal major-mode 'dired-mode) default-directory (buffer-file-name))))
-      (when filename
-        (kill-new filename)
-        (message "Copied buffer file name '%s' to the clipboard." filename))))
+  (defun copy-file-name-to-clipboard (do-not-strip-prefix)
+    "Copy the current buffer file name to the clipboard. The path will be relative to the project's root directory, if set. Invoking with a prefix argument copies the full path."
+    (interactive "P")
+    (letrec
+        ((fullname (if (equal major-mode 'dired-mode) default-directory (buffer-file-name)))
+         (relname (file-relative-name fullname (projectile-project-root)))
+         (should-strip (and (projectile-project-root) (not do-not-strip-prefix)))
+         (filename (if should-strip relname fullname)))
+      (kill-new filename)
+      (message "Copied buffer file name '%s' to the clipboard." filename)))
 
-  (bind-key "C-c P" #'copy-file-name-to-clipboard)
+  (bind-key "C-c p" #'copy-file-name-to-clipboard)
 #+end_src
 
 Normally I bind ~other-window~ to ~C-c ,~, but on my ultra-wide-screen monitor, which supports up to 8 buffers comfortably, holding that key to move around buffers is kind of a drag. Some useful commands to remember here are ~aw-ignore-current~ and ~aw-ignore-on~.
@@ -590,7 +608,7 @@ Normally I bind ~other-window~ to ~C-c ,~, but on my ultra-wide-screen monitor, 
     (defun my-ace-window (args)
       "As ace-window, but hiding the cursor while the action is active."
       (interactive "P")
-      (cl-letf
+      (let
           ((cursor-type nil)
            (cursor-in-non-selected-window nil))
         (ace-window nil)))
@@ -708,6 +726,10 @@ Magit also allows integration with GitHub and other such forges (though I hate t
 #+begin_src emacs-lisp
   (use-package forge
     :after magit)
+
+  ;; hack to eliminate weirdness
+  (unless (boundp 'bug-reference-auto-setup-functions)
+    (defvar bug-reference-auto-setup-functions '()))
 #+end_src
 
 ** Projectile
@@ -739,8 +761,7 @@ Now that Helm  And with ~ivy-rich~, things even look nice. ~counsel~ provides ni
     :config
     (ivy-mode 1)
 
-    :bind (("C-c C-r" . #'ivy-resume)
-           ("C-c s"   . #'swiper-thing-at-point)
+    :bind (("C-c s"   . #'swiper-thing-at-point)
            ("C-s"     . #'swiper)))
 
   (use-package ivy-rich
@@ -755,12 +776,21 @@ Now that Helm  And with ~ivy-rich~, things even look nice. ~counsel~ provides ni
   (use-package counsel
     :init
     (counsel-mode 1)
+    :config
+
+    (defun pt/yank-pop ()
+      "As pt/yank, but calling counsel-yank-pop."
+      (interactive)
+      (let ((point-before (point)))
+        (counsel-yank-pop)
+        (indent-region point-before (point))))
 
     :bind (("C-c ;" . #'counsel-M-x)
            ("C-c U" . #'counsel-unicode-char)
            ("C-c i" . #'counsel-imenu)
            ("C-x f" . #'counsel-find-file)
-           ("C-c y" . #'counsel-yank-pop)
+           ("C-c Y" . #'counsel-yank-pop)
+           ("C-c y" . #'pt/yank-pop)
            ("C-c r" . #'counsel-recentf)
            ("C-c v" . #'counsel-switch-buffer-other-window)
            ("C-c H" . #'counsel-projectile-rg)
@@ -907,7 +937,8 @@ Before Emacs 27, the LSP experience on large projects was not particularly good.
   ;;   :after lsp-mode)
 
   (use-package lsp-ivy
-    :after (ivy lsp-mode))
+    :after (ivy lsp-mode)
+    :bind (("s-t" . #'lsp-ivy-workspace-symbol)))
 
   (use-package company-lsp
     :disabled
