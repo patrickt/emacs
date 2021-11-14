@@ -16,12 +16,6 @@ Yet I don't feel bad about publishing something this self-indulgent. Not only be
 
 ** Preliminaries
 
-I'll say it: modern Emacs Lisp is unfairly maligned. However, it was pretty fairly maligned before Emacs 24, which introduced lexical scoping.
-
- #+begin_src emacs-lisp
-   ;;; -*- lexical-binding: t -*-
- #+end_src
-
 Many of Emacs's defaults are ill-suited for my purposes, but the first one that needs fixing is the shockingly low garbage-collection threshold, which defaults to a paltry *:8kb*. Setting it to *:100mb* seems to strike a nice balance between GC pauses and performance. I also like to turn on the messages associated therewith, since thrashing GC is a good indicator of runaway processes or similar weirdness.
 
 #+begin_src emacs-lisp
@@ -79,8 +73,8 @@ Fixing Emacs's defaults is a nontrivial problem. We'll start with UI concerns.
    case-fold-search nil
    ;; no need to prompt for the read command _every_ time
    compilation-read-command nil
-   ;; always scroll
-   compilation-scroll-output t
+   ;; don't scroll
+   compilation-scroll-output nil
    ;; my source directory
    default-directory "~/src/")
 
@@ -165,18 +159,19 @@ There are a great many keybindings that are actively hostile, in that they are b
   (unbind-key "s-n") ;; make-frame
 #+end_src
 
-By default, I want paste operations to indent their results.
+By default, I want paste operations to indent their results. I could express this as defadvice around the yank command, but I try to avoid such measures if possible.
 
 #+begin_src emacs-lisp
-  (defun pt/yank ()
-    "Call counsel-yank-pop, then indent the pasted region, as TextMate does."
+  (defun pt-yank ()
+    "Call yank, then indent the pasted region, as TextMate does."
     (interactive)
     (let ((point-before (point)))
+      (when mark-active (call-interactively 'delete-backward-char))
       (yank)
       (indent-region point-before (point))))
 
-  (bind-key "C-y" #'pt/yank)
-  (bind-key "s-v" #'pt/yank)
+  (bind-key "C-y" #'pt-yank)
+  (bind-key "s-v" #'pt-yank)
   (bind-key "C-Y" #'yank)
 #+end_src
 
@@ -230,7 +225,7 @@ I define a couple of my own configuration variables with ~defvar~, and no matter
 Emacs looks a lot better when it has a modern monospaced font and VSCode-esque icons.
 
 #+begin_src emacs-lisp
-  (ignore-errors (set-frame-font "Menlo-14"))
+  (ignore-errors (set-frame-font "SF Mono-12"))
 
   (use-package all-the-icons)
 
@@ -259,7 +254,7 @@ I use the [[https://github.com/hlissner/emacs-doom-themes][Doom Emacs themes]], 
 #+begin_src emacs-lisp
   (use-package doom-themes
     :config
-    (let ((chosen-theme 'doom-homage-black))
+    (let ((chosen-theme 'modus-vivendi))
       (doom-themes-visual-bell-config)
       (doom-themes-org-config)
       (setq doom-challenger-deep-brighter-comments t
@@ -319,6 +314,7 @@ As part of my day job, I hack on the [[https://tree-sitter.github.io][~tree-sitt
   (use-package tree-sitter
     :hook ((ruby-mode . tree-sitter-hl-mode)
            (js-mode . tree-sitter-hl-mode)
+           (rust-mode . tree-sitter-hl-mode)
            (typescript-mode . tree-sitter-hl-mode)
            (go-mode . tree-sitter-hl-mode)))
   (use-package tree-sitter-langs)
@@ -489,7 +485,8 @@ It's genuinely shocking that there's no "duplicate whatever's marked" command bu
     (defun my-duplicate-thing ()
       "Duplicate thing at point without changing the mark."
       (interactive)
-      (save-mark-and-excursion (duplicate-thing 1)))
+      (save-mark-and-excursion (duplicate-thing 1))
+      (call-interactively #'next-line))
     :bind (("C-c u" . my-duplicate-thing)
            ("C-c C-u" . my-duplicate-thing)))
 #+end_src
@@ -920,7 +917,7 @@ Before Emacs 27, the LSP experience on large projects was not particularly good.
     :commands (lsp lsp-execute-code-action)
     :hook ((go-mode . lsp-deferred)
            (lsp-mode . lsp-enable-which-key-integration)
-           (lsp-mode . lsp-diagnostics-modeline-mode))
+           (lsp-mode . lsp-modeline-diagnostics-mode))
     :bind (("C-c C-c" . #'lsp-execute-code-action)
            ("s-[" . #'xref-pop-marker-stack)
            ("s-]" . #'pop-global-mark))
@@ -928,13 +925,18 @@ Before Emacs 27, the LSP experience on large projects was not particularly good.
     (lsp-diagnostics-modeline-scope :project)
     (lsp-file-watch-threshold 5000)
     (lsp-response-timeout 2)
-    (lsp-ui-doc-mode nil)
+    (lsp-eldoc-render-all nil)
+    (eldoc-idle-delay 2)
     (lsp-enable-file-watchers nil))
 
-  ;; (use-package lsp-ui
-  ;;   :custom
-  ;;   (lsp-ui-doc-mode nil)
-  ;;   :after lsp-mode)
+  (use-package lsp-ui
+    :custom
+    (lsp-ui-doc-show-with-mouse t)
+    (lsp-ui-doc-show-with-cursor nil)
+    (lsp-ui-doc-delay 1.5) ;; buggy, see https://github.com/emacs-lsp/lsp-ui/issues/664
+    :config
+    (lsp-ui-doc-mode)
+    :after lsp-mode)
 
   (use-package lsp-ivy
     :after (ivy lsp-mode)
@@ -952,14 +954,11 @@ Haskell is my day-to-day programming language, so I've tinkered with it a good d
 
 #+begin_src emacs-lisp
   (use-package haskell-mode
-    :hook (haskell-mode . my-haskell-hook)
 
     :config
     (defcustom haskell-formatter 'ormolu
       "The Haskell formatter to use. One of: 'ormolu, 'stylish, nil. Set it per-project in .dir-locals."
       :safe 'symbolp)
-
-    (defun my-haskell-hook () (eldoc-mode nil))
 
     (defun haskell-smart-format ()
       "Format a buffer based on the value of 'haskell-formatter'."
@@ -970,6 +969,7 @@ Haskell is my day-to-day programming language, so I've tinkered with it a good d
         (nil nil)
         ))
 
+
     (defun haskell-switch-formatters ()
       "Switch from ormolu to stylish-haskell, or vice versa."
       (interactive)
@@ -979,23 +979,13 @@ Haskell is my day-to-day programming language, so I've tinkered with it a good d
               ('stylish 'ormolu)
               (nil nil))))
 
-    ;; haskell-mode doesn't know about newer GHC features.
-    (let ((new-extensions '("QuantifiedConstraints"
-                            "DerivingVia"
-                            "BlockArguments"
-                            "DerivingStrategies"
-                            "StandaloneKindSignatures"
-                            "ImportQualifiedPost"
-                            )))
-      (setq
-       haskell-ghc-supported-extensions
-       (append haskell-ghc-supported-extensions new-extensions)))
-
     :bind (:map haskell-mode-map
            ("C-c a c" . haskell-cabal-visit-file)
            ("C-c a i" . haskell-navigate-imports)
            ("C-c M"   . haskell-compile)
-           ("C-c a I" . haskell-navigate-imports-return)))
+           ("C-c a I" . haskell-navigate-imports-return)
+           :map haskell-cabal-mode-map
+           ("C-c M"   . haskell-compile)))
 
   (use-package haskell-snippets
     :after (haskell-mode yasnippet)
