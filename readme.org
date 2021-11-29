@@ -315,6 +315,7 @@ As part of my day job, I hack on the [[https://tree-sitter.github.io][~tree-sitt
     :hook ((ruby-mode . tree-sitter-hl-mode)
            (js-mode . tree-sitter-hl-mode)
            (rust-mode . tree-sitter-hl-mode)
+           (c-mode . tree-sitter-hl-mode)
            (typescript-mode . tree-sitter-hl-mode)
            (go-mode . tree-sitter-hl-mode)))
   (use-package tree-sitter-langs)
@@ -348,8 +349,8 @@ Any modern editor should include multiple-cursor support. Sure, keyboard macros 
 
 #+begin_src emacs-lisp
   (use-package multiple-cursors
-    :bind (("C-c m m" . #'mc/edit-lines )
-           ("C-c m d" . #'mc/mark-all-dwim )))
+    :bind (("C-c M m" . #'mc/edit-lines )
+           ("C-c M d" . #'mc/mark-all-dwim )))
 #+end_src
 
 The ~fill-paragraph~ (~M-q~) command can be useful for formatting long text lines in a pleasing matter. I don't do it in every document, but when I do, I want more columns than the default *:70*.
@@ -635,6 +636,28 @@ It's useful to have a scratch buffer around, and more useful to have a key chord
   (bind-key "C-c a s" #'switch-to-scratch-buffer)
 #+end_src
 
+One of the main problems with Emacs is how many ephemeral buffers it creates. I'm giving ~popper-mode~ a try to see if it can stem the flood thereof.
+
+#+begin_src emacs-lisp
+  (use-package popper
+    :bind (("C-`"   . popper-toggle-latest)
+           ("C-c :" . popper-toggle-latest)
+           ("C-\\"  . popper-cycle)
+           ("C-M-`" . popper-toggle-type))
+    :config
+    (setq popper-reference-buffers '("\\*Messages\\*"
+                                "Output\\*$"
+                                "\\*Async Shell Command\\*"
+                                help-mode
+                                "magit:.\*"
+                                "\\*deadgrep.\*"
+                                "\\*vterm.\*"
+                                "\\*xref\\*"
+                                compilation-mode))
+    (popper-mode +1)
+    (popper-echo-mode +1))
+#+end_src
+
 ** Org-mode
 
 Even though my whole-ass blogging workflow is built around org-mode, I still can't say that I know it very well. I don't take advantage of ~org-agenda~, ~org-timer~, ~org-calendar~, ~org-capture~, anything interesting to do with tags, et cetera. Someday I will learn these things, but not yet.
@@ -679,6 +702,16 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
 
   (use-package org-ref
     :config (defalias 'dnd-unescape-uri 'dnd--unescape-uri))
+
+  (use-package org-roam
+    :bind
+    (("C-c o r" . org-roam-capture)
+     ("C-c o f" . org-roam-node-find))
+    :custom
+    (org-roam-directory (expand-file-name "~/Dropbox/txt/roam"))
+    (org-roam-v2-ack t)
+    :config
+    (org-roam-db-autosync-mode))
 #+end_src
 
 * Keymacs support
@@ -687,8 +720,6 @@ I recently acquired a [[https://keymacs.com][Keymacs A620N]], a reproduction of 
 
 #+begin_src emacs-lisp
   (bind-key "<f1>" #'other-window)
-  (bind-key "C-(" #'centaur-tabs-backward)
-  (bind-key "C-)" #'centaur-tabs-forward)
 #+end_src
 
 * IDE features
@@ -737,7 +768,7 @@ Most every nontrivial package provides projectile integration in some form or fa
   (use-package projectile
     :diminish
     :bind (("C-c k" . #'projectile-kill-buffers)
-           ("C-c M" . #'projectile-compile-project))
+           ("C-c m" . #'projectile-compile-project))
     :custom
     (projectile-completion-system 'ivy)
     (projectile-enable-caching t)
@@ -982,10 +1013,10 @@ Haskell is my day-to-day programming language, so I've tinkered with it a good d
     :bind (:map haskell-mode-map
            ("C-c a c" . haskell-cabal-visit-file)
            ("C-c a i" . haskell-navigate-imports)
-           ("C-c M"   . haskell-compile)
+           ("C-c m"   . haskell-compile)
            ("C-c a I" . haskell-navigate-imports-return)
            :map haskell-cabal-mode-map
-           ("C-c M"   . haskell-compile)))
+           ("C-c m"   . haskell-compile)))
 
   (use-package haskell-snippets
     :after (haskell-mode yasnippet)
@@ -1027,6 +1058,7 @@ A thing I want to do someday is to write a framework for sending things like com
     (vterm-toggle-scope 'project)
     :bind (("C-c t" . #'vterm-toggle)
            :map vterm-mode-map
+           ("C-\\" . #'popper-cycle)
            ("s-t" . #'vterm) ; Open up new tabs quickly
            ))
 #+end_src
