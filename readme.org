@@ -292,6 +292,7 @@ Highlighting the closing/opening pair associated with a given parenthesis is ess
 
 #+begin_src emacs-lisp
   (show-paren-mode)
+  (setq show-paren-style 'expression)
 
   (use-package rainbow-delimiters
     :hook ((prog-mode . rainbow-delimiters-mode)))
@@ -644,16 +645,21 @@ One of the main problems with Emacs is how many ephemeral buffers it creates. I'
            ("C-c :" . popper-toggle-latest)
            ("C-\\"  . popper-cycle)
            ("C-M-`" . popper-toggle-type))
-    :config
-    (setq popper-reference-buffers '("\\*Messages\\*"
+    :custom
+    (compilation-scroll-output 'first-error)
+    (popper-reference-buffers '("\\*Messages\\*"
                                 "Output\\*$"
                                 "\\*Async Shell Command\\*"
                                 help-mode
+                                prodigy-mode
                                 "magit:.\*"
                                 "\\*deadgrep.\*"
                                 "\\*vterm.\*"
                                 "\\*xref\\*"
+                                "\\*Warnings\\*"
+                                haskell-compilation-mode
                                 compilation-mode))
+    :config
     (popper-mode +1)
     (popper-echo-mode +1))
 #+end_src
@@ -758,6 +764,12 @@ Magit also allows integration with GitHub and other such forges (though I hate t
   ;; hack to eliminate weirdness
   (unless (boundp 'bug-reference-auto-setup-functions)
     (defvar bug-reference-auto-setup-functions '()))
+#+end_src
+
+The code-review package allows for integration with pull request comments and such.
+
+#+begin_src emacs-lisp
+  (use-package code-review)
 #+end_src
 
 ** Projectile
@@ -1196,6 +1208,7 @@ Occasionally I need to edit Rails .erb templates, God help me.
 
 #+begin_src emacs-lisp
   (use-package web-mode
+    :custom (web-mode-markup-indent-offset 2)
     :mode ("\\.html.erb$" . web-mode))
 #+end_src
 
@@ -1254,6 +1267,19 @@ TRAMP mode is excellent for editing files on a remote machine or Docker containe
                     :after-open-fn (lambda ()
                                      ;; https://github.com/golang/tools/commit/b2d8b0336
                                      (setq-local lsp-completion-filter-on-incomplete nil))))
+
+  ;; add gh codespaces ssh method support for tramp editing
+  ;; e.g. C-x C-f /ghcs:codespace-name:/path/to/file
+  ;; thanks to my coworker Bas for this one
+  (let ((ghcs (assoc "ghcs" tramp-methods))
+        (ghcs-methods '((tramp-login-program "gh")
+                        (tramp-login-args (("codespace") ("ssh") ("-c") ("%h")))
+                        (tramp-remote-shell "/bin/sh")
+                        (tramp-remote-shell-login ("-l"))
+                        (tramp-remote-shell-args ("-c")))))
+    ;; just for debugging the methods
+    (if ghcs (setcdr ghcs ghcs-methods)
+      (push (cons "ghcs" ghcs-methods) tramp-methods)))
 #+end_src
 
 #+begin_src emacs-lisp
