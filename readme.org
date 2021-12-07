@@ -691,6 +691,7 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
     ;; Putting these in a loop or in :bind generates invalid code and I have no idea why.
     (unbind-key "C-," org-mode-map)
     (unbind-key "C-c ;" org-mode-map)
+    (unbind-key "C-c :" org-mode-map)
     (unbind-key "C-c ," org-mode-map)
     (unbind-key "M-<left>" org-mode-map)
     (unbind-key "M-<right>" org-mode-map)
