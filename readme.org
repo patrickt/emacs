@@ -966,6 +966,7 @@ Before Emacs 27, the LSP experience on large projects was not particularly good.
            ("s-[" . #'xref-pop-marker-stack)
            ("s-]" . #'pop-global-mark))
     :custom
+    (lsp-keymap-prefix "C-c SPC")
     (lsp-diagnostics-modeline-scope :project)
     (lsp-file-watch-threshold 5000)
     (lsp-response-timeout 2)
