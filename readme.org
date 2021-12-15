@@ -136,6 +136,7 @@ By default, the list of recent files gets cluttered up with the contents of down
 #+begin_src emacs-lisp
   (require 'recentf)
   (add-to-list 'recentf-exclude "\\elpa")
+  (recentf-mode)
 #+end_src
 
 Emoji don't work on Emacs versions < 27 (aside from the Mitsuharu Yamamoto emacs-mac port), and for those greater than 27 we seem to need this. A fun fact about this: that commented parenthesis is to work around an inscrutable parsing bug associated with the ~<~ in ~version<~ that breaks the elisp indentation mode. Emacs!
@@ -378,8 +379,6 @@ Emacs's keybinding for ~comment-dwim~ is ~M-;~, which is not convenient to type 
   (use-package avy
     :bind (("C-c l" . avy-goto-line)
            ("C-c j" . avy-goto-char)))
-
-  (use-package ivy-avy)
 #+end_src
 
 ~iedit~ gives us the very popular idiom of automatically deploying multiple cursors to edit all occurrences of a particular word.
@@ -790,63 +789,102 @@ Most every nontrivial package provides projectile integration in some form or fa
 
 ** Ivy, counsel, and swiper
 
+#+begin_src emacs-lisp
+  (use-package consult
+    :config
+    (defun pt/yank-pop ()
+      "As pt/yank, but calling consult-yank-pop."
+      (interactive)
+      (let ((point-before (point)))
+        (consult-yank-pop)
+        (indent-region point-before (point))))
+
+    :bind (("C-c i" . #'consult-imenu)
+           ("C-c b" . #'consult-buffer)
+           ("C-x b" . #'consult-buffer)
+           ("C-c r" . #'consult-recent-file)
+           ("C-c y" . #'pt/yank-pop)
+           ("C-c ;" . #'execute-extended-command)
+           ("C-c f" . #'projectile-find-file)
+           ("C-s" . #'isearch-forward)
+           )
+    :custom
+    (xref-show-xrefs-function #'consult-xref)
+    (xref-show-definitions-function #'consult-xref)
+    )
+
+  (use-package selectrum
+    :config (selectrum-mode)
+    :bind
+    (:map selectrum-minibuffer-map
+          ("C-'" . #'selectrum-quick-select))
+    :custom
+    (selectrum-max-window-height 30))
+
+  (use-package marginalia :config (marginalia-mode))
+
+  (use-package orderless
+    :ensure t
+    :custom (completion-styles '(orderless)))
+#+end_src
+
 Now that Helm  And with ~ivy-rich~, things even look nice. ~counsel~ provides nice UI chrome for built-in commands, ~counsel-projectile~ provides project integration, and ~amx~ provides most-recently-used information and keeps track of which commands I use and which I don't.
 
 #+begin_src emacs-lisp
-  (use-package ivy
-    :diminish
-    :custom
-    (ivy-height 30)
-    (ivy-use-virtual-buffers t)
-    (ivy-use-selectable-prompt t)
-    :config
-    (ivy-mode 1)
+  ;; (use-package ivy
+  ;;   :diminish
+  ;;   :custom
+  ;;   (ivy-height 30)
+  ;;   (ivy-use-virtual-buffers t)
+  ;;   (ivy-use-selectable-prompt t)
+  ;;   :config
+  ;;   (ivy-mode 1)
 
-    :bind (("C-c s"   . #'swiper-thing-at-point)
-           ("C-s"     . #'swiper)))
+  ;;   :bind (("C-c s"   . #'swiper-thing-at-point)
+  ;;          ("C-s"     . #'swiper)))
 
-  (use-package ivy-rich
-    :custom
-    (ivy-virtual-abbreviate 'full)
-    (ivy-rich-switch-buffer-align-virtual-buffer nil)
-    (ivy-rich-path-style 'full)
-    :config
-    (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line)
-    (ivy-rich-mode))
+  ;; (use-package ivy-rich
+  ;;   :custom
+  ;;   (ivy-virtual-abbreviate 'full)
+  ;;   (ivy-rich-switch-buffer-align-virtual-buffer nil)
+  ;;   (ivy-rich-path-style 'full)
+  ;;   :config
+  ;;   (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line)
+  ;;   (ivy-rich-mode))
 
-  (use-package counsel
-    :init
-    (counsel-mode 1)
-    :config
+  ;; (use-package counsel
+  ;;   :init
+  ;;   (counsel-mode 1)
+  ;;   :config
 
-    (defun pt/yank-pop ()
-      "As pt/yank, but calling counsel-yank-pop."
-      (interactive)
-      (let ((point-before (point)))
-        (counsel-yank-pop)
-        (indent-region point-before (point))))
+  ;;   (defun pt/yank-pop ()
+  ;;     "As pt/yank, but calling counsel-yank-pop."
+  ;;     (interactive)
+  ;;     (let ((point-before (point)))
+  ;;       (counsel-yank-pop)
+  ;;       (indent-region point-before (point))))
 
-    :bind (("C-c ;" . #'counsel-M-x)
-           ("C-c U" . #'counsel-unicode-char)
-           ("C-c i" . #'counsel-imenu)
-           ("C-x f" . #'counsel-find-file)
-           ("C-c Y" . #'counsel-yank-pop)
-           ("C-c y" . #'pt/yank-pop)
-           ("C-c r" . #'counsel-recentf)
-           ("C-c v" . #'counsel-switch-buffer-other-window)
-           ("C-c H" . #'counsel-projectile-rg)
-           ("C-h h" . #'counsel-command-history)
-           ("C-x C-f" . #'counsel-find-file)
-           ("C-x b" . #'counsel-switch-buffer)
-           :map ivy-minibuffer-map
-           ("C-r" . counsel-minibuffer-history))
-    :diminish)
+  ;;   :bind (("C-c ;" . #'counsel-M-x)
+  ;;          ("C-c U" . #'counsel-unicode-char)
+  ;;          ("C-c i" . #'counsel-imenu)
+  ;;          ("C-x f" . #'counsel-find-file)
+  ;;          ("C-c Y" . #'counsel-yank-pop)
+  ;;          ("C-c y" . #'pt/yank-pop)
+  ;;          ("C-c r" . #'counsel-recentf)
+  ;;          ("C-c v" . #'counsel-switch-buffer-other-window)
+  ;;          ("C-c H" . #'counsel-projectile-rg)
+  ;;          ("C-h h" . #'counsel-command-history)
+  ;;          ("C-x C-f" . #'counsel-find-file)
+  ;;          ("C-x b" . #'counsel-switch-buffer)
+  ;;          :map ivy-minibuffer-map
+  ;;          ("C-r" . counsel-minibuffer-history))
+  ;;   :diminish)
 
-  (use-package counsel-projectile
-    :bind (("C-c f" . #'counsel-projectile)
-           ("C-c F" . #'counsel-projectile-switch-project)))
+  ;; (use-package counsel-projectile
+  ;;   :bind (("C-c f" . #'counsel-projectile)
+  ;;          ("C-c F" . #'counsel-projectile-switch-project)))
 
-  (use-package amx :config (amx-mode))
+  ;; (use-package amx :config (amx-mode))
 #+end_src
 
 Dumb-jump is pretty good at figuring out where declarations of things might be. I'm using it with C because I'm too lazy to set up true C LSP integration.
@@ -881,7 +919,6 @@ Flycheck performs in-buffer highlighting of errors and warnings, and is superior
   (use-package flycheck-inline
     :disabled
     :config (global-flycheck-inline-mode))
-
 #+end_src
 
 ** Searching
@@ -905,7 +942,10 @@ I remember the days before Emacs had real regular expressions. Nowadays, we have
 Completion in Emacs is sort of a fraught enterprise, given the existence of ~pcomplete~, ~hippie-expand~, and ~complete.el~. ~company~ is the least problematic and most modern of these alternatives, though it's kind of a bear to configure. Its interface is not so nice by default but all the frontends flicker terribly if you're typing quickly, which is just spectacularly distracting.
 
 #+begin_src emacs-lisp
+  (bind-key "C-." #'completion-at-point)
+
   (use-package company
+    :disabled
     :diminish
     :bind (("C-." . #'company-capf))
     :bind (("C-c ." . #'completion-at-point))
