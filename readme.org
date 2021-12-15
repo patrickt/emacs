@@ -73,8 +73,8 @@ Fixing Emacs's defaults is a nontrivial problem. We'll start with UI concerns.
    case-fold-search nil
    ;; no need to prompt for the read command _every_ time
    compilation-read-command nil
-   ;; don't scroll
-   compilation-scroll-output nil
+   ;; scroll to first error
+   compilation-scroll-output 'first-error
    ;; my source directory
    default-directory "~/src/")
 
@@ -908,6 +908,7 @@ Completion in Emacs is sort of a fraught enterprise, given the existence of ~pco
   (use-package company
     :diminish
     :bind (("C-." . #'company-capf))
+    :bind (("C-c ." . #'completion-at-point))
     :bind (:map company-active-map
            ("C-n" . #'company-select-next)
            ("C-p" . #'company-select-previous))
