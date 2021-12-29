@@ -34,6 +34,12 @@ Don't copy this to your config! This is to work around weird bugs with JITted Em
   (setq package-check-signature nil)
 #+end_src
 
+THe most useful Emacs command is ~execute-extended-command~. It should be painless to access from the home row.
+
+#+begin_src emacs-lisp
+  (bind-key "C-c ;" #'execute-extended-command)
+#+end_src
+
 ** OS-specific concerns
 
 Since subsequent packages like ~libgit~ may depend on executables like ~cmake~, we need to ensure that Emacs has access to the PATH associated with the current environment.
@@ -176,6 +182,13 @@ By default, I want paste operations to indent their results. I could express thi
   (bind-key "C-Y" #'yank)
 #+end_src
 
+Searching should be done with isearch, for UI purposes.
+
+#+begin_src emacs-lisp
+  (bind-key "C-s" #'isearch-forward)
+  (bind-key "C-c s" #'isearch-forward-symbol)
+#+end_src
+
 The out-of-the-box treatment of whitespace is unfortunate, but fixable.
 
 #+begin_src emacs-lisp
@@ -226,7 +239,7 @@ I define a couple of my own configuration variables with ~defvar~, and no matter
 Emacs looks a lot better when it has a modern monospaced font and VSCode-esque icons.
 
 #+begin_src emacs-lisp
-  (ignore-errors (set-frame-font "SF Mono-12"))
+  (ignore-errors (set-frame-font "JuliaMono-14"))
 
   (use-package all-the-icons)
 
@@ -657,7 +670,8 @@ One of the main problems with Emacs is how many ephemeral buffers it creates. I'
                                 "\\*xref\\*"
                                 "\\*Warnings\\*"
                                 haskell-compilation-mode
-                                compilation-mode))
+                                compilation-mode
+                                bqn-inferior-mode))
     :config
     (popper-mode +1)
     (popper-echo-mode +1))
@@ -772,22 +786,22 @@ The code-review package allows for integration with pull request comments and su
   (use-package code-review)
 #+end_src
 
-** Projectile
+** Project navigation
 
-Most every nontrivial package provides projectile integration in some form or fashion.
+I used to use Projectile, but ~marginalia-mode~ doesn't appear to work out of the box with it. Besides, there's no reason to pull in a separate package when the builtin ~project.el~ works fine.
 
 #+begin_src emacs-lisp
-  (use-package projectile
-    :diminish
-    :bind (("C-c k" . #'projectile-kill-buffers)
-           ("C-c m" . #'projectile-compile-project))
-    :custom
-    (projectile-completion-system 'ivy)
-    (projectile-enable-caching t)
-    :config (projectile-mode))
+  (use-package project
+    :bind (("C-c k" . #'project-kill-buffers)
+           ("C-c m" . #'project-compile)
+           ("C-x f" . #'find-file)
+           ("C-c f" . #'project-find-file)
+           ("C-c F" . #'project-switch-project))
+    )
+
 #+end_src
 
-** Ivy, counsel, and swiper
+** Completion and input
 
 #+begin_src emacs-lisp
   (use-package consult
@@ -799,14 +813,13 @@ Most every nontrivial package provides projectile integration in some form or fa
         (consult-yank-pop)
         (indent-region point-before (point))))
 
-    :bind (("C-c i" . #'consult-imenu)
-           ("C-c b" . #'consult-buffer)
-           ("C-x b" . #'consult-buffer)
-           ("C-c r" . #'consult-recent-file)
-           ("C-c y" . #'pt/yank-pop)
-           ("C-c ;" . #'execute-extended-command)
-           ("C-c f" . #'projectile-find-file)
-           ("C-s" . #'isearch-forward)
+    :bind (("C-c i"   . #'consult-imenu)
+           ("C-c b"   . #'consult-buffer)
+           ("C-x b"   . #'consult-buffer)
+           ("C-c r"   . #'consult-recent-file)
+           ("C-c y"   . #'pt/yank-pop)
+           ("C-x C-f" . #'find-file)
+           ("C-h a"   . #'consult-apropos)
            )
     :custom
     (xref-show-xrefs-function #'consult-xref)
@@ -814,77 +827,66 @@ Most every nontrivial package provides projectile integration in some form or fa
     )
 
   (use-package selectrum
-    :config (selectrum-mode)
+    :config
+    (selectrum-mode)
+
+    ;; Ido has a nice feature where it greedily deletes directories.
+    ;; This is surprisingly nice and I was loathe to lose it with selectrum.
+    ;; Pilfered from the vertico-directory extensions.
+    (defun selectrum-directory-up ()
+      "Delete directory before point."
+      (interactive)
+      (when (and (> (point) (minibuffer-prompt-end))
+                 (eq (char-before) ?/)
+                 minibuffer-completing-file-name)
+        (let ((path (buffer-substring (minibuffer-prompt-end) (point))))
+          (when (string-match-p "\\`~[^/]*/\\'" path)
+            (delete-minibuffer-contents)
+            (insert (expand-file-name path))))
+        (save-excursion
+          (goto-char (1- (point)))
+          (when (search-backward "/" (minibuffer-prompt-end) t)
+            (delete-region (1+ (point)) (point-max))
+            t))))
+
+    (defun selectrum-directory-delete-char ()
+      "Delete directory or char before point."
+      (interactive)
+      (unless (selectrum-directory-up)
+        (call-interactively #'backward-delete-char)))
+
+    (defun selectrum-directory-delete-word ()
+      "Delete directory or word before point."
+      (interactive)
+      (unless (selectrum-directory-up)
+        (let ((pt (point)))
+          (forward-word -1)
+          (delete-region pt (point)))))
+
+
     :bind
     (:map selectrum-minibuffer-map
-          ("C-'" . #'selectrum-quick-select))
+          ("DEL" . #'selectrum-directory-delete-char)
+          ("M-DEL" . #'selectrum-directory-delete-word)
+          ("C-'" . #'selectrum-quick-select)
+          ("C-c SPC" . #'selectrum-quick-select))
     :custom
     (selectrum-max-window-height 30))
 
-  (use-package marginalia :config (marginalia-mode))
+  (use-package marginalia
+    :config (marginalia-mode))
 
   (use-package orderless
-    :ensure t
     :custom (completion-styles '(orderless)))
-#+end_src
 
-Now that Helm  And with ~ivy-rich~, things even look nice. ~counsel~ provides nice UI chrome for built-in commands, ~counsel-projectile~ provides project integration, and ~amx~ provides most-recently-used information and keeps track of which commands I use and which I don't.
+  (use-package ctrlf
+    :config (ctrlf-mode))
 
-#+begin_src emacs-lisp
-  ;; (use-package ivy
-  ;;   :diminish
-  ;;   :custom
-  ;;   (ivy-height 30)
-  ;;   (ivy-use-virtual-buffers t)
-  ;;   (ivy-use-selectable-prompt t)
-  ;;   :config
-  ;;   (ivy-mode 1)
+  (use-package prescient
+    :config (prescient-persist-mode))
 
-  ;;   :bind (("C-c s"   . #'swiper-thing-at-point)
-  ;;          ("C-s"     . #'swiper)))
-
-  ;; (use-package ivy-rich
-  ;;   :custom
-  ;;   (ivy-virtual-abbreviate 'full)
-  ;;   (ivy-rich-switch-buffer-align-virtual-buffer nil)
-  ;;   (ivy-rich-path-style 'full)
-  ;;   :config
-  ;;   (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line)
-  ;;   (ivy-rich-mode))
-
-  ;; (use-package counsel
-  ;;   :init
-  ;;   (counsel-mode 1)
-  ;;   :config
-
-  ;;   (defun pt/yank-pop ()
-  ;;     "As pt/yank, but calling counsel-yank-pop."
-  ;;     (interactive)
-  ;;     (let ((point-before (point)))
-  ;;       (counsel-yank-pop)
-  ;;       (indent-region point-before (point))))
-
-  ;;   :bind (("C-c ;" . #'counsel-M-x)
-  ;;          ("C-c U" . #'counsel-unicode-char)
-  ;;          ("C-c i" . #'counsel-imenu)
-  ;;          ("C-x f" . #'counsel-find-file)
-  ;;          ("C-c Y" . #'counsel-yank-pop)
-  ;;          ("C-c y" . #'pt/yank-pop)
-  ;;          ("C-c r" . #'counsel-recentf)
-  ;;          ("C-c v" . #'counsel-switch-buffer-other-window)
-  ;;          ("C-c H" . #'counsel-projectile-rg)
-  ;;          ("C-h h" . #'counsel-command-history)
-  ;;          ("C-x C-f" . #'counsel-find-file)
-  ;;          ("C-x b" . #'counsel-switch-buffer)
-  ;;          :map ivy-minibuffer-map
-  ;;          ("C-r" . counsel-minibuffer-history))
-  ;;   :diminish)
-
-  ;; (use-package counsel-projectile
-  ;;   :bind (("C-c f" . #'counsel-projectile)
-  ;;          ("C-c F" . #'counsel-projectile-switch-project)))
-
-  ;; (use-package amx :config (amx-mode))
+  (use-package selectrum-prescient
+    :config (selectrum-prescient-mode))
 #+end_src
 
 Dumb-jump is pretty good at figuring out where declarations of things might be. I'm using it with C because I'm too lazy to set up true C LSP integration.
@@ -975,11 +977,11 @@ In Haskell, my language of choice, I rarely need a step-through debugger, as des
 
 #+begin_src emacs-lisp
   (use-package dap-mode
-    :bind
-    (("C-c b b" . dap-breakpoint-toggle)
-     ("C-c b r" . dap-debug-restart)
-     ("C-c b l" . dap-debug-last)
-     ("C-c b d" . dap-debug))
+    ;; :bind
+    ;; (("C-c b b" . dap-breakpoint-toggle)
+    ;;  ("C-c b r" . dap-debug-restart)
+    ;;  ("C-c b l" . dap-debug-last)
+    ;;  ("C-c b d" . dap-debug))
     :init
     (require 'dap-go)
     ;; NB: dap-go-setup appears to be broken, so you have to download the extension from GH, rename its file extension
@@ -998,40 +1000,35 @@ In Haskell, my language of choice, I rarely need a step-through debugger, as des
 Before Emacs 27, the LSP experience on large projects was not particularly good. We now have native JSON parsing support. I am told that it makes things easier.
 
 #+begin_src emacs-lisp
-  (use-package lsp-mode
-    :commands (lsp lsp-execute-code-action)
-    :hook ((go-mode . lsp-deferred)
-           (lsp-mode . lsp-enable-which-key-integration)
-           (lsp-mode . lsp-modeline-diagnostics-mode))
-    :bind (("C-c C-c" . #'lsp-execute-code-action)
-           ("s-[" . #'xref-pop-marker-stack)
-           ("s-]" . #'pop-global-mark))
-    :custom
-    (lsp-keymap-prefix "C-c SPC")
-    (lsp-diagnostics-modeline-scope :project)
-    (lsp-file-watch-threshold 5000)
-    (lsp-response-timeout 2)
-    (lsp-eldoc-render-all nil)
-    (eldoc-idle-delay 2)
-    (lsp-enable-file-watchers nil))
+    (use-package lsp-mode
+      :commands (lsp lsp-execute-code-action)
+      :hook ((go-mode . lsp-deferred)
+             (lsp-mode . lsp-enable-which-key-integration)
+             (lsp-mode . lsp-modeline-diagnostics-mode))
+      :bind (:map lsp-mode-map
+             ("C-c C-c" . #'lsp-execute-code-action)
+             ("s-[" . #'xref-pop-marker-stack)
+             ("s-]" . #'pop-global-mark))
+      :custom
+      (lsp-keymap-prefix "C-c SPC")
+      (lsp-diagnostics-modeline-scope :project)
+      (lsp-file-watch-threshold 5000)
+      (lsp-response-timeout 2)
+      (lsp-eldoc-render-all nil)
+      (eldoc-idle-delay 2)
+      (lsp-enable-file-watchers nil))
 
-  (use-package lsp-ui
-    :custom
-    (lsp-ui-doc-show-with-mouse t)
-    (lsp-ui-doc-show-with-cursor nil)
-    (lsp-ui-doc-delay 1.5) ;; buggy, see https://github.com/emacs-lsp/lsp-ui/issues/664
-    :config
-    (lsp-ui-doc-mode)
-    :after lsp-mode)
+    (use-package lsp-ui
+      :custom
+      (lsp-ui-doc-show-with-mouse t)
+      (lsp-ui-doc-show-with-cursor nil)
+      (lsp-ui-doc-delay 1.5) ;; buggy, see https://github.com/emacs-lsp/lsp-ui/issues/664
+      :config
+      (lsp-ui-doc-mode)
+      :after lsp-mode)
 
-  (use-package lsp-ivy
-    :after (ivy lsp-mode)
-    :bind (("s-t" . #'lsp-ivy-workspace-symbol)))
-
-  (use-package company-lsp
-    :disabled
-    :custom (company-lsp-enable-snippet t)
-    :after (company lsp-mode))
+    (use-package consult-lsp
+      :bind (("s-t" . #'consult-lsp-symbols)))
 #+end_src
 
 * Haskell
@@ -1213,6 +1210,8 @@ I'm trying to learn APL, because I've lost control of my life.
 #+begin_src emacs-lisp
   (use-package dyalog-mode)
 #+end_src
+
+
 
 *** Configuration
 

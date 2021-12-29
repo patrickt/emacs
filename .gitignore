@@ -28,3 +28,4 @@ eln-cache
 .extension
 services.el
 projects
+vendor
