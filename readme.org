@@ -69,6 +69,8 @@ Fixing Emacs's defaults is a nontrivial problem. We'll start with UI concerns.
    sentence-end-double-space nil
    ;; Never ding at me, ever.
    ring-bell-function 'ignore
+   ;; Save existing clipboard text into the kill ring before replacing it.
+   save-interprogram-paste-before-kill t
    ;; Prompts should go in the minibuffer, not in a GUI.
    use-dialog-box nil
    ;; Fix undo in commands affecting the mark.
@@ -81,15 +83,22 @@ Fixing Emacs's defaults is a nontrivial problem. We'll start with UI concerns.
    compilation-read-command nil
    ;; scroll to first error
    compilation-scroll-output 'first-error
+   ;; accept 'y' or 'n' instead of yes/no
+   ;; the documentation advises against setting this variable
+   ;; the documentation can get bent imo
+   use-short-answers t
    ;; my source directory
-   default-directory "~/src/")
+   default-directory "~/src/"
+   ;; eke out a little more scrolling performance
+   fast-but-imprecise-scrolling t
+   ;; prefer newer elisp files
+   load-prefer-newer t
+   )
 
   ;; Never mix tabs and spaces. Never use tabs, period.
   ;; We need the setq-default here because this becomes
   ;; a buffer-local variable when set.
   (setq-default indent-tabs-mode nil)
-
-  (defalias 'yes-or-no-p 'y-or-n-p)       ; Accept 'y' in lieu of 'yes'.
 #+end_src
 
 It's good that Emacs supports the wide variety of file encodings it does, but UTF-8 should always, /always/ be the default.
@@ -185,7 +194,7 @@ By default, I want paste operations to indent their results. I could express thi
 Searching should be done with isearch, for UI purposes.
 
 #+begin_src emacs-lisp
-  (bind-key "C-s" #'isearch-forward)
+  (bind-key "C-s" #'isearch-forward-regexp)
   (bind-key "C-c s" #'isearch-forward-symbol)
 #+end_src
 
@@ -217,7 +226,7 @@ Emacs is also in love with showing you its NEWS file; it's bound to like four di
   (defalias 'describe-gnu-project 'ignore)
 #+end_src
 
-Undo has always been problematic for me in Emacs. The beauty of undo-tree is that it means that, once you've typed something into a buffer, you'll always be able to get it back. At least in theory. undo-tree has long-standing data loss bugs that are unlikely to be fixed. But no other package provodes a comparable experience.
+Undo has always been problematic for me in Emacs. The beauty of undo-tree is that it means that, once you've typed something into a buffer, you'll always be able to get it back. At least in theory. undo-tree has long-standing data loss bugs that are unlikely to be fixed. But no other package provides a comparable experience.
 
 #+begin_src emacs-lisp
   (use-package undo-tree
@@ -239,7 +248,7 @@ I define a couple of my own configuration variables with ~defvar~, and no matter
 Emacs looks a lot better when it has a modern monospaced font and VSCode-esque icons.
 
 #+begin_src emacs-lisp
-  (ignore-errors (set-frame-font "JuliaMono-14"))
+  (ignore-errors (set-frame-font "JuliaMono-18"))
 
   (use-package all-the-icons)
 
@@ -537,6 +546,12 @@ These libraries are helpful to have around when writing little bits of elisp.
   (use-package dash)
 #+end_src
 
+Emacs has an ~executable-prefix-env~ command that adds a magic shebang line to scripts in interpreted languages. With a little cajoling, it can use ~env(1)~ instead of hardcoding the interpreter path, which is slightly more robust in certain circumstances.
+
+#+begin_src emacs-lisp
+  (setq executable-prefix-env t)
+#+end_src
+
 ** Buffer management
 
 I almost always want to default to a two-buffer setup.
@@ -614,7 +629,7 @@ Normally I bind ~other-window~ to ~C-c ,~, but on my ultra-wide-screen monitor, 
     (ace-window-display-mode)
 
      ;; Make the number indicators a little larger. I'm getting old.
-    (set-face-attribute 'aw-leading-char-face nil :height 2.0 :background "black")
+     ;; (set-face-attribute 'aw-leading-char-face nil :height 2.0 :background "black")
 
     (defun my-ace-window (args)
       "As ace-window, but hiding the cursor while the action is active."
@@ -649,7 +664,7 @@ It's useful to have a scratch buffer around, and more useful to have a key chord
   (bind-key "C-c a s" #'switch-to-scratch-buffer)
 #+end_src
 
-One of the main problems with Emacs is how many ephemeral buffers it creates. I'm giving ~popper-mode~ a try to see if it can stem the flood thereof.
+One of the main problems with Emacs is how many ephemeral buffers it creates. I'm giving ~popper-mode~ a try to see if it can stem the flood thereof. Note that vterm is not included here because vterm-toggle doesn't play particularly nicely with popper.
 
 #+begin_src emacs-lisp
   (use-package popper
@@ -666,7 +681,6 @@ One of the main problems with Emacs is how many ephemeral buffers it creates. I'
                                 prodigy-mode
                                 "magit:.\*"
                                 "\\*deadgrep.\*"
-                                "\\*vterm.\*"
                                 "\\*xref\\*"
                                 "\\*Warnings\\*"
                                 haskell-compilation-mode
@@ -803,6 +817,8 @@ I used to use Projectile, but ~marginalia-mode~ doesn't appear to work out of th
 
 ** Completion and input
 
+My journey through the various Emacs completion facilities has been long and twisty. I started with Helm, then spent several years using Ivy, and am now using Selectrum, with the consult and marginalia packages to yield an interface that is nicer and faster than Ivy.
+
 #+begin_src emacs-lisp
   (use-package consult
     :config
@@ -829,6 +845,7 @@ I used to use Projectile, but ~marginalia-mode~ doesn't appear to work out of th
   (use-package selectrum
     :config
     (selectrum-mode)
+    (minibuffer-electric-default-mode)
 
     ;; Ido has a nice feature where it greedily deletes directories.
     ;; This is surprisingly nice and I was loathe to lose it with selectrum.
@@ -868,9 +885,12 @@ I used to use Projectile, but ~marginalia-mode~ doesn't appear to work out of th
     (:map selectrum-minibuffer-map
           ("DEL" . #'selectrum-directory-delete-char)
           ("M-DEL" . #'selectrum-directory-delete-word)
+          ("C-j"   . #'selectrum-insert-current-candidate)
           ("C-'" . #'selectrum-quick-select)
           ("C-c SPC" . #'selectrum-quick-select))
     :custom
+    (completion-ignore-case t)
+    (read-buffer-completion-ignore-case t)
     (selectrum-max-window-height 30))
 
   (use-package marginalia
@@ -1323,6 +1343,8 @@ TRAMP mode is excellent for editing files on a remote machine or Docker containe
     (if ghcs (setcdr ghcs ghcs-methods)
       (push (cons "ghcs" ghcs-methods) tramp-methods)))
 #+end_src
+
+I use ~direnv~ to manage per-project environment variables. The Emacs direnv mode is quite sophisticated, automatically setting all relevant variables for you when you go in and out of a particular project.
 
 #+begin_src emacs-lisp
   (use-package direnv :config (direnv-mode))
