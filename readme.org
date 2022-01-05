@@ -243,12 +243,20 @@ I define a couple of my own configuration variables with ~defvar~, and no matter
   (setq enable-local-variables :all)
 #+end_src
 
+By default, Emacs wraps long lines, inserting a little icon to indicate this. I find this a bit naff. What we can do to mimic more modern behavior is to allow line truncation by default, but also allow touchpad-style scrolling of the document.
+
+#+begin_src emacs-lisp
+  (setq mouse-wheel-tilt-scroll t
+        mouse-wheel-flip-direction t)
+  (setq-default truncate-lines t)
+#+end_src
+
 ** Visuals
 
 Emacs looks a lot better when it has a modern monospaced font and VSCode-esque icons.
 
 #+begin_src emacs-lisp
-  (ignore-errors (set-frame-font "JuliaMono-18"))
+  (ignore-errors (set-frame-font "JuliaMono-13"))
 
   (use-package all-the-icons)
 
@@ -277,11 +285,12 @@ I use the [[https://github.com/hlissner/emacs-doom-themes][Doom Emacs themes]], 
 #+begin_src emacs-lisp
   (use-package doom-themes
     :config
-    (let ((chosen-theme 'modus-vivendi))
+    (let ((chosen-theme 'doom-ir-black))
       (doom-themes-visual-bell-config)
       (doom-themes-org-config)
       (setq doom-challenger-deep-brighter-comments t
             doom-challenger-deep-brighter-modeline t
+            doom-ir-black-brighter-comments t
             doom-dark+-blue-modeline nil)
       (load-theme chosen-theme)))
 #+end_src
@@ -682,7 +691,9 @@ One of the main problems with Emacs is how many ephemeral buffers it creates. I'
                                 "magit:.\*"
                                 "\\*deadgrep.\*"
                                 "\\*xref\\*"
+                                "\\*direnv\\*"
                                 "\\*Warnings\\*"
+                                "\\*Bookmark List\\*"
                                 haskell-compilation-mode
                                 compilation-mode
                                 bqn-inferior-mode))
@@ -770,13 +781,7 @@ Magit is one of the top three reasons anyone should use Emacs. What a brilliant 
     (magit-repository-directories '(("~/src" . 1)))
     :config
     (add-to-list 'magit-no-confirm 'stage-all-changes))
-#+end_src
 
-Pulling in the ~libgit~ module makes Magit a good deal faster. For some reason, Emacs has problems determining the correct file extension for the resulting build product; it chooses ~.so~ even though Emacs expects a ~dylib~. To fix this, change directory to where the offending module lives and change its file extension to what is expected.
-
-EDIT: this is crashing on the JITted emacs and I don't know why. Hopefully by the time Emacs 28 comes out they'll have figured out the dylib situation.
-
-#+begin_src emacs-lisp
   (use-package libgit)
 
   (use-package magit-libgit
@@ -887,10 +892,13 @@ My journey through the various Emacs completion facilities has been long and twi
           ("M-DEL" . #'selectrum-directory-delete-word)
           ("C-j"   . #'selectrum-insert-current-candidate)
           ("C-'" . #'selectrum-quick-select)
+          ("<wheel-down>" . #'selectrum-next-candidate)
+          ("<wheel-up>" . #'selectrum-previous-candidate)
+          ("<mouse-2>" . #'selectrum-select-current-candidate)
           ("C-c SPC" . #'selectrum-quick-select))
     :custom
-    (completion-ignore-case t)
-    (read-buffer-completion-ignore-case t)
+    (completion-ignore-case nil)
+    (read-buffer-completion-ignore-case nil)
     (selectrum-max-window-height 30))
 
   (use-package marginalia
@@ -961,34 +969,10 @@ I remember the days before Emacs had real regular expressions. Nowadays, we have
 
 ** Autocomplete
 
-Completion in Emacs is sort of a fraught enterprise, given the existence of ~pcomplete~, ~hippie-expand~, and ~complete.el~. ~company~ is the least problematic and most modern of these alternatives, though it's kind of a bear to configure. Its interface is not so nice by default but all the frontends flicker terribly if you're typing quickly, which is just spectacularly distracting.
+After a long journey with ~company~, I've settled on just using the builtin completion-at-point facilities for autocomplete. The UI considerations afforded by Selectrum make it even nicer than what Company offered, and consistently faster, too. Someday I want to look into a more aggressive inline autocompletion thing like VSC
 
 #+begin_src emacs-lisp
   (bind-key "C-." #'completion-at-point)
-
-  (use-package company
-    :disabled
-    :diminish
-    :bind (("C-." . #'company-capf))
-    :bind (("C-c ." . #'completion-at-point))
-    :bind (:map company-active-map
-           ("C-n" . #'company-select-next)
-           ("C-p" . #'company-select-previous))
-    :hook (prog-mode . company-mode)
-    :custom
-    (company-dabbrev-downcase nil "Don't downcase returned candidates.")
-    (company-show-numbers t "Numbers are helpful.")
-    (company-tooltip-limit 20 "The more the merrier.")
-    (company-tooltip-idle-delay 0.4 "Faster!")
-    (company-async-timeout 20 "Some requests can take a long time. That's fine.")
-    (company-idle-delay 1.5 "Default is way too low.")
-    :config
-
-    ;; Use the numbers 0-9 to select company completion candidates
-    (let ((map company-active-map))
-      (mapc (lambda (x) (define-key map (format "%d" x)
-                          `(lambda () (interactive) (company-complete-number ,x))))
-            (number-sequence 0 9))))
 #+end_src
 
 ** Debugging
@@ -997,21 +981,24 @@ In Haskell, my language of choice, I rarely need a step-through debugger, as des
 
 #+begin_src emacs-lisp
   (use-package dap-mode
-    ;; :bind
-    ;; (("C-c b b" . dap-breakpoint-toggle)
-    ;;  ("C-c b r" . dap-debug-restart)
-    ;;  ("C-c b l" . dap-debug-last)
-    ;;  ("C-c b d" . dap-debug))
+    :bind
+    (:map dap-mode-map
+     ("C-c b b" . dap-breakpoint-toggle)
+     ("C-c b r" . dap-debug-restart)
+     ("C-c b l" . dap-debug-last)
+     ("C-c b d" . dap-debug))
     :init
     (require 'dap-go)
     ;; NB: dap-go-setup appears to be broken, so you have to download the extension from GH, rename its file extension
     ;; unzip it, and copy it into the config so that the following path lines up
     (setq dap-go-debug-program '("node" "/Users/patrickt/.config/emacs/.extension/vscode/golang.go/extension/dist/debugAdapter.js"))
-    :config
-    (dap-mode)
-    (dap-auto-configure-mode)
-    (dap-ui-mode)
-    (dap-ui-controls-mode)
+    (defun turn-on-debugger ()
+      (interactive)
+      (dap-mode)
+      (dap-auto-configure-mode)
+      (dap-ui-mode)
+      (dap-ui-controls-mode)
+      )
     )
 #+end_src
 
