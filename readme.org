@@ -34,10 +34,10 @@ Don't copy this to your config! This is to work around weird bugs with JITted Em
   (setq package-check-signature nil)
 #+end_src
 
-THe most useful Emacs command is ~execute-extended-command~. It should be painless to access from the home row.
+THe most useful Emacs command is ~execute-extended-command~. It should be painless to access from the home row. (~bind-key*~ ensures that this setting is propagated through all major modes, which saves us a bunch of ~unbind-key~ calls in ~use-package~ stanzas.)
 
 #+begin_src emacs-lisp
-  (bind-key "C-c ;" #'execute-extended-command)
+  (bind-key* "C-c ;" #'execute-extended-command)
 #+end_src
 
 ** OS-specific concerns
@@ -256,7 +256,7 @@ By default, Emacs wraps long lines, inserting a little icon to indicate this. I 
 Emacs looks a lot better when it has a modern monospaced font and VSCode-esque icons.
 
 #+begin_src emacs-lisp
-  (ignore-errors (set-frame-font "JuliaMono-13"))
+  (ignore-errors (set-frame-font "JuliaMono-12"))
 
   (use-package all-the-icons)
 
@@ -271,7 +271,7 @@ Every Emacs window should, by default occupy all the screen space it can.
   (add-to-list 'default-frame-alist '(fullscreen . maximized))
 #+end_src
 
-Window chrome both wastes space and looks unappealing.
+Window chrome both wastes space and looks unappealing. (This is actually pasted into the first lines of my Emacs configuration so I never have to see the UI chrome, but it is reproduced here for the sake of people who might be taking this configuration for a spin themselves.)
 
 #+begin_src emacs-lisp
   (when (window-system)
@@ -348,6 +348,7 @@ As part of my day job, I hack on the [[https://tree-sitter.github.io][~tree-sitt
     :hook ((ruby-mode . tree-sitter-hl-mode)
            (js-mode . tree-sitter-hl-mode)
            (rust-mode . tree-sitter-hl-mode)
+           (sh-mode . tree-sitter-hl-mode)
            (c-mode . tree-sitter-hl-mode)
            (typescript-mode . tree-sitter-hl-mode)
            (go-mode . tree-sitter-hl-mode)))
@@ -369,7 +370,6 @@ The long-awaited Emacs 27 support for native tabs is shaky, both visually and in
     (centaur-tabs-set-icons t)
     (centaur-tabs-set-modified-marker t)
     (centaur-tabs-modified-marker "●")
-    ;; (centaur-tabs-buffer-groups-function #'centaur-tabs-projectile-buffer-groups)
 
     :bind
     (("s-{" . #'centaur-tabs-backward)
@@ -466,12 +466,6 @@ Standard macOS conventions would have ~s-w~ close the current buffer, not the wh
 
 #+begin_src emacs-lisp
   (bind-key "s-w" #'kill-this-buffer)
-#+end_src
-
-Ibuffer mode is a dired-esque package for managing buffers. It allows convenient selection of multiple buffers at the time for killing/reorganization purposes. I don't really know how to use it, but it's pretty useful.
-
-#+begin_src emacs-lisp
-  (bind-key "C-c B" #'ibuffer)
 #+end_src
 
 Emacs makes it weirdly hard to just, like, edit a file as root, probably due to supporting operating systems not built on ~sudo~. Enter the ~sudo-edit~ package.
@@ -601,13 +595,13 @@ Also, it's nice to be able to kill all buffers.
   (defun kill-all-buffers ()
     "Close all buffers."
     (interactive)
-    ;; (maybe-unset-buffer-modified)
-    (delete-other-windows)
-    (save-some-buffers)
-    (let
-        ((kill-buffer-query-functions '())
-         (lsp-restart 'ignore))
-      (mapc 'kill-buffer (buffer-list))))
+    (let ((lsp-restart 'ignore))
+      ;; (maybe-unset-buffer-modified)
+      (delete-other-windows)
+      (save-some-buffers)
+      (let
+          ((kill-buffer-query-functions '()))
+        (mapc 'kill-buffer (buffer-list)))))
 
   (bind-key "C-c K" #'kill-all-buffers)
 #+end_src
@@ -620,8 +614,9 @@ VS Code has a great feature where you can just copy a filename to the clipboard.
     (interactive "P")
     (letrec
         ((fullname (if (equal major-mode 'dired-mode) default-directory (buffer-file-name)))
-         (relname (file-relative-name fullname (projectile-project-root)))
-         (should-strip (and (projectile-project-root) (not do-not-strip-prefix)))
+         (root (project-root (project-current)))
+         (relname (file-relative-name fullname root))
+         (should-strip (and root (not do-not-strip-prefix)))
          (filename (if should-strip relname fullname)))
       (kill-new filename)
       (message "Copied buffer file name '%s' to the clipboard." filename)))
@@ -637,8 +632,6 @@ Normally I bind ~other-window~ to ~C-c ,~, but on my ultra-wide-screen monitor, 
     ;; Show the window designators in the modeline.
     (ace-window-display-mode)
 
-     ;; Make the number indicators a little larger. I'm getting old.
-     ;; (set-face-attribute 'aw-leading-char-face nil :height 2.0 :background "black")
 
     (defun my-ace-window (args)
       "As ace-window, but hiding the cursor while the action is active."
@@ -649,7 +642,7 @@ Normally I bind ~other-window~ to ~C-c ,~, but on my ultra-wide-screen monitor, 
         (ace-window nil)))
 
 
-    :bind (("C-," . my-ace-window))
+    :bind* (("C-," . my-ace-window))
     :custom
     (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l) "Designate windows by home row keys, not numbers.")
     (aw-background nil))
@@ -677,9 +670,9 @@ One of the main problems with Emacs is how many ephemeral buffers it creates. I'
 
 #+begin_src emacs-lisp
   (use-package popper
+   :bind* ("C-c :" . popper-toggle-latest)
     :bind (("C-`"   . popper-toggle-latest)
-           ("C-c :" . popper-toggle-latest)
-           ("C-\\"  . popper-cycle)
+            ("C-\\"  . popper-cycle)
            ("C-M-`" . popper-toggle-type))
     :custom
     (compilation-scroll-output 'first-error)
@@ -726,11 +719,6 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
     (org-agenda-files (list (concat org-directory "/agenda.org")))
 
     :config
-    ;; Putting these in a loop or in :bind generates invalid code and I have no idea why.
-    (unbind-key "C-," org-mode-map)
-    (unbind-key "C-c ;" org-mode-map)
-    (unbind-key "C-c :" org-mode-map)
-    (unbind-key "C-c ," org-mode-map)
     (unbind-key "M-<left>" org-mode-map)
     (unbind-key "M-<right>" org-mode-map)
 
@@ -839,6 +827,7 @@ My journey through the various Emacs completion facilities has been long and twi
            ("C-x b"   . #'consult-buffer)
            ("C-c r"   . #'consult-recent-file)
            ("C-c y"   . #'pt/yank-pop)
+           ("C-c h"   . #'consult-ripgrep)
            ("C-x C-f" . #'find-file)
            ("C-h a"   . #'consult-apropos)
            )
@@ -953,11 +942,11 @@ Flycheck performs in-buffer highlighting of errors and warnings, and is superior
 
 ** Searching
 
-deadgrep is the bee's knees for project-wide search, as it uses ~ripgrep~.
+deadgrep is the bee's knees for project-wide search, as it uses ~ripgrep~. I defer to the faster and live-previewing ~consult-ripgrep~, but sometimes deadgrep is more useful.
 
 #+begin_src emacs-lisp
   (use-package deadgrep
-    :bind (("C-c h" . #'deadgrep)))
+    :bind (("C-c H" . #'deadgrep)))
 #+end_src
 
 I remember the days before Emacs had real regular expressions. Nowadays, we have them, but the find-and-replace UI is bad. ~visual-regexp~ fixes this. I have this bound to an incredibly stupid keybinding because I simply do not want to take the time to catabolize/forget that particular muscle memory.
@@ -1119,6 +1108,7 @@ A thing I want to do someday is to write a framework for sending things like com
            :map vterm-mode-map
            ("C-\\" . #'popper-cycle)
            ("s-t" . #'vterm) ; Open up new tabs quickly
+           ("s-v" . #'vterm-yank)
            ))
 #+end_src
 
@@ -1180,8 +1170,6 @@ I occasionally write Go, generally as a glue language to munge things together. 
    (defun fix-messed-up-gofmt-path ()
      (interactive)
      (setq gofmt-command (string-trim (shell-command-to-string "which gofmt"))))
-
-   (use-package go-projectile)
 
    (use-package gotest
      :bind (:map go-mode-map
@@ -1249,7 +1237,7 @@ I generally use GitHub-flavored Markdown, so we default to that.
 
  #+begin_src emacs-lisp
    (use-package markdown-mode
-     :bind (("C-c C-s a" . markdown-table-align))
+     :bind (:map markdown-mode-map ("C-c C-s a" . markdown-table-align))
      :mode ("\\.md$" . gfm-mode))
  #+end_src
 
