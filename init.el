@@ -34,7 +34,9 @@
 
 (setq max-lisp-eval-depth 2000)
 (setq safe-local-variable-values '((projectile-mode . t)))
-(use-package projectile)
+
+(use-package projectile
+  :hook (org-mode . projectile-mode))
 
 (reload-config)
 
