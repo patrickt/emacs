@@ -52,7 +52,7 @@ Since subsequent packages like ~libgit~ may depend on executables like ~cmake~, 
 There appears to be some sort of kerfuffle regarding ELPA's GPG keys. The details are beyond me, but installing this package silences associated warnings.
 
 #+begin_src emacs-lisp
-  (use-package gnu-elpa-keyring-update)
+  ;; (use-package gnu-elpa-keyring-update)
 #+end_src
 
 ** Fixing defaults
@@ -806,14 +806,6 @@ I used to use Projectile, but ~marginalia-mode~ doesn't appear to work out of th
            ("C-x f" . #'find-file)
            ("C-c f" . #'project-find-file)
            ("C-c F" . #'project-switch-project))
-    :config
-    ;; For whatever reason, .project.el gets confused about this file itself.
-    (defun pt/override-project-root-detector (dir)
-        (when (s-suffix? "emacs/readme.org" (buffer-file-name))
-          (cons 'vc (file-name-directory (buffer-file-name)))))
-
-    (add-hook 'project-find-functions #'pt/override-project-root-detector)
-
     :custom
     (project-switch-commands '((project-find-file "Find file") (magit-project-status "Magit" ?g)))
 
@@ -1008,6 +1000,10 @@ In Haskell, my language of choice, I rarely need a step-through debugger, as des
 Built-in ~xref~ is powerful.
 
 #+begin_src emacs-lisp
+  ;; TODO figure out how to warn given old xref/project
+  (use-package xref
+    :bind (("s-r" . #'xref-find-references)))
+
   (bind-key "s-r" #'xref-find-references)
   (bind-key "s-d" #'eldoc)
 #+end_src
@@ -1015,40 +1011,6 @@ Built-in ~xref~ is powerful.
 Before Emacs 27, the LSP experience on large projects was not particularly good. We now have native JSON parsing support. I am told that it makes things easier.
 
 #+begin_src emacs-lisp
-  (use-package lsp-mode
-    :disabled
-    :commands (lsp lsp-execute-code-action)
-    :hook ((go-mode . lsp-deferred)
-           (lsp-mode . lsp-enable-which-key-integration)
-           (lsp-mode . lsp-modeline-diagnostics-mode))
-    :bind (:map lsp-mode-map
-           ("C-c C-c" . #'lsp-execute-code-action)
-           ("s-[" . #'xref-pop-marker-stack)
-           ("s-]" . #'pop-global-mark))
-    :custom
-    (lsp-keymap-prefix "C-c SPC")
-    (lsp-diagnostics-modeline-scope :project)
-    (lsp-file-watch-threshold 5000)
-    (lsp-response-timeout 2)
-    (lsp-eldoc-render-all nil)
-    (eldoc-idle-delay 2)
-    (lsp-enable-file-watchers nil))
-
-  (use-package lsp-ui
-    :disabled
-    :custom
-    (lsp-ui-doc-show-with-mouse t)
-    (lsp-ui-doc-show-with-cursor nil)
-    (lsp-ui-doc-delay 1.5) ;; buggy, see https://github.com/emacs-lsp/lsp-ui/issues/664
-    :config
-    (lsp-ui-doc-mode)
-    :after lsp-mode)
-
-  (use-package consult-lsp
-    :disabled
-    :bind (("s-t" . #'consult-lsp-symbols)
-           ("s-p"     . #'consult-lsp-file-symbols)))
-
   (use-package eglot
     :hook ((go-mode . eglot-ensure)
            (haskell-mode . eglot-ensure)
