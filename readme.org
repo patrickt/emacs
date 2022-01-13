@@ -671,7 +671,7 @@ One of the main problems with Emacs is how many ephemeral buffers it creates. I'
 
 #+begin_src emacs-lisp
   (use-package popper
-   :bind* ("C-c :" . popper-toggle-latest)
+    :bind* ("C-c :" . popper-toggle-latest)
     :bind (("C-`"   . popper-toggle-latest)
             ("C-\\"  . popper-cycle)
            ("C-M-`" . popper-toggle-type))
@@ -684,6 +684,7 @@ One of the main problems with Emacs is how many ephemeral buffers it creates. I'
                                 prodigy-mode
                                 "magit:.\*"
                                 "\\*deadgrep.\*"
+                                "\\*eldoc.\*"
                                 "\\*xref\\*"
                                 "\\*direnv\\*"
                                 "\\*Warnings\\*"
@@ -805,9 +806,18 @@ I used to use Projectile, but ~marginalia-mode~ doesn't appear to work out of th
            ("C-x f" . #'find-file)
            ("C-c f" . #'project-find-file)
            ("C-c F" . #'project-switch-project))
-    :custom
-    (project-switch-commands '((project-find-file "Find file") (magit-project-status "Magit" ?g))))
+    :config
+    ;; For whatever reason, .project.el gets confused about this file itself.
+    (defun pt/override-project-root-detector (dir)
+        (when (s-suffix? "emacs/readme.org" (buffer-file-name))
+          (cons 'vc (file-name-directory (buffer-file-name)))))
 
+    (add-hook 'project-find-functions #'pt/override-project-root-detector)
+
+    :custom
+    (project-switch-commands '((project-find-file "Find file") (magit-project-status "Magit" ?g)))
+
+    )
 #+end_src
 
 ** Completion and input
@@ -995,10 +1005,18 @@ In Haskell, my language of choice, I rarely need a step-through debugger, as des
 
 ** LSP
 
+Built-in ~xref~ is powerful.
+
+#+begin_src emacs-lisp
+  (bind-key "s-r" #'xref-find-references)
+  (bind-key "s-d" #'eldoc)
+#+end_src
+
 Before Emacs 27, the LSP experience on large projects was not particularly good. We now have native JSON parsing support. I am told that it makes things easier.
 
 #+begin_src emacs-lisp
   (use-package lsp-mode
+    :disabled
     :commands (lsp lsp-execute-code-action)
     :hook ((go-mode . lsp-deferred)
            (lsp-mode . lsp-enable-which-key-integration)
@@ -1017,6 +1035,7 @@ Before Emacs 27, the LSP experience on large projects was not particularly good.
     (lsp-enable-file-watchers nil))
 
   (use-package lsp-ui
+    :disabled
     :custom
     (lsp-ui-doc-show-with-mouse t)
     (lsp-ui-doc-show-with-cursor nil)
@@ -1026,8 +1045,35 @@ Before Emacs 27, the LSP experience on large projects was not particularly good.
     :after lsp-mode)
 
   (use-package consult-lsp
+    :disabled
     :bind (("s-t" . #'consult-lsp-symbols)
            ("s-p"     . #'consult-lsp-file-symbols)))
+
+  (use-package eglot
+    :hook ((go-mode . eglot-ensure)
+           (haskell-mode . eglot-ensure)
+           (rust-mode . eglot-ensure))
+    :bind (:map eglot-mode-map
+                ("C-<down-mouse-1>" . #'xref-find-definitions)
+                ("C-c C-c" . #'eglot-code-actions)))
+
+  (use-package consult-eglot
+    :bind (("s-t" . #'consult-eglot-symbols)))
+#+end_src
+
+It's really weird that none of the LSP packages, or indeed xref itself, provide easy navigation forwards and backwards when jumping between definitions. This package appears to do the trick though.
+
+#+begin_src emacs-lisp
+  (use-package backward-forward
+    :config
+    (backward-forward-mode t)
+    :bind (:map backward-forward-mode-map
+                ("<C-left>" . nil)
+                ("<C-right>" . nil)
+                ("s-[" . backward-forward-previous-location)
+                ("s-]" . backward-forward-next-location)
+                )
+    )
 #+end_src
 
 * Haskell
