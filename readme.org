@@ -1325,7 +1325,9 @@ TRAMP mode is excellent for editing files on a remote machine or Docker containe
 I use ~direnv~ to manage per-project environment variables. The Emacs direnv mode is quite sophisticated, automatically setting all relevant variables for you when you go in and out of a particular project.
 
 #+begin_src emacs-lisp
-  (use-package direnv :config (direnv-mode))
+  (use-package direnv
+    :config (direnv-mode)
+    :custom (direnv-always-show-summary nil))
 #+end_src
 
 * Initial screen setup
