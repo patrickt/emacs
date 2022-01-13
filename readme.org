@@ -1,3 +1,5 @@
+#  -*- mode: org; projectile-mode: t-*-
+
 This is my Emacs configuration, assembled over the course of more than ten years. I first started using Emacs in 2009 out of sheer necessity---I first learned to code using [[https://github.com/textmate/textmate][TextMate]], but that wasn't an option upon, after arriving at college, being required to SSH into some creaky Sun boxes running geologically-ancient versions of Solaris. As of this writing, it is 2020, some eleven years into my Emacs journey, and I have an incurable case of Emacs-induced brain worms; I've spent on the order of hundreds of hours tweaking and refining my configuration. This file is the result of that process.
 
 If there's anything that convinced me to take on this lifelong Emacs habit, it's because both macOS and iOS come, out of the box, with support for Emacs keybindings in their text areas. Said keybindings aren't hugely exhaustive, but they're useful, especially given that the ~Ctrl-k~ and ~Ctrl-y~ inputs for copy and paste operate on a /different/ pasteboard than do ~⌘C~ and ~⌘V~. Once I discovered that, and the dorkily exhiliating feeling of juggling information through the various system pasteboards, I was more or less entirely beholden to the Emacs way, despite the merits of modal editingr[fn:1]. But the forcing factor was, after I left Apple, arriving at a job where I had to test C code on macOS, Linux, FreeBSD, and SmartOS. The difficulty of remembering keyboard shortcuts between TextMate, Sublime Text, and Emacs was leagues beyond insupportable, and as such I took the Emacs plunge.
@@ -93,6 +95,8 @@ Fixing Emacs's defaults is a nontrivial problem. We'll start with UI concerns.
    fast-but-imprecise-scrolling t
    ;; prefer newer elisp files
    load-prefer-newer t
+   ;; when I say to quit, I mean quit
+   confirm-kill-processes nil
    )
 
   ;; Never mix tabs and spaces. Never use tabs, period.
@@ -334,7 +338,6 @@ It's nice to have the option to center a window, given the considerable size of 
 
 #+begin_src emacs-lisp
   (use-package centered-window
-    :ensure t
     :custom
     (cwm-centered-window-width 180))
 #+end_src
@@ -701,7 +704,6 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
 
 #+begin_src emacs-lisp
   (use-package org
-    :pin org
     :hook ((org-mode . visual-line-mode))
     :bind (("C-c o c" . counsel-org-capture)
            ("C-c o a" . org-agenda)
@@ -734,6 +736,7 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
     :hook (org-mode . org-bullets-mode))
 
   (use-package org-ref
+    :disabled ;; very slow to load
     :config (defalias 'dnd-unescape-uri 'dnd--unescape-uri))
 
   (use-package org-roam
@@ -804,7 +807,8 @@ I used to use Projectile, but ~marginalia-mode~ doesn't appear to work out of th
            ("C-x f" . #'find-file)
            ("C-c f" . #'project-find-file)
            ("C-c F" . #'project-switch-project))
-    )
+    :custom
+    (project-switch-commands '((project-find-file "Find file") (magit-project-status "Magit" ?g))))
 
 #+end_src
 
@@ -958,7 +962,7 @@ I remember the days before Emacs had real regular expressions. Nowadays, we have
 
 ** Autocomplete
 
-After a long journey with ~company~, I've settled on just using the builtin completion-at-point facilities for autocomplete. The UI considerations afforded by Selectrum make it even nicer than what Company offered, and consistently faster, too. Someday I want to look into a more aggressive inline autocompletion thing like VSC
+After a long journey with ~company~, I've settled on just using the builtin completion-at-point facilities for autocomplete. The UI considerations afforded by Selectrum make it even nicer than what Company offered, and consistently faster, too. Someday I want to look into a more aggressive inline autocompletion thing like VSCode supports, but I don't know
 
 #+begin_src emacs-lisp
   (bind-key "C-." #'completion-at-point)
@@ -996,35 +1000,36 @@ In Haskell, my language of choice, I rarely need a step-through debugger, as des
 Before Emacs 27, the LSP experience on large projects was not particularly good. We now have native JSON parsing support. I am told that it makes things easier.
 
 #+begin_src emacs-lisp
-    (use-package lsp-mode
-      :commands (lsp lsp-execute-code-action)
-      :hook ((go-mode . lsp-deferred)
-             (lsp-mode . lsp-enable-which-key-integration)
-             (lsp-mode . lsp-modeline-diagnostics-mode))
-      :bind (:map lsp-mode-map
-             ("C-c C-c" . #'lsp-execute-code-action)
-             ("s-[" . #'xref-pop-marker-stack)
-             ("s-]" . #'pop-global-mark))
-      :custom
-      (lsp-keymap-prefix "C-c SPC")
-      (lsp-diagnostics-modeline-scope :project)
-      (lsp-file-watch-threshold 5000)
-      (lsp-response-timeout 2)
-      (lsp-eldoc-render-all nil)
-      (eldoc-idle-delay 2)
-      (lsp-enable-file-watchers nil))
+  (use-package lsp-mode
+    :commands (lsp lsp-execute-code-action)
+    :hook ((go-mode . lsp-deferred)
+           (lsp-mode . lsp-enable-which-key-integration)
+           (lsp-mode . lsp-modeline-diagnostics-mode))
+    :bind (:map lsp-mode-map
+           ("C-c C-c" . #'lsp-execute-code-action)
+           ("s-[" . #'xref-pop-marker-stack)
+           ("s-]" . #'pop-global-mark))
+    :custom
+    (lsp-keymap-prefix "C-c SPC")
+    (lsp-diagnostics-modeline-scope :project)
+    (lsp-file-watch-threshold 5000)
+    (lsp-response-timeout 2)
+    (lsp-eldoc-render-all nil)
+    (eldoc-idle-delay 2)
+    (lsp-enable-file-watchers nil))
 
-    (use-package lsp-ui
-      :custom
-      (lsp-ui-doc-show-with-mouse t)
-      (lsp-ui-doc-show-with-cursor nil)
-      (lsp-ui-doc-delay 1.5) ;; buggy, see https://github.com/emacs-lsp/lsp-ui/issues/664
-      :config
-      (lsp-ui-doc-mode)
-      :after lsp-mode)
+  (use-package lsp-ui
+    :custom
+    (lsp-ui-doc-show-with-mouse t)
+    (lsp-ui-doc-show-with-cursor nil)
+    (lsp-ui-doc-delay 1.5) ;; buggy, see https://github.com/emacs-lsp/lsp-ui/issues/664
+    :config
+    (lsp-ui-doc-mode)
+    :after lsp-mode)
 
-    (use-package consult-lsp
-      :bind (("s-t" . #'consult-lsp-symbols)))
+  (use-package consult-lsp
+    :bind (("s-t" . #'consult-lsp-symbols)
+           ("s-p"     . #'consult-lsp-file-symbols)))
 #+end_src
 
 * Haskell

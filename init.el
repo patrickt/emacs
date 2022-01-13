@@ -33,6 +33,8 @@
   (org-babel-load-file "~/.config/emacs/readme.org"))
 
 (setq max-lisp-eval-depth 2000)
+(setq safe-local-variable-values '((projectile-mode . t)))
+(use-package projectile)
 
 (reload-config)
 
