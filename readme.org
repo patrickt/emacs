@@ -14,6 +14,11 @@ Yet I don't feel bad about publishing something this self-indulgent. Not only be
 
 * Configuration: start!
 
+Some TODOs:
+
+- Figure out why we keep getting a save dialog for ~/dev/null~, and ~defadvice~ our way out of this.
+- Make a popper function that gives Magit a bit more breathing room
+
 ** Preliminaries
 
 Many of Emacs's defaults are ill-suited for my purposes, but the first one that needs fixing is the shockingly low garbage-collection threshold, which defaults to a paltry *:8kb*. Setting it to *:100mb* seems to strike a nice balance between GC pauses and performance. I also like to turn on the messages associated therewith, since thrashing GC is a good indicator of runaway processes or similar weirdness.
@@ -180,16 +185,16 @@ There are a great many keybindings that are actively hostile, in that they are b
 By default, I want paste operations to indent their results. I could express this as defadvice around the yank command, but I try to avoid such measures if possible.
 
 #+begin_src emacs-lisp
-  (defun pt-yank ()
+  (defun pt/yank ()
     "Call yank, then indent the pasted region, as TextMate does."
     (interactive)
     (let ((point-before (point)))
-      (when mark-active (call-interactively 'delete-backward-char))
+      (if mark-active (call-interactively 'delete-backward-char))
       (yank)
       (indent-region point-before (point))))
 
-  (bind-key "C-y" #'pt-yank)
-  (bind-key "s-v" #'pt-yank)
+  (bind-key "C-y" #'pt/yank)
+  (bind-key "s-v" #'pt/yank)
   (bind-key "C-Y" #'yank)
 #+end_src
 
@@ -402,13 +407,15 @@ Textmate-style tap-to-expand-into-the-current-delimiter is very useful and curio
 Emacs's keybinding for ~comment-dwim~ is ~M-;~, which is not convenient to type or particularly mnemonic outside of an elisp context (where commenting is indeed ~;~). Better to bind it somewhere sensible.
 
 #+begin_src emacs-lisp
-  (bind-key "C-c /" #'comment-dwim)
+  (bind-key* "C-c /" #'comment-dwim)
 #+end_src
 
 ~avy~ gives us fluent jump-to-line commands mapped to the home row.
 
 #+begin_src emacs-lisp
   (use-package avy
+    :bind (:map prog-mode-map ("C-'" . avy-goto-line))
+    :bind (:map org-mode-map ("C-'" . avy-goto-line))
     :bind (("C-c l" . avy-goto-line)
            ("C-c j" . avy-goto-char)))
 #+end_src
@@ -515,13 +522,13 @@ It's genuinely shocking that there's no "duplicate whatever's marked" command bu
 #+begin_src emacs-lisp
   (use-package duplicate-thing
     :init
-    (defun my-duplicate-thing ()
+    (defun pt/duplicate-thing ()
       "Duplicate thing at point without changing the mark."
       (interactive)
       (save-mark-and-excursion (duplicate-thing 1))
       (call-interactively #'next-line))
-    :bind (("C-c u" . my-duplicate-thing)
-           ("C-c C-u" . my-duplicate-thing)))
+    :bind (("C-c u" . pt/duplicate-thing)
+           ("C-c C-u" . pt/duplicate-thing)))
 #+end_src
 
 We need to support reading large blobs of data for LSP's sake.
@@ -583,7 +590,7 @@ I almost always want to default to a two-buffer setup.
   (bind-key "s-g" #'abort-recursive-edit)
 #+end_src
 
-Ivy makes ~kill-buffer~ give you a list of possible results, which isn't generally what I want.
+Completion systems make ~kill-buffer~ give you a list of possible results, which isn't generally what I want.
 
 #+begin_src emacs-lisp
   (defun kill-this-buffer ()
@@ -683,7 +690,22 @@ One of the main problems with Emacs is how many ephemeral buffers it creates. I'
     :bind (("C-`"   . popper-toggle-latest)
            ("C-\\"  . popper-cycle)
            ("C-M-`" . popper-toggle-type))
+    :config
+    (popper-mode +1)
+    (popper-echo-mode +1)
+
+    ;; (defun pt/popper-window-height (win)
+    ;;   (let (
+    ;;         (base (popper--fit-window-height win))
+    ;;         (special-case
+    ;;          (cl-ecase (buffer-name (window-buffer win))
+    ;;            ))
+    ;;         )
+    ;;     (or special-case base))
+    ;;   (popper--fit-window-height win))
+
     :custom
+    ;; (popper-window-height #'pt/popper-window-height)
     (compilation-scroll-output 'first-error)
     (popper-reference-buffers '("\\*Messages\\*"
                                 "Output\\*$"
@@ -700,9 +722,7 @@ One of the main problems with Emacs is how many ephemeral buffers it creates. I'
                                 haskell-compilation-mode
                                 compilation-mode
                                 bqn-inferior-mode))
-    :config
-    (popper-mode +1)
-    (popper-echo-mode +1))
+    )
 #+end_src
 
 ** Org-mode
@@ -830,11 +850,14 @@ My journey through the various Emacs completion facilities has been long and twi
     (vertico-mode)
     (vertico-mouse-mode)
     :custom
-    (vertico-count 20)
+    (vertico-count 22)
     :bind (:map vertico-map
-                ("C-'" . #'vertico-quick-exit)
-                ("C-c SPC" . #'vertico-quick-exit)
-                ("DEL" . #'vertico-directory-delete-char)))
+                ("C-'"       . #'vertico-quick-exit)
+                ;; Have to rebind this because C-m is translated to RET.
+                ("<return>"  . #'exit-minibuffer)
+                ("C-m"       . #'vertico-insert)
+                ("C-c SPC"   . #'vertico-quick-exit)
+                ("DEL"       . #'vertico-directory-delete-char)))
 
   (use-package consult
     :config
@@ -985,7 +1008,7 @@ Before Emacs 27, the LSP experience on large projects was not particularly good.
                 ("C-c C-c" . #'eglot-code-actions)))
 
   (use-package consult-eglot
-    :bind (("s-t" . #'consult-eglot-symbols)))
+    :bind (:map eglot-mode-map ("s-t" . #'consult-eglot-symbols)))
 #+end_src
 
 It's really weird that none of the LSP packages, or indeed xref itself, provide easy navigation forwards and backwards when jumping between definitions. This package appears to do the trick though.
