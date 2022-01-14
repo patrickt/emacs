@@ -255,7 +255,7 @@ By default, Emacs wraps long lines, inserting a little icon to indicate this. I 
 
 ** Visuals
 
-Emacs looks a lot better when it has a modern monospaced font and VSCode-esque icons.
+Emacs looks a lot better when it has a modern monospaced font and VSCode-esque icons, as well as smooth scrolling.
 
 #+begin_src emacs-lisp
   (ignore-errors (set-frame-font "JuliaMono-12"))
@@ -435,6 +435,12 @@ I got used to a number of convenient TextMate-style commands.
     (newline-and-indent))
 
   (bind-key "s-<return>" #'pt/eol-then-newline)
+#+end_src
+
+It's occasionally useful to be able to search a Unicode character by name.
+
+#+begin_src emacs-lisp
+  (bind-key "C-c U" #'insert-char)
 #+end_src
 
 ** Quality-of-life improvements
@@ -634,16 +640,18 @@ Normally I bind ~other-window~ to ~C-c ,~, but on my ultra-wide-screen monitor, 
     (ace-window-display-mode)
 
 
-    (defun my-ace-window (args)
+    (defun pt/ace-window (args)
       "As ace-window, but hiding the cursor while the action is active."
       (interactive "P")
-      (let
-          ((cursor-type nil)
-           (cursor-in-non-selected-window nil))
-        (ace-window nil)))
+      (if (= (length (window-list)) 2)
+          (other-window 1)
+        (let
+            ((cursor-type nil)
+             (cursor-in-non-selected-window nil))
+          (ace-window args))))
 
 
-    :bind* (("C-," . my-ace-window))
+    :bind* (("C-<" . other-window) ("C-," . pt/ace-window))
     :custom
     (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l) "Designate windows by home row keys, not numbers.")
     (aw-background nil))
@@ -673,7 +681,7 @@ One of the main problems with Emacs is how many ephemeral buffers it creates. I'
   (use-package popper
     :bind* ("C-c :" . popper-toggle-latest)
     :bind (("C-`"   . popper-toggle-latest)
-            ("C-\\"  . popper-cycle)
+           ("C-\\"  . popper-cycle)
            ("C-M-`" . popper-toggle-type))
     :custom
     (compilation-scroll-output 'first-error)
@@ -824,8 +832,8 @@ My journey through the various Emacs completion facilities has been long and twi
     :custom
     (vertico-count 20)
     :bind (:map vertico-map
-                ("C-'" . #'vertico-quick-insert)
-                ("C-c SPC" . #'vertico-quick-insert)
+                ("C-'" . #'vertico-quick-exit)
+                ("C-c SPC" . #'vertico-quick-exit)
                 ("DEL" . #'vertico-directory-delete-char)))
 
   (use-package consult
@@ -863,15 +871,6 @@ My journey through the various Emacs completion facilities has been long and twi
 
   (use-package prescient
     :config (prescient-persist-mode))
-
-  (use-package backward-forward
-    :config (backward-forward-mode t)
-    :bind (:map backward-forward-mode-map
-                ("<C-left>" . nil)
-                ("<C-right>" . nil)
-                ("s-[" . backward-forward-previous-location)
-                ("s-]" . backward-forward-next-location)
-                ))
 #+end_src
 
 Dumb-jump is pretty good at figuring out where declarations of things might be. I'm using it with C because I'm too lazy to set up true C LSP integration.
@@ -966,7 +965,9 @@ Built-in ~xref~ is powerful.
 #+begin_src emacs-lisp
   ;; TODO figure out how to warn given old xref/project
   (use-package xref
-    :bind (("s-r" . #'xref-find-references)))
+    :bind (("s-r" . #'xref-find-references)
+           ("s-[" . #'xref-go-back)
+           ("s-]" . #'xref-go-forward)))
 
   (bind-key "s-r" #'xref-find-references)
   (bind-key "s-d" #'eldoc)
