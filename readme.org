@@ -814,9 +814,20 @@ I used to use Projectile, but ~marginalia-mode~ doesn't appear to work out of th
 
 ** Completion and input
 
-My journey through the various Emacs completion facilities has been long and twisty. I started with Helm, then spent several years using Ivy, and am now using Selectrum, with the consult and marginalia packages to yield an interface that is nicer and faster than Ivy.
+My journey through the various Emacs completion facilities has been long and twisty. I started with Helm, then spent several years using Ivy, and am now using Vertico, with the consult and marginalia packages to yield an interface that is nicer and faster than Ivy.
 
 #+begin_src emacs-lisp
+  (use-package vertico
+    :config
+    (vertico-mode)
+    (vertico-mouse-mode)
+    :custom
+    (vertico-count 20)
+    :bind (:map vertico-map
+                ("C-'" . #'vertico-quick-insert)
+                ("C-c SPC" . #'vertico-quick-insert)
+                ("DEL" . #'vertico-directory-delete-char)))
+
   (use-package consult
     :config
     (defun pt/yank-pop ()
@@ -836,63 +847,10 @@ My journey through the various Emacs completion facilities has been long and twi
            ("C-h a"   . #'consult-apropos)
            )
     :custom
+    (completion-in-region-function #'consult-completion-in-region)
     (xref-show-xrefs-function #'consult-xref)
     (xref-show-definitions-function #'consult-xref)
     )
-
-  (use-package selectrum
-    :config
-    (selectrum-mode)
-    (minibuffer-electric-default-mode)
-
-    ;; Ido has a nice feature where it greedily deletes directories.
-    ;; This is surprisingly nice and I was loathe to lose it with selectrum.
-    ;; Pilfered from the vertico-directory extensions.
-    (defun selectrum-directory-up ()
-      "Delete directory before point."
-      (interactive)
-      (when (and (> (point) (minibuffer-prompt-end))
-                 (eq (char-before) ?/)
-                 minibuffer-completing-file-name)
-        (let ((path (buffer-substring (minibuffer-prompt-end) (point))))
-          (when (string-match-p "\\`~[^/]*/\\'" path)
-            (delete-minibuffer-contents)
-            (insert (expand-file-name path))))
-        (save-excursion
-          (goto-char (1- (point)))
-          (when (search-backward "/" (minibuffer-prompt-end) t)
-            (delete-region (1+ (point)) (point-max))
-            t))))
-
-    (defun selectrum-directory-delete-char ()
-      "Delete directory or char before point."
-      (interactive)
-      (unless (selectrum-directory-up)
-        (call-interactively #'backward-delete-char)))
-
-    (defun selectrum-directory-delete-word ()
-      "Delete directory or word before point."
-      (interactive)
-      (unless (selectrum-directory-up)
-        (let ((pt (point)))
-          (forward-word -1)
-          (delete-region pt (point)))))
-
-
-    :bind
-    (:map selectrum-minibuffer-map
-          ("DEL" . #'selectrum-directory-delete-char)
-          ("M-DEL" . #'selectrum-directory-delete-word)
-          ("C-j"   . #'selectrum-insert-current-candidate)
-          ("C-'" . #'selectrum-quick-select)
-          ("<wheel-down>" . #'selectrum-next-candidate)
-          ("<wheel-up>" . #'selectrum-previous-candidate)
-          ("<mouse-2>" . #'selectrum-select-current-candidate)
-          ("C-c SPC" . #'selectrum-quick-select))
-    :custom
-    (completion-ignore-case nil)
-    (read-buffer-completion-ignore-case nil)
-    (selectrum-max-window-height 30))
 
   (use-package marginalia
     :config (marginalia-mode))
@@ -906,8 +864,14 @@ My journey through the various Emacs completion facilities has been long and twi
   (use-package prescient
     :config (prescient-persist-mode))
 
-  (use-package selectrum-prescient
-    :config (selectrum-prescient-mode))
+  (use-package backward-forward
+    :config (backward-forward-mode t)
+    :bind (:map backward-forward-mode-map
+                ("<C-left>" . nil)
+                ("<C-right>" . nil)
+                ("s-[" . backward-forward-previous-location)
+                ("s-]" . backward-forward-next-location)
+                ))
 #+end_src
 
 Dumb-jump is pretty good at figuring out where declarations of things might be. I'm using it with C because I'm too lazy to set up true C LSP integration.
