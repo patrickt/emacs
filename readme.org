@@ -646,7 +646,6 @@ Normally I bind ~other-window~ to ~C-c ,~, but on my ultra-wide-screen monitor, 
     ;; Show the window designators in the modeline.
     (ace-window-display-mode)
 
-
     (defun pt/ace-window (args)
       "As ace-window, but hiding the cursor while the action is active."
       (interactive "P")
@@ -735,6 +734,8 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
     :bind (("C-c o c" . counsel-org-capture)
            ("C-c o a" . org-agenda)
            :map org-mode-map
+           ("M-<left>" . nil)
+           ("M-<right>" . nil)
            ("C-c c" . #'org-mode-insert-code)
            ("C-c a f" . #'org-shifttab)
            ("C-c a S" . #'zero-width))
@@ -744,12 +745,10 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
     (org-default-notes-file (concat org-directory "/notes.org"))
     (org-return-follows-link t)
     (org-src-ask-before-returning-to-edit-buffer nil "org-src is kinda needy out of the box")
-    (org-src-window-setup 'split-window-below)
+    (org-src-window-setup 'current-window)
     (org-agenda-files (list (concat org-directory "/agenda.org")))
 
     :config
-    (unbind-key "M-<left>" org-mode-map)
-    (unbind-key "M-<right>" org-mode-map)
 
     (defun make-inserter (c) '(lambda () (interactive) (insert-char c)))
     (defun zero-width () (interactive) (insert "​"))
@@ -983,7 +982,7 @@ In Haskell, my language of choice, I rarely need a step-through debugger, as des
 
 ** LSP
 
-Built-in ~xref~ is powerful.
+Built-in ~xref~ and ~eldoc~ are powerful packages.
 
 #+begin_src emacs-lisp
   ;; TODO figure out how to warn given old xref/project
@@ -992,11 +991,10 @@ Built-in ~xref~ is powerful.
            ("s-[" . #'xref-go-back)
            ("s-]" . #'xref-go-forward)))
 
-  (bind-key "s-r" #'xref-find-references)
-  (bind-key "s-d" #'eldoc)
+  (use-package eldoc :bind ("s-d" . #'eldoc))
 #+end_src
 
-Before Emacs 27, the LSP experience on large projects was not particularly good. We now have native JSON parsing support. I am told that it makes things easier.
+Though I used
 
 #+begin_src emacs-lisp
   (use-package eglot
@@ -1005,6 +1003,7 @@ Before Emacs 27, the LSP experience on large projects was not particularly good.
            (rust-mode . eglot-ensure))
     :bind (:map eglot-mode-map
                 ("C-<down-mouse-1>" . #'xref-find-definitions)
+                ("C-S-<down-mouse-1>" . #'xref-find-references)
                 ("C-c C-c" . #'eglot-code-actions)))
 
   (use-package consult-eglot
@@ -1015,6 +1014,7 @@ It's really weird that none of the LSP packages, or indeed xref itself, provide 
 
 #+begin_src emacs-lisp
   (use-package backward-forward
+    :disabled ;; for now
     :config
     (backward-forward-mode t)
     :bind (:map backward-forward-mode-map
@@ -1070,16 +1070,7 @@ Haskell is my day-to-day programming language, so I've tinkered with it a good d
     :defer)
 #+end_src
 
-#+begin_src emacs-lisp
-  (use-package lsp-haskell
-    :hook (haskell-mode . lsp)
-    :custom
-    (lsp-haskell-process-path-hie "haskell-language-server-wrapper")
-    (lsp-haskell-process-args-hie '())
-    )
-#+end_src
-
-My statements about Haskell autoformatters have, in the past, attracted controversy, so I have no further comment on the below lines. Note that ~haskell-lsp~ runs ormolu with ~lsp-format-buffer~.
+My statements about Haskell autoformatters have, in the past, attracted controversy, so I have no further comment on the below lines.
 
 #+begin_src emacs-lisp
   (use-package ormolu)
@@ -1157,12 +1148,8 @@ I occasionally write Go, generally as a glue language to munge things together. 
 
  #+begin_src emacs-lisp
    (use-package go-mode
-     :custom
-     (lsp-enable-links nil)
-     (lsp-ui-doc-mode nil)
      :config
-     (add-hook 'before-save-hook #'gofmt-before-save)
-     )
+     (add-hook 'before-save-hook #'gofmt-before-save))
 
    (use-package go-snippets)
 
@@ -1179,7 +1166,6 @@ Elm is a good language.
 
 #+begin_src emacs-lisp
   (use-package elm-mode
-    :ensure t
     :hook ((elm-mode . elm-format-on-save-mode)
            (elm-mode . elm-indent-mode)))
 #+end_src
@@ -1204,8 +1190,6 @@ I'm trying to learn APL, because I've lost control of my life.
 #+begin_src emacs-lisp
   (use-package dyalog-mode)
 #+end_src
-
-
 
 *** Configuration
 
@@ -1255,6 +1239,8 @@ I usually use curly quotes when writing in markup languages, which ~typo-mode~ m
 #+end_src
 
 *** Shell
+
+~fish~ is the only shell that doesn't make me want to defenestrate. The only time I use anything else is when I have to use TRAMP to connect to a codespace, in which case I need to use zsh, as ~fish~ is not POSIX-compliant.
 
  #+begin_src emacs-lisp
    (use-package fish-mode)
