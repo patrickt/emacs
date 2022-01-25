@@ -1,3 +1,5 @@
+# -*- project-vc-merge-submodules: nil; -*-
+
 This is my Emacs configuration, assembled over the course of more than ten years. I first started using Emacs in 2009 out of sheer necessity---I first learned to code using [[https://github.com/textmate/textmate][TextMate]], but that wasn't an option upon, after arriving at college, being required to SSH into some creaky Sun boxes running geologically-ancient versions of Solaris. As of this writing, it is 2020, some eleven years into my Emacs journey, and I have an incurable case of Emacs-induced brain worms; I've spent on the order of hundreds of hours tweaking and refining my configuration. This file is the result of that process.
 
 If there's anything that convinced me to take on this lifelong Emacs habit, it's because both macOS and iOS come, out of the box, with support for Emacs keybindings in their text areas. Said keybindings aren't hugely exhaustive, but they're useful, especially given that the ~Ctrl-k~ and ~Ctrl-y~ inputs for copy and paste operate on a /different/ pasteboard than do ~⌘C~ and ~⌘V~. Once I discovered that, and the dorkily exhiliating feeling of juggling information through the various system pasteboards, I was more or less entirely beholden to the Emacs way, despite the merits of modal editingr[fn:1]. But the forcing factor was, after I left Apple, arriving at a job where I had to test C code on macOS, Linux, FreeBSD, and SmartOS. The difficulty of remembering keyboard shortcuts between TextMate, Sublime Text, and Emacs was leagues beyond insupportable, and as such I took the Emacs plunge.
@@ -12,6 +14,10 @@ Yet I don't feel bad about publishing something this self-indulgent. Not only be
 
 [fn:3] Hello, future generations! If you're reading this, please believe me when I say that *:2020* was a truly enervating time to be a human being.
 
+* Canonical links to this document
+
+The most up-to-date version of this document is located [[https://github.com/patrickt/emacs][on GitHub]]. A better-rendered version can be found [[https://blog.sumtypeofway.com/posts/emacs-config.html][on my blog]], but might not be as current as the first version.
+
 * Configuration: start!
 
 Some TODOs:
@@ -20,6 +26,12 @@ Some TODOs:
 - Make a popper function that gives Magit a bit more breathing room
 
 ** Preliminaries
+
+We have to be sure to set ~lexical-binding~ in the file header to opt into Emacs lexical scope. Emacs Lisp really isn't the worst language once you pull in the community's /de facto/ standard libraries, but you need lexical scope.
+
+#+begin_src emacs-lisp
+;; -*- coding: utf-8; lexical-binding: t -*-
+#+end_src
 
 Many of Emacs's defaults are ill-suited for my purposes, but the first one that needs fixing is the shockingly low garbage-collection threshold, which defaults to a paltry *:8kb*. Setting it to *:100mb* seems to strike a nice balance between GC pauses and performance.
 
@@ -145,12 +157,13 @@ However, because Emacs stores theme-safety information in that file, we have to 
   (setq custom-safe-themes t)
 #+end_src
 
-By default, the list of recent files gets cluttered up with the contents of downloaded packages. It comes with Emacs, so there's no ~use-package~ call required.
+By default, the list of recent files gets cluttered up with the contents of downloaded packages.
 
 #+begin_src emacs-lisp
-  (require 'recentf)
-  (add-to-list 'recentf-exclude "\\elpa")
-  (recentf-mode)
+  (use-package recentf
+    :config
+    (add-to-list 'recentf-exclude "\\elpa")
+    (recentf-mode))
 #+end_src
 
 Emoji don't work on Emacs versions < 27 (aside from the Mitsuharu Yamamoto emacs-mac port), and for those greater than 27 we seem to need this.
@@ -250,13 +263,17 @@ By default, Emacs wraps long lines, inserting a little icon to indicate this. I 
   (setq-default truncate-lines t)
 #+end_src
 
-By default, Emacs ships with a nice completion system based on buffer contents, but inexplicably cripples its functionality by setting this completion system to ignore case in inserted results. Absolutely remarkable choice of defaults here.
+By default, Emacs ships with a nice completion system based on buffer contents, but inexplicably cripples its functionality by setting this completion system to ignore case in inserted results. Absolutely remarkable choice of defaults.
 
 #+begin_src emacs-lisp
   (use-package dabbrev
     :bind (("C-/" . #'dabbrev-completion))
     :custom
     (dabbrev-case-replace nil))
+
+  ;; TODO: I want to use the fancy-dabbrev package everywhere,
+  ;; but it uses popup.el rather than read-completion, and
+  ;; I don't like how quickly it operates on its inline suggestions
 #+end_src
 
 ** Visuals
@@ -308,7 +325,6 @@ Most major modes pollute the modeline, so we pull in diminish.el to quiesce them
 #+begin_src emacs-lisp
   (use-package diminish
     :config
-    (diminish 'eldoc-mode)
     (diminish 'visual-line-mode))
 #+end_src
 
@@ -854,6 +870,7 @@ I used to use Projectile, but ~marginalia-mode~ doesn't appear to work out of th
        (magit-project-status "Magit" ?g)
        (deadgrep "Grep" ?h)))
     (compilation-always-kill t)
+    (project-vc-merge-submodules nil)
     )
 #+end_src
 
@@ -1017,6 +1034,7 @@ Built-in ~xref~ and ~eldoc~ are powerful packages.
            ("s-]" . #'xref-go-forward)))
 
   (use-package eldoc
+    :diminish
     :bind ("s-d" . #'eldoc)
     :custom (eldoc-echo-area-prefer-doc-buffer t))
 #+end_src
