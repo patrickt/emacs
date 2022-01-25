@@ -4,9 +4,9 @@ If there's anything that convinced me to take on this lifelong Emacs habit, it's
 
 This file is an [[https://en.wikipedia.org/wiki/Org-mode][Org-mode]] document, like all the posts on my blog. And if you're reading it on my blog in HTML form, it is because my blog pulls in my Emacs configuration as a submodule, and a conveniently-placed symlink means that it is treated like any other post, and its embedded code is rendered in fancy code blocks. If you're reading it on [[https://github.com/patrickt/emacs][its GitHub repository]], you'll see it rendered inline in the repository, as its filename is ~readme.org~. And at Emacs boot time, Emacs itself runs ~org-babel~, generates elisp code out of the code snippets embedded herein, and loads it; further updates to the blog entry are a ~git submodule~ command away. I feel both delight and shame in equal quantities at this state of affairs: having a really cherried-out, custom-built[fn:2] Emacs setup is one of those things that's cool because of how uncool it is, like growing giant vegetables at a county fair, or being really good at Connect Four.
 
-Yet I don't feel bad about publishing something this self-indulgent. Not only because maybe it'll demystify what the care and feeding of a very-intense Emacs setup looks like, and also because yak-shaving is an excellent way to occupy myself in quarantine [fn:3]. Furthermore, I'm happier with my setup as an org-mode document, as Emacs configurations generally have a high propensity for entropy: it's easy to leave a few computer-specific hacks in some dusty corner of a config, and then, upon returning years later, having absolutely no idea what that hack does. Forcing a literate style guilts me into documenting every inch of it. In addition, I have been thanked by strangers for the quality of my config, and my coworker described it as "inspiring", which seems like sufficient justification to continue, at least with respect to my ego.
+Yet I don't feel bad about publishing something this self-indulgent. Not only because maybe it'll demystify what the care and feeding of a very-intense Emacs setup looks like, and also because yak-shaving is an excellent way to occupy myself in quarantine [fn:3], but because I'm happier with my setup as an org-mode document, as Emacs configurations generally have a high propensity for entropy: it's easy to leave a few computer-specific hacks in some dusty corner of a config, and then, upon returning years later, having absolutely no idea what that hack does. Forcing a literate style guilts me into documenting every inch of it. In addition, I have been thanked by strangers for the quality of my config, and my coworker described it as "inspiring", which seems like sufficient justification to continue, at least with respect to my ego.
 
-[fn:1] I've tried to reconfigure my brain to use modal editing, to little avail, but the its model of a domain-specific-language for text editing is a hugely exciting one to me.
+[fn:1] I've tried to reconfigure my brain to use modal editing, to little avail, but its model of a domain-specific-language for text editing is a hugely exciting one to me.
 
 [fn:2] My configuration is not built atop one of the all-in-one Emacs distributions like [[https://www.spacemacs.org][Spacemacs]] or [[https://github.com/hlissner/doom-emacs][Doom Emacs]]. I probably would have if either had been around at the beginning of my Emacs journey, but at this point my own personal set of key bindings is burnt into my brain.
 
@@ -21,7 +21,7 @@ Some TODOs:
 
 ** Preliminaries
 
-Many of Emacs's defaults are ill-suited for my purposes, but the first one that needs fixing is the shockingly low garbage-collection threshold, which defaults to a paltry *:8kb*. Setting it to *:100mb* seems to strike a nice balance between GC pauses and performance. I also like to turn on the messages associated therewith, since thrashing GC is a good indicator of runaway processes or similar weirdness.
+Many of Emacs's defaults are ill-suited for my purposes, but the first one that needs fixing is the shockingly low garbage-collection threshold, which defaults to a paltry *:8kb*. Setting it to *:100mb* seems to strike a nice balance between GC pauses and performance.
 
 #+begin_src emacs-lisp
   (setq gc-cons-threshold 100000000)
@@ -45,19 +45,11 @@ THe most useful Emacs command is ~execute-extended-command~. It should be painle
   (bind-key* "C-c ;" #'execute-extended-command)
 #+end_src
 
-** OS-specific concerns
-
 Since subsequent packages like ~libgit~ may depend on executables like ~cmake~, we need to ensure that Emacs has access to the PATH associated with the current environment.
 
 #+begin_src emacs-lisp
   (use-package exec-path-from-shell
     :init (exec-path-from-shell-initialize))
-#+end_src
-
-There appears to be some sort of kerfuffle regarding ELPA's GPG keys. The details are beyond me, but installing this package silences associated warnings.
-
-#+begin_src emacs-lisp
-  ;; (use-package gnu-elpa-keyring-update)
 #+end_src
 
 ** Fixing defaults
@@ -161,10 +153,10 @@ By default, the list of recent files gets cluttered up with the contents of down
   (recentf-mode)
 #+end_src
 
-Emoji don't work on Emacs versions < 27 (aside from the Mitsuharu Yamamoto emacs-mac port), and for those greater than 27 we seem to need this. A fun fact about this: that commented parenthesis is to work around an inscrutable parsing bug associated with the ~<~ in ~version<~ that breaks the elisp indentation mode. Emacs!
+Emoji don't work on Emacs versions < 27 (aside from the Mitsuharu Yamamoto emacs-mac port), and for those greater than 27 we seem to need this.
 
 #+begin_src emacs-lisp
-  (if ( version< "27.0" emacs-version ) ; )
+  (if (version< "27.0" emacs-version)
       (set-fontset-font "fontset-default" 'unicode "Apple Color Emoji" nil 'prepend)
     (warn "This Emacs version is too old to properly support emoji."))
 #+end_src
@@ -258,6 +250,15 @@ By default, Emacs wraps long lines, inserting a little icon to indicate this. I 
   (setq-default truncate-lines t)
 #+end_src
 
+By default, Emacs ships with a nice completion system based on buffer contents, but inexplicably cripples its functionality by setting this completion system to ignore case in inserted results. Absolutely remarkable choice of defaults here.
+
+#+begin_src emacs-lisp
+  (use-package dabbrev
+    :bind (("C-/" . #'dabbrev-completion))
+    :custom
+    (dabbrev-case-replace nil))
+#+end_src
+
 ** Visuals
 
 Emacs looks a lot better when it has a modern monospaced font and VSCode-esque icons, as well as smooth scrolling.
@@ -345,9 +346,15 @@ It's nice to have the option to center a window, given the considerable size of 
     (cwm-centered-window-width 180))
 #+end_src
 
+Compilation buffers should wrap their lines.
+
+#+begin_src emacs-lisp
+  (add-hook 'compilation-mode-hook 'visual-line-mode)
+#+end_src
+
 *** Tree-sitter
 
-As part of my day job, I hack on the [[https://tree-sitter.github.io][~tree-sitter~]] parsing toolkit. Pleasingly enough, the parsers generated by ~tree-sitter~ can be used to spruce up syntax highlighting within Emacs: for example, highlighting Python with ~emacs-tree-sitter~ will correctly highlight code inside format strings, which is really quite useful.
+As part of my day job, I hack on the [[https://tree-sitter.github.io][~tree-sitter~]] parsing toolkit. Pleasingly enough, the parsers generated by ~tree-sitter~ can be used to spruce up syntax highlighting within Emacs: for example, highlighting Python with ~emacs-tree-sitter~ will correctly highlight code inside format strings, which is really quite useful. Note that for this to work you have to add the tree-sitter ELPA server.
 
 #+begin_src emacs-lisp
   (use-package tree-sitter
@@ -370,12 +377,10 @@ The long-awaited Emacs 27 support for native tabs is shaky, both visually and in
     :config
     (centaur-tabs-mode t)
     :custom
-    (centaur-tabs-gray-out-icons 'buffer)
-    (centaur-tabs-style "rounded")
-    (centaur-tabs-height 32)
     (centaur-tabs-set-icons t)
-    (centaur-tabs-set-modified-marker t)
-    (centaur-tabs-modified-marker "●")
+    (centaur-tabs-show-new-tab-button nil)
+    (centaur-tabs-set-close-button nil)
+    (centaur-tabs-enable-ido-completion nil)
 
     :bind
     (("s-{" . #'centaur-tabs-backward)
@@ -384,18 +389,20 @@ The long-awaited Emacs 27 support for native tabs is shaky, both visually and in
 
 ** Text manipulation
 
+Being able to
+
 Any modern editor should include multiple-cursor support. Sure, keyboard macros would suffice, sometimes. Let me live. I haven't yet taken advantage of many of the ~multiple-cursors~ commands. Someday.
 
 #+begin_src emacs-lisp
   (use-package multiple-cursors
-    :bind (("C-c M m" . #'mc/edit-lines )
-           ("C-c M d" . #'mc/mark-all-dwim )))
+    :bind (("C-c C-e m" . #'mc/edit-lines)
+           ("C-c C-e d" . #'mc/mark-all-dwim)))
 #+end_src
 
 The ~fill-paragraph~ (~M-q~) command can be useful for formatting long text lines in a pleasing matter. I don't do it in every document, but when I do, I want more columns than the default *:70*.
 
 #+begin_src emacs-lisp
-  (setq fill-column 135)
+  (setq-default fill-column 135)
 #+end_src
 Textmate-style tap-to-expand-into-the-current-delimiter is very useful and curiously absent.
 
@@ -567,6 +574,14 @@ Emacs has an ~executable-prefix-env~ command that adds a magic shebang line to s
 
 #+begin_src emacs-lisp
   (setq executable-prefix-env t)
+#+end_src
+
+The new ~context-menu-mode~ in Emacs 28 makes right-click a lot more useful. But for terminal emacs, it's handy to have the menubar at hand.
+
+#+begin_src emacs-lisp
+  (when (fboundp 'context-menu-mode) (context-menu-mode))
+  (bind-key "C-c C-m" #'tmm-menubar)
+
 #+end_src
 
 ** Buffer management
@@ -834,8 +849,11 @@ I used to use Projectile, but ~marginalia-mode~ doesn't appear to work out of th
            ("C-c f" . #'project-find-file)
            ("C-c F" . #'project-switch-project))
     :custom
-    (project-switch-commands '((project-find-file "Find file") (magit-project-status "Magit" ?g)))
-
+    (project-switch-commands
+     '((project-find-file "Find file")
+       (magit-project-status "Magit" ?g)
+       (deadgrep "Grep" ?h)))
+    (compilation-always-kill t)
     )
 #+end_src
 
@@ -902,12 +920,19 @@ Dumb-jump is pretty good at figuring out where declarations of things might be. 
     :bind (("C-c J" . #'dumb-jump-go)))
 #+end_src
 
+~embark~ is a cool package for discoverability.
+
+#+begin_src emacs-lisp
+  (use-package embark :bind ("C-c E" . #'embark-act))
+#+end_src
+
 ** Flycheck
 
 Flycheck performs in-buffer highlighting of errors and warnings, and is superior on many axes to the builtin ~flymake~ mode. The only configuration it needs is to add [[https://github.com/amperser/proselint][~proselint~]] support and to disable the documentation checking in ~org-src~ buffers.
 
 #+begin_src emacs-lisp
   (use-package flycheck
+    :disabled
     :after org
     :hook
     (org-src-mode . disable-flycheck-for-elisp)
@@ -991,20 +1016,26 @@ Built-in ~xref~ and ~eldoc~ are powerful packages.
            ("s-[" . #'xref-go-back)
            ("s-]" . #'xref-go-forward)))
 
-  (use-package eldoc :bind ("s-d" . #'eldoc))
+  (use-package eldoc
+    :bind ("s-d" . #'eldoc)
+    :custom (eldoc-echo-area-prefer-doc-buffer t))
 #+end_src
 
 Though I used
 
 #+begin_src emacs-lisp
   (use-package eglot
+
     :hook ((go-mode . eglot-ensure)
            (haskell-mode . eglot-ensure)
            (rust-mode . eglot-ensure))
     :bind (:map eglot-mode-map
                 ("C-<down-mouse-1>" . #'xref-find-definitions)
                 ("C-S-<down-mouse-1>" . #'xref-find-references)
-                ("C-c C-c" . #'eglot-code-actions)))
+                ("C-c C-c" . #'eglot-code-actions))
+    :custom
+    (eglot-autoshutdown t)
+    )
 
   (use-package consult-eglot
     :bind (:map eglot-mode-map ("s-t" . #'consult-eglot-symbols)))
@@ -1136,9 +1167,6 @@ Rust is one of my favorite languages in the world.
 
 #+begin_src emacs-lisp
   (use-package rust-mode
-    :hook ((rust-mode . lsp)
-           (rust-mode . lsp-lens-mode)
-           )
     :custom
     (rust-format-on-save t)
     (lsp-rust-server 'rust-analyzer))
