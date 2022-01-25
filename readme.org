@@ -14,7 +14,7 @@ Yet I don't feel bad about publishing something this self-indulgent. Not only be
 
 [fn:3] Hello, future generations! If you're reading this, please believe me when I say that *:2020* was a truly enervating time to be a human being.
 
-* Canonical links to this document
+** Canonical links to this document
 
 The most up-to-date version of this document is located [[https://github.com/patrickt/emacs][on GitHub]]. A better-rendered version can be found [[https://blog.sumtypeofway.com/posts/emacs-config.html][on my blog]], but might not be as current as the first version.
 
