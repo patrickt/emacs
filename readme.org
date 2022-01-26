@@ -1,5 +1,3 @@
-# -*- project-vc-merge-submodules: nil; -*-
-
 This is my Emacs configuration, assembled over the course of more than ten years. I first started using Emacs in 2009 out of sheer necessity---I first learned to code using [[https://github.com/textmate/textmate][TextMate]], but that wasn't an option upon, after arriving at college, being required to SSH into some creaky Sun boxes running geologically-ancient versions of Solaris. As of this writing, it is 2020, some eleven years into my Emacs journey, and I have an incurable case of Emacs-induced brain worms; I've spent on the order of hundreds of hours tweaking and refining my configuration. This file is the result of that process.
 
 If there's anything that convinced me to take on this lifelong Emacs habit, it's because both macOS and iOS come, out of the box, with support for Emacs keybindings in their text areas. Said keybindings aren't hugely exhaustive, but they're useful, especially given that the ~Ctrl-k~ and ~Ctrl-y~ inputs for copy and paste operate on a /different/ pasteboard than do ~⌘C~ and ~⌘V~. Once I discovered that, and the dorkily exhiliating feeling of juggling information through the various system pasteboards, I was more or less entirely beholden to the Emacs way, despite the merits of modal editingr[fn:1]. But the forcing factor was, after I left Apple, arriving at a job where I had to test C code on macOS, Linux, FreeBSD, and SmartOS. The difficulty of remembering keyboard shortcuts between TextMate, Sublime Text, and Emacs was leagues beyond insupportable, and as such I took the Emacs plunge.
@@ -7,6 +5,8 @@ If there's anything that convinced me to take on this lifelong Emacs habit, it's
 This file is an [[https://en.wikipedia.org/wiki/Org-mode][Org-mode]] document, like all the posts on my blog. And if you're reading it on my blog in HTML form, it is because my blog pulls in my Emacs configuration as a submodule, and a conveniently-placed symlink means that it is treated like any other post, and its embedded code is rendered in fancy code blocks. If you're reading it on [[https://github.com/patrickt/emacs][its GitHub repository]], you'll see it rendered inline in the repository, as its filename is ~readme.org~. And at Emacs boot time, Emacs itself runs ~org-babel~, generates elisp code out of the code snippets embedded herein, and loads it; further updates to the blog entry are a ~git submodule~ command away. I feel both delight and shame in equal quantities at this state of affairs: having a really cherried-out, custom-built[fn:2] Emacs setup is one of those things that's cool because of how uncool it is, like growing giant vegetables at a county fair, or being really good at Connect Four.
 
 Yet I don't feel bad about publishing something this self-indulgent. Not only because maybe it'll demystify what the care and feeding of a very-intense Emacs setup looks like, and also because yak-shaving is an excellent way to occupy myself in quarantine [fn:3], but because I'm happier with my setup as an org-mode document, as Emacs configurations generally have a high propensity for entropy: it's easy to leave a few computer-specific hacks in some dusty corner of a config, and then, upon returning years later, having absolutely no idea what that hack does. Forcing a literate style guilts me into documenting every inch of it. In addition, I have been thanked by strangers for the quality of my config, and my coworker described it as "inspiring", which seems like sufficient justification to continue, at least with respect to my ego.
+
+This configuration assumes you're running Emacs 28, the latest version (though I live off of ~HEAD~). Note that I strongly, /strongly/ recommend using an Emacs built with native compilation enabled. The difference in speed is truly profound. Getting ~libgccjit~ and friends set up can be a bit of a bear (I use [[https://github.com/jimeh/build-emacs-for-macos][this script]] on macOS), but it's absolutely essential if you want to live in Emacs to the degree that I do.
 
 [fn:1] I've tried to reconfigure my brain to use modal editing, to little avail, but its model of a domain-specific-language for text editing is a hugely exciting one to me.
 
@@ -51,7 +51,7 @@ Don't copy this to your config! This is to work around weird bugs with JITted Em
   (setq package-check-signature nil)
 #+end_src
 
-THe most useful Emacs command is ~execute-extended-command~. It should be painless to access from the home row. (~bind-key*~ ensures that this setting is propagated through all major modes, which saves us a bunch of ~unbind-key~ calls in ~use-package~ stanzas.)
+The most useful Emacs command is ~execute-extended-command~. It should be painless to access from the home row. (~bind-key*~ ensures that this setting is propagated through all major modes, which saves us a bunch of ~unbind-key~ calls in ~use-package~ stanzas.)
 
 #+begin_src emacs-lisp
   (bind-key* "C-c ;" #'execute-extended-command)
@@ -104,6 +104,8 @@ Fixing Emacs's defaults is a nontrivial problem. We'll start with UI concerns.
    load-prefer-newer t
    ;; when I say to quit, I mean quit
    confirm-kill-processes nil
+   ;; if native-comp is having trouble, there's not very much I can do
+   native-comp-async-report-warnings-errors 'silent
    )
 
   ;; Never mix tabs and spaces. Never use tabs, period.
@@ -180,6 +182,7 @@ There are a great many keybindings that are actively hostile, in that they are b
   (unbind-key "C-x C-f") ;; find-file-read-only
   (unbind-key "C-x C-d") ;; list-directory
   (unbind-key "C-z") ;; suspend-frame
+  (unbind-key "C-x C-z") ;; again
   (unbind-key "M-o") ;; facemenu-mode
   (unbind-key "<mouse-2>") ;; pasting with mouse-wheel click
   (unbind-key "<C-wheel-down>") ;; text scale adjust
@@ -595,9 +598,9 @@ Emacs has an ~executable-prefix-env~ command that adds a magic shebang line to s
 The new ~context-menu-mode~ in Emacs 28 makes right-click a lot more useful. But for terminal emacs, it's handy to have the menubar at hand.
 
 #+begin_src emacs-lisp
-  (when (fboundp 'context-menu-mode) (context-menu-mode))
-  (bind-key "C-c C-m" #'tmm-menubar)
-
+  (when (fboundp 'context-menu-mode)
+    (context-menu-mode)
+    (bind-key "C-c C-m" #'tmm-menubar))
 #+end_src
 
 ** Buffer management
@@ -907,6 +910,7 @@ My journey through the various Emacs completion facilities has been long and twi
            ("C-x b"   . #'consult-buffer)
            ("C-c r"   . #'consult-recent-file)
            ("C-c y"   . #'pt/yank-pop)
+           ("C-c R"   . #'consult-bookmark)
            ("C-c h"   . #'consult-ripgrep)
            ("C-x C-f" . #'find-file)
            ("C-h a"   . #'consult-apropos)
