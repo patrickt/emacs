@@ -23,6 +23,7 @@ The most up-to-date version of this document is located [[https://github.com/pat
 Some TODOs:
 
 - Figure out why we keep getting a save dialog for ~/dev/null~, and ~defadvice~ our way out of this.
+- Port flycheck configuration to flymake
 - Make a popper function that gives Magit a bit more breathing room
 
 ** Preliminaries
@@ -188,6 +189,7 @@ There are a great many keybindings that are actively hostile, in that they are b
   (unbind-key "<C-wheel-down>") ;; text scale adjust
   (unbind-key "<C-wheel-up>") ;; ditto
   (unbind-key "s-n") ;; make-frame
+  (unbind-key "C-x C-q") ;; read-only-mode
 #+end_src
 
 By default, I want paste operations to indent their results. I could express this as defadvice around the yank command, but I try to avoid such measures if possible.
@@ -911,6 +913,7 @@ My journey through the various Emacs completion facilities has been long and twi
            ("C-c r"   . #'consult-recent-file)
            ("C-c y"   . #'pt/yank-pop)
            ("C-c R"   . #'consult-bookmark)
+           ("C-c `"   . #'consult-flymake)
            ("C-c h"   . #'consult-ripgrep)
            ("C-x C-f" . #'find-file)
            ("C-h a"   . #'consult-apropos)
@@ -947,33 +950,7 @@ Dumb-jump is pretty good at figuring out where declarations of things might be. 
   (use-package embark :bind ("C-c E" . #'embark-act))
 #+end_src
 
-** Flycheck
-
-Flycheck performs in-buffer highlighting of errors and warnings, and is superior on many axes to the builtin ~flymake~ mode. The only configuration it needs is to add [[https://github.com/amperser/proselint][~proselint~]] support and to disable the documentation checking in ~org-src~ buffers.
-
-#+begin_src emacs-lisp
-  (use-package flycheck
-    :disabled
-    :after org
-    :hook
-    (org-src-mode . disable-flycheck-for-elisp)
-    :custom
-    (flycheck-emacs-lisp-initialize-packages t)
-    (flycheck-display-errors-delay 0.9)
-    :config
-    (global-flycheck-mode)
-    (flycheck-set-indication-mode 'left-margin)
-
-    (defun disable-flycheck-for-elisp ()
-      (setq-local flycheck-disabled-checkers '(emacs-lisp-checkdoc)))
-
-    (add-to-list 'flycheck-checkers 'proselint)
-    (setq-default flycheck-disabled-checkers '(haskell-stack-ghc)))
-
-  (use-package flycheck-inline
-    :disabled
-    :config (global-flycheck-inline-mode))
-#+end_src
+** Flymake
 
 ** Searching
 
@@ -993,7 +970,7 @@ I remember the days before Emacs had real regular expressions. Nowadays, we have
 
 ** Autocomplete
 
-After a long journey with ~company~, I've settled on just using the builtin completion-at-point facilities for autocomplete. The UI considerations afforded by Selectrum make it even nicer than what Company offered, and consistently faster, too. Someday I want to look into a more aggressive inline autocompletion thing like VSCode supports, but I don't know
+After a long journey with ~company~, I've settled on just using the builtin completion-at-point facilities for autocomplete. The UI considerations afforded by Vertico make it even nicer than what Company offered, and consistently faster, too. Someday I want to look into a more aggressive inline autocompletion thing like VSCode supports, but I don't know
 
 #+begin_src emacs-lisp
   (bind-key "C-." #'completion-at-point)
@@ -1035,6 +1012,7 @@ Built-in ~xref~ and ~eldoc~ are powerful packages.
   (use-package xref
     :bind (("s-r" . #'xref-find-references)
            ("s-[" . #'xref-go-back)
+           ("C-<down-mouse-2>" . #'xref-go-back)
            ("s-]" . #'xref-go-forward)))
 
   (use-package eldoc
@@ -1047,11 +1025,11 @@ Though I used
 
 #+begin_src emacs-lisp
   (use-package eglot
-
     :hook ((go-mode . eglot-ensure)
            (haskell-mode . eglot-ensure)
            (rust-mode . eglot-ensure))
     :bind (:map eglot-mode-map
+                ("C-c a r" . #'eglot-rename)
                 ("C-<down-mouse-1>" . #'xref-find-definitions)
                 ("C-S-<down-mouse-1>" . #'xref-find-references)
                 ("C-c C-c" . #'eglot-code-actions))
