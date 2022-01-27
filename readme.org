@@ -46,13 +46,7 @@ Many of Emacs's defaults are ill-suited for my purposes, but the first one that 
    (setq use-package-always-ensure t)
  #+end_src
 
-Don't copy this to your config! This is to work around weird bugs with JITted Emacs.
-
-#+begin_src emacs-lisp
-  (setq package-check-signature nil)
-#+end_src
-
-The most useful Emacs command is ~execute-extended-command~. It should be painless to access from the home row. (~bind-key*~ ensures that this setting is propagated through all major modes, which saves us a bunch of ~unbind-key~ calls in ~use-package~ stanzas.)
+The most useful Emacs command is ~execute-extended-command~. It should be painless to access from the home row. (~bind-key*~ ensures that this setting is propagated through all major modes, which saves us a bunch of ~unbind-key~ calls in ~use-package~ stanzas.) Why not something even easier, like ~C-;~, you ask? Unfortunately, macOS Terminal.app swallows that keybinding and does nothing with it. I'm sure this is correct behavior by some sort of standard, but I have to work around it, since occasionally I do use Emacs in the terminal.
 
 #+begin_src emacs-lisp
   (bind-key* "C-c ;" #'execute-extended-command)
@@ -600,9 +594,9 @@ Emacs has an ~executable-prefix-env~ command that adds a magic shebang line to s
 The new ~context-menu-mode~ in Emacs 28 makes right-click a lot more useful. But for terminal emacs, it's handy to have the menubar at hand.
 
 #+begin_src emacs-lisp
-  (when (fboundp 'context-menu-mode)
-    (context-menu-mode)
-    (bind-key "C-c C-m" #'tmm-menubar))
+  (use-package mouse ;; don't know why I find this funny, but I do
+    :bind ("C-c C-m" . #'tmm-menubar)
+    :config (context-menu-mode))
 #+end_src
 
 ** Buffer management
@@ -949,8 +943,6 @@ Dumb-jump is pretty good at figuring out where declarations of things might be. 
 #+begin_src emacs-lisp
   (use-package embark :bind ("C-c E" . #'embark-act))
 #+end_src
-
-** Flymake
 
 ** Searching
 
