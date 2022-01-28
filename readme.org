@@ -130,7 +130,7 @@ Emacs 27 comes with fast current-line highlight functionality, but it can produc
   (require 'hl-line)
   (add-hook 'prog-mode-hook #'hl-line-mode)
   (add-hook 'text-mode-hook #'hl-line-mode)
-  (set-face-attribute 'hl-line nil :background "gray21")
+  ;;(set-face-attribute 'hl-line nil :background "gray21")
 #+end_src
 
 Emacs is super fond of littering filesystems with backups and autosaves, since it was built with the assumption that multiple users could be using the same Emacs instance on the same filesystem. This was valid in 1980. It is no longer the case.
@@ -163,27 +163,33 @@ By default, the list of recent files gets cluttered up with the contents of down
     (recentf-mode))
 #+end_src
 
-Emoji don't work on Emacs versions < 27 (aside from the Mitsuharu Yamamoto emacs-mac port), and for those greater than 27 we seem to need this.
+Emoji don't work on Emacs versions < 27 (aside from the Mitsuharu Yamamoto emacs-mac port). However, we can just do this.
 
 #+begin_src emacs-lisp
-  (if (version< "27.0" emacs-version)
-      (set-fontset-font "fontset-default" 'unicode "Apple Color Emoji" nil 'prepend)
-    (warn "This Emacs version is too old to properly support emoji."))
+  (set-fontset-font "fontset-default" 'unicode "Apple Color Emoji" nil 'prepend)
 #+end_src
 
-There are a great many keybindings that are actively hostile, in that they are bound to useless or obsolete functions that are really easy to trigger accidentally.
+These libraries are helpful to have around when writing little bits of elisp, like the below. You can't possibly force me to remember the difference between the ~mapcar~, ~mapc~, ~mapcan~, ~mapconcat~, and the ~cl-~ versions of some of the aforementioned. I refuse.
 
 #+begin_src emacs-lisp
-  (unbind-key "C-x C-f") ;; find-file-read-only
-  (unbind-key "C-x C-d") ;; list-directory
-  (unbind-key "C-z") ;; suspend-frame
-  (unbind-key "C-x C-z") ;; again
-  (unbind-key "M-o") ;; facemenu-mode
-  (unbind-key "<mouse-2>") ;; pasting with mouse-wheel click
-  (unbind-key "<C-wheel-down>") ;; text scale adjust
-  (unbind-key "<C-wheel-up>") ;; ditto
-  (unbind-key "s-n") ;; make-frame
-  (unbind-key "C-x C-q") ;; read-only-mode
+  (use-package s)
+  (use-package dash)
+#+end_src
+
+There are a great many keybindings that are actively hostile, in that they are bound to useless or obsolete functions that are really easy to trigger accidentally. (The lambda is because ~unbind-key~ is a macro.)
+
+#+begin_src emacs-lisp
+  (-map (lambda (x) (unbind-key x)) '("C-x C-f" ;; find-file-read-only
+                                      "C-x C-d" ;; list-directory
+                                      "C-z" ;; suspend-frame
+                                      "C-x C-z" ;; again
+                                      "M-o" ;; facemenu-mode
+                                      "<mouse-2>" ;; pasting with mouse-wheel click
+                                      "<C-wheel-down>" ;; text scale adjust
+                                      "<C-wheel-up>" ;; ditto
+                                      "s-n" ;; make-frame
+                                      "C-x C-q" ;; read-only-mode
+                                      ))
 #+end_src
 
 By default, I want paste operations to indent their results. I could express this as defadvice around the yank command, but I try to avoid such measures if possible.
@@ -304,17 +310,18 @@ Window chrome both wastes space and looks unappealing. (This is actually pasted 
     (tooltip-mode -1))
 #+end_src
 
-I use the [[https://github.com/hlissner/emacs-doom-themes][Doom Emacs themes]], which are gorgeous.
+I use the [[https://github.com/hlissner/emacs-doom-themes][Doom Emacs themes]], which are gorgeous. I sometimes also use Modus Vivendi, the excellent new theme that now ships with Emacs.
 
 #+begin_src emacs-lisp
   (use-package doom-themes
     :config
-    (let ((chosen-theme 'doom-ir-black))
+    (let ((chosen-theme 'modus-vivendi))
       (doom-themes-visual-bell-config)
       (doom-themes-org-config)
       (setq doom-challenger-deep-brighter-comments t
             doom-challenger-deep-brighter-modeline t
             doom-ir-black-brighter-comments t
+            modus-themes-org-blocks 'gray-background
             doom-dark+-blue-modeline nil)
       (load-theme chosen-theme)))
 #+end_src
@@ -346,8 +353,9 @@ I find it useful to have a slightly more apparent indicator of which buffer is a
 Highlighting the closing/opening pair associated with a given parenthesis is essential. Furthermore, parentheses should be delimited by color. I may be colorblind, but it's good enough, usually.
 
 #+begin_src emacs-lisp
-  (show-paren-mode)
-  (setq show-paren-style 'expression)
+  (use-package paren
+    :config (show-paren-mode)
+    :custom (show-paren-style 'expression))
 
   (use-package rainbow-delimiters
     :hook ((prog-mode . rainbow-delimiters-mode)))
@@ -392,7 +400,7 @@ The long-awaited Emacs 27 support for native tabs is shaky, both visually and in
     :config
     (centaur-tabs-mode t)
     :custom
-    (centaur-tabs-set-icons t)
+    (centaur-tabs-set-icons nil)
     (centaur-tabs-show-new-tab-button nil)
     (centaur-tabs-set-close-button nil)
     (centaur-tabs-enable-ido-completion nil)
@@ -578,13 +586,6 @@ When I hit, accidentally or purposefully, a key chord that forms the prefix of s
     (message "Welcome back."))
 #+end_src
 
-These libraries are helpful to have around when writing little bits of elisp.
-
-#+begin_src emacs-lisp
-  (use-package s)
-  (use-package dash)
-#+end_src
-
 Emacs has an ~executable-prefix-env~ command that adds a magic shebang line to scripts in interpreted languages. With a little cajoling, it can use ~env(1)~ instead of hardcoding the interpreter path, which is slightly more robust in certain circumstances.
 
 #+begin_src emacs-lisp
@@ -760,7 +761,7 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
 
 #+begin_src emacs-lisp
   (use-package org
-    :hook ((org-mode . visual-line-mode))
+    :hook ((org-mode . #'pt/org-mode-hook))
     :bind (("C-c o c" . counsel-org-capture)
            ("C-c o a" . org-agenda)
            :map org-mode-map
@@ -779,7 +780,9 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
     (org-agenda-files (list (concat org-directory "/agenda.org")))
 
     :config
-
+    (defun pt/org-mode-hook ()
+      (when (s-suffix? "todo.org" (buffer-file-name (current-buffer)))
+        (real-auto-save-mode)))
     (defun make-inserter (c) '(lambda () (interactive) (insert-char c)))
     (defun zero-width () (interactive) (insert "​"))
 
@@ -864,6 +867,8 @@ I used to use Projectile, but ~marginalia-mode~ doesn't appear to work out of th
            ("C-c f" . #'project-find-file)
            ("C-c F" . #'project-switch-project))
     :custom
+    ;; This is one of my favorite things: you can customize
+    ;; the options shown upon switching projects.
     (project-switch-commands
      '((project-find-file "Find file")
        (magit-project-status "Magit" ?g)
@@ -908,7 +913,11 @@ My journey through the various Emacs completion facilities has been long and twi
            ("C-c y"   . #'pt/yank-pop)
            ("C-c R"   . #'consult-bookmark)
            ("C-c `"   . #'consult-flymake)
-           ("C-c h"   . #'consult-ripgrep)
+           ;; I usually use ripgrep, but something in the package's
+           ;; internals is causing a lot of its async requests to fail.
+           ;; It also could be this bleeding-edge Emacs build. Whatever.
+           ;; Git grep is fine.
+           ("C-c h"   . #'consult-git-grep)
            ("C-x C-f" . #'find-file)
            ("C-h a"   . #'consult-apropos)
            )
@@ -1037,7 +1046,7 @@ It's really weird that none of the LSP packages, or indeed xref itself, provide 
 
 #+begin_src emacs-lisp
   (use-package backward-forward
-    :disabled ;; for now
+    :disabled ;; testing the new xref-go-back function!
     :config
     (backward-forward-mode t)
     :bind (:map backward-forward-mode-map
