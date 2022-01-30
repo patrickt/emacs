@@ -130,7 +130,6 @@ Emacs 27 comes with fast current-line highlight functionality, but it can produc
   (require 'hl-line)
   (add-hook 'prog-mode-hook #'hl-line-mode)
   (add-hook 'text-mode-hook #'hl-line-mode)
-  ;;(set-face-attribute 'hl-line nil :background "gray21")
 #+end_src
 
 Emacs is super fond of littering filesystems with backups and autosaves, since it was built with the assumption that multiple users could be using the same Emacs instance on the same filesystem. This was valid in 1980. It is no longer the case.
@@ -142,10 +141,10 @@ Emacs is super fond of littering filesystems with backups and autosaves, since i
    create-lockfiles nil)
 #+end_src
 
-By default, Emacs stores any configuration you make through its UI by writing ~custom-set-variables~ invocations to your init file, or to the file specified by ~custom-file~. Though this is convenient, it's also an excellent way to cause aggravation when the variable you keep trying to modify is being set in some ~custom-set-variables~ invocation. We can disable this by mapping it to the null device.
+By default, Emacs stores any configuration you make through its UI by writing ~custom-set-variables~ invocations to your init file, or to the file specified by ~custom-file~. Though this is convenient, it's also an excellent way to cause aggravation when the variable you keep trying to modify is being set in some ~custom-set-variables~ invocation. We can disable this by mapping it to a temporary file. (I used to map this to ~/dev/null~, but this started causing a bunch of inane save dialogues.)
 
 #+begin_src emacs-lisp
-  (setq custom-file "/tmp/custom")
+  (setq custom-file (make-temp-name "/tmp/"))
 #+end_src
 
 However, because Emacs stores theme-safety information in that file, we have to disable the warnings entirely. This is not particularly secure, but if someone has uploaded malicious code to MELPA inside a theme, I have bigger problems. (Besides, Emacs is not a secure system, and I see no need to try overmuch to make it one.)
