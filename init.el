@@ -21,6 +21,7 @@
   (package-refresh-contents)
   (package-install 'use-package))
 
+(require 'use-package)
 (require 'org-install)
 (require 'ob-tangle)
 

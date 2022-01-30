@@ -1,6 +1,6 @@
 This is my Emacs configuration, assembled over the course of more than ten years. I first started using Emacs in 2009 out of sheer necessity---I first learned to code using [[https://github.com/textmate/textmate][TextMate]], but that wasn't an option upon, after arriving at college, being required to SSH into some creaky Sun boxes running geologically-ancient versions of Solaris. As of this writing, it is 2020, some eleven years into my Emacs journey, and I have an incurable case of Emacs-induced brain worms; I've spent on the order of hundreds of hours tweaking and refining my configuration. This file is the result of that process.
 
-If there's anything that convinced me to take on this lifelong Emacs habit, it's because both macOS and iOS come, out of the box, with support for Emacs keybindings in their text areas. Said keybindings aren't hugely exhaustive, but they're useful, especially given that the ~Ctrl-k~ and ~Ctrl-y~ inputs for copy and paste operate on a /different/ pasteboard than do ~⌘C~ and ~⌘V~. Once I discovered that, and the dorkily exhiliating feeling of juggling information through the various system pasteboards, I was more or less entirely beholden to the Emacs way, despite the merits of modal editingr[fn:1]. But the forcing factor was, after I left Apple, arriving at a job where I had to test C code on macOS, Linux, FreeBSD, and SmartOS. The difficulty of remembering keyboard shortcuts between TextMate, Sublime Text, and Emacs was leagues beyond insupportable, and as such I took the Emacs plunge.
+If there's anything that convinced me to take on this lifelong Emacs habit, it's because both macOS and iOS come, out of the box, with support for Emacs keybindings in their text areas. Said keybindings aren't hugely exhaustive, but they're useful, especially given that the ~Ctrl-k~ and ~Ctrl-y~ inputs for copy and paste operate on a /different/ pasteboard than do ~⌘C~ and ~⌘V~. Once I discovered that, and the dorkily exhiliating feeling of juggling information through the various system pasteboards, I was more or less entirely beholden to the Emacs way, despite the merits of modal editing[fn:1]. But the forcing factor was, after I left Apple, arriving at a job where I had to test C code on macOS, Linux, FreeBSD, and SmartOS. The difficulty of remembering keyboard shortcuts between TextMate, Sublime Text, and Emacs was leagues beyond insupportable, and as such I took the Emacs plunge.
 
 This file is an [[https://en.wikipedia.org/wiki/Org-mode][Org-mode]] document, like all the posts on my blog. And if you're reading it on my blog in HTML form, it is because my blog pulls in my Emacs configuration as a submodule, and a conveniently-placed symlink means that it is treated like any other post, and its embedded code is rendered in fancy code blocks. If you're reading it on [[https://github.com/patrickt/emacs][its GitHub repository]], you'll see it rendered inline in the repository, as its filename is ~readme.org~. And at Emacs boot time, Emacs itself runs ~org-babel~, generates elisp code out of the code snippets embedded herein, and loads it; further updates to the blog entry are a ~git submodule~ command away. I feel both delight and shame in equal quantities at this state of affairs: having a really cherried-out, custom-built[fn:2] Emacs setup is one of those things that's cool because of how uncool it is, like growing giant vegetables at a county fair, or being really good at Connect Four.
 
@@ -145,13 +145,19 @@ Emacs is super fond of littering filesystems with backups and autosaves, since i
 By default, Emacs stores any configuration you make through its UI by writing ~custom-set-variables~ invocations to your init file, or to the file specified by ~custom-file~. Though this is convenient, it's also an excellent way to cause aggravation when the variable you keep trying to modify is being set in some ~custom-set-variables~ invocation. We can disable this by mapping it to the null device.
 
 #+begin_src emacs-lisp
-  (setq custom-file null-device)
+  (setq custom-file "/tmp/custom")
 #+end_src
 
 However, because Emacs stores theme-safety information in that file, we have to disable the warnings entirely. This is not particularly secure, but if someone has uploaded malicious code to MELPA inside a theme, I have bigger problems. (Besides, Emacs is not a secure system, and I see no need to try overmuch to make it one.)
 
 #+begin_src emacs-lisp
   (setq custom-safe-themes t)
+#+end_src
+
+Don't copy this to your config. This just prevents inexplicable failures from elpa.
+
+#+begin_src emacs-lisp
+  (setq package-check-signature nil)
 #+end_src
 
 By default, the list of recent files gets cluttered up with the contents of downloaded packages.
@@ -315,11 +321,12 @@ I use the [[https://github.com/hlissner/emacs-doom-themes][Doom Emacs themes]], 
 #+begin_src emacs-lisp
   (use-package doom-themes
     :config
-    (let ((chosen-theme 'modus-vivendi))
+    (let ((chosen-theme 'doom-rouge))
       (doom-themes-visual-bell-config)
       (doom-themes-org-config)
       (setq doom-challenger-deep-brighter-comments t
             doom-challenger-deep-brighter-modeline t
+            doom-rouge-brighter-comments t
             doom-ir-black-brighter-comments t
             modus-themes-org-blocks 'gray-background
             doom-dark+-blue-modeline nil)
@@ -334,12 +341,11 @@ Most major modes pollute the modeline, so we pull in diminish.el to quiesce them
     (diminish 'visual-line-mode))
 #+end_src
 
-The default modeline is pretty uninspiring, and nano-modeline is very minimal and pleasing.
+The default modeline is pretty uninspiring, and ~mood-line~ is very minimal and pleasing. (UPDATE: It's crashing on install for some reason.)
 
 #+begin_src emacs-lisp
-  (use-package nano-modeline
-    :config (nano-modeline-mode)
-    :custom (nano-modeline-position 'bottom))
+  (use-package mood-line
+    :config (mood-line-mode))
 #+end_src
 
 I find it useful to have a slightly more apparent indicator of which buffer is active at the moment.
@@ -573,7 +579,6 @@ When I hit, accidentally or purposefully, a key chord that forms the prefix of s
   (use-package which-key
     :diminish
     :custom
-    (which-key-setup-side-window-bottom)
     (which-key-enable-extended-define-key t)
     :config
     (which-key-mode)
@@ -595,9 +600,8 @@ Emacs has an ~executable-prefix-env~ command that adds a magic shebang line to s
 The new ~context-menu-mode~ in Emacs 28 makes right-click a lot more useful. But for terminal emacs, it's handy to have the menubar at hand.
 
 #+begin_src emacs-lisp
-  (use-package mouse ;; don't know why I find this funny, but I do
-    :bind ("C-c C-m" . #'tmm-menubar)
-    :config (context-menu-mode))
+(context-menu-mode)
+(bind-key "C-c C-m" #'tmm-menubar)
 #+end_src
 
 ** Buffer management
@@ -677,18 +681,7 @@ Normally I bind ~other-window~ to ~C-c ,~, but on my ultra-wide-screen monitor, 
     ;; Show the window designators in the modeline.
     (ace-window-display-mode)
 
-    (defun pt/ace-window (args)
-      "As ace-window, but hiding the cursor while the action is active."
-      (interactive "P")
-      (if (= (length (window-list)) 2)
-          (other-window 1)
-        (let
-            ((cursor-type nil)
-             (cursor-in-non-selected-window nil))
-          (ace-window args))))
-
-
-    :bind* (("C-<" . other-window) ("C-," . pt/ace-window))
+    :bind* (("C-<" . other-window) ("C-," . ace-window))
     :custom
     (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l) "Designate windows by home row keys, not numbers.")
     (aw-background nil))
@@ -723,20 +716,7 @@ One of the main problems with Emacs is how many ephemeral buffers it creates. I'
     :config
     (popper-mode +1)
     (popper-echo-mode +1)
-
-    ;; (defun pt/popper-window-height (win)
-    ;;   (let (
-    ;;         (base (popper--fit-window-height win))
-    ;;         (special-case
-    ;;          (cl-ecase (buffer-name (window-buffer win))
-    ;;            ))
-    ;;         )
-    ;;     (or special-case base))
-    ;;   (popper--fit-window-height win))
-
     :custom
-    ;; (popper-window-height #'pt/popper-window-height)
-    (compilation-scroll-output 'first-error)
     (popper-reference-buffers '("\\*Messages\\*"
                                 "Output\\*$"
                                 "\\*Async Shell Command\\*"
@@ -761,7 +741,7 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
 
 #+begin_src emacs-lisp
   (use-package org
-    :hook ((org-mode . #'pt/org-mode-hook))
+    :hook (org-mode . visual-line-mode)
     :bind (("C-c o c" . counsel-org-capture)
            ("C-c o a" . org-agenda)
            :map org-mode-map
@@ -811,10 +791,10 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
 
 * Keymacs support
 
-I recently acquired a [[https://keymacs.com][Keymacs A620N]], a reproduction of the [[https://deskthority.net/wiki/Symbolics_365407][Symbolics 365407]], from 1983. Though it's expensive, it's unquestionably the nicest keyboard I've ever used, given its vintage ALPS switches; of the keyboards I've used, only the keyboard.io comes close. However, since the keyboard is simply massive, we need to unbind some of the function keys, as I keep hitting them.
+I recently acquired a [[https://keymacs.com][Keymacs A620N]], a reproduction of the [[https://deskthority.net/wiki/Symbolics_365407][Symbolics 365407]], from 1983. Though it's expensive, it's unquestionably the nicest keyboard I've ever used, given its vintage ALPS switches; of the keyboards I've used, only the keyboard.io comes close. It's big enough that it has a preposterous amount of function keys.
 
 #+begin_src emacs-lisp
-  (bind-key "<f1>" #'other-window)
+  (bind-key "<f12>" #'other-window)
 #+end_src
 
 * IDE features
@@ -832,7 +812,7 @@ Magit is one of the top three reasons anyone should use Emacs. What a brilliant 
     :config
     (add-to-list 'magit-no-confirm 'stage-all-changes))
 
-  (use-package libgit)
+  (use-package libgit :after magit)
 
   (use-package magit-libgit
     :after (magit libgit))
@@ -852,15 +832,16 @@ Magit also allows integration with GitHub and other such forges (though I hate t
 The code-review package allows for integration with pull request comments and such.
 
 #+begin_src emacs-lisp
-  (use-package code-review)
+  (use-package code-review :after magit)
 #+end_src
 
 ** Project navigation
 
-I used to use Projectile, but ~marginalia-mode~ doesn't appear to work out of the box with it. Besides, there's no reason to pull in a separate package when the builtin ~project.el~ works fine.
+I used to use Projectile, but ~marginalia-mode~ doesn't appear to work out of the box with it. Besides, there's no reason to pull in a separate package when the builtin ~project.el~ works fine. We pin it to GNU ELPA to pull the latest version.
 
 #+begin_src emacs-lisp
   (use-package project
+    :pin gnu
     :bind (("C-c k" . #'project-kill-buffers)
            ("C-c m" . #'project-compile)
            ("C-x f" . #'find-file)
@@ -994,7 +975,7 @@ In Haskell, my language of choice, I rarely need a step-through debugger, as des
     ;; NB: dap-go-setup appears to be broken, so you have to download the extension from GH, rename its file extension
     ;; unzip it, and copy it into the config so that the following path lines up
     (setq dap-go-debug-program '("node" "/Users/patrickt/.config/emacs/.extension/vscode/golang.go/extension/dist/debugAdapter.js"))
-    (defun turn-on-debugger ()
+    (defun pt/turn-on-debugger ()
       (interactive)
       (dap-mode)
       (dap-auto-configure-mode)
@@ -1006,23 +987,24 @@ In Haskell, my language of choice, I rarely need a step-through debugger, as des
 
 ** LSP
 
-Built-in ~xref~ and ~eldoc~ are powerful packages.
+Built-in ~xref~ and ~eldoc~ are powerful packages, though we pin them to GNU ELPA to pull in the latest versions.
 
 #+begin_src emacs-lisp
-  ;; TODO figure out how to warn given old xref/project
   (use-package xref
+    :pin gnu
     :bind (("s-r" . #'xref-find-references)
            ("s-[" . #'xref-go-back)
            ("C-<down-mouse-2>" . #'xref-go-back)
            ("s-]" . #'xref-go-forward)))
 
   (use-package eldoc
+    :pin gnu
     :diminish
     :bind ("s-d" . #'eldoc)
     :custom (eldoc-echo-area-prefer-doc-buffer t))
 #+end_src
 
-Though I used
+Though I used ~lsp-mode~ for ages, in my old age I've grown happier with packages that try to do less, as they are in almost all cases faster and more reliable. ~eglot~ is such a mode.
 
 #+begin_src emacs-lisp
   (use-package eglot
@@ -1040,22 +1022,6 @@ Though I used
 
   (use-package consult-eglot
     :bind (:map eglot-mode-map ("s-t" . #'consult-eglot-symbols)))
-#+end_src
-
-It's really weird that none of the LSP packages, or indeed xref itself, provide easy navigation forwards and backwards when jumping between definitions. This package appears to do the trick though.
-
-#+begin_src emacs-lisp
-  (use-package backward-forward
-    :disabled ;; testing the new xref-go-back function!
-    :config
-    (backward-forward-mode t)
-    :bind (:map backward-forward-mode-map
-                ("<C-left>" . nil)
-                ("<C-right>" . nil)
-                ("s-[" . backward-forward-previous-location)
-                ("s-]" . backward-forward-next-location)
-                )
-    )
 #+end_src
 
 * Haskell
@@ -1168,6 +1134,7 @@ Rust is one of my favorite languages in the world.
 
 #+begin_src emacs-lisp
   (use-package rust-mode
+    :defer t
     :custom
     (rust-format-on-save t)
     (lsp-rust-server 'rust-analyzer))
@@ -1177,10 +1144,11 @@ I occasionally write Go, generally as a glue language to munge things together. 
 
  #+begin_src emacs-lisp
    (use-package go-mode
+     :defer t
      :config
      (add-hook 'before-save-hook #'gofmt-before-save))
 
-   (use-package go-snippets)
+   (use-package go-snippets :defer t)
 
    (defun fix-messed-up-gofmt-path ()
      (interactive)
@@ -1209,29 +1177,30 @@ I don't write a lot of Python, but when I do I like to use the extremely opinion
 Some other miscellaneous languages that I don't write often but for which I need syntax highlighting, at least.
 
 #+begin_src emacs-lisp
-  (use-package typescript-mode)
-  (use-package csharp-mode)
+  (use-package typescript-mode :defer t)
+  (use-package csharp-mode :defer t)
   (setq-default js-indent-level 2)
 #+end_src
 
 I'm trying to learn APL, because I've lost control of my life.
 
 #+begin_src emacs-lisp
-  (use-package dyalog-mode)
+  (use-package dyalog-mode :defer t)
 #+end_src
 
 *** Configuration
 
  #+begin_src emacs-lisp
-   (use-package yaml-mode)
-   (use-package dockerfile-mode)
-   (use-package toml-mode)
+   (use-package yaml-mode :defer t)
+   (use-package dockerfile-mode :defer t)
+   (use-package toml-mode :defer t)
  #+end_src
 
 I use Bazel for some Haskell projects.
 
 #+begin_src emacs-lisp
   (use-package bazel
+    :defer t
     :config
     (add-hook 'bazel-mode-hook (lambda () (add-hook 'before-save-hook #'bazel-mode-buildifier nil t)))
     )
@@ -1240,7 +1209,7 @@ I use Bazel for some Haskell projects.
 *** Interchange
 
  #+begin_src emacs-lisp
- (use-package protobuf-mode)
+ (use-package protobuf-mode :defer t)
  #+end_src
 
 *** Markup
@@ -1264,7 +1233,7 @@ Occasionally I need to edit Rails .erb templates, God help me.
 I usually use curly quotes when writing in markup languages, which ~typo-mode~ makes easy.
 
 #+begin_src emacs-lisp
-  (use-package typo)
+  (use-package typo :defer t)
 #+end_src
 
 *** Shell
@@ -1272,7 +1241,7 @@ I usually use curly quotes when writing in markup languages, which ~typo-mode~ m
 ~fish~ is the only shell that doesn't make me want to defenestrate. The only time I use anything else is when I have to use TRAMP to connect to a codespace, in which case I need to use zsh, as ~fish~ is not POSIX-compliant.
 
  #+begin_src emacs-lisp
-   (use-package fish-mode)
+   (use-package fish-mode :defer t)
  #+end_src
 
 * Miscellany
