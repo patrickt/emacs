@@ -18,13 +18,11 @@ This configuration assumes you're running Emacs 28, the latest version (though I
 
 The most up-to-date version of this document is located [[https://github.com/patrickt/emacs][on GitHub]]. A better-rendered version can be found [[https://blog.sumtypeofway.com/posts/emacs-config.html][on my blog]], but might not be as current as the first version.
 
-* Configuration: start!
+** TODOs
 
-Some TODOs:
-
-- Figure out why we keep getting a save dialog for ~/dev/null~, and ~defadvice~ our way out of this.
-- Port flycheck configuration to flymake
 - Make a popper function that gives Magit a bit more breathing room
+
+* Configuration: start!
 
 ** Preliminaries
 
@@ -101,6 +99,8 @@ Fixing Emacs's defaults is a nontrivial problem. We'll start with UI concerns.
    confirm-kill-processes nil
    ;; if native-comp is having trouble, there's not very much I can do
    native-comp-async-report-warnings-errors 'silent
+   ;; unicode ellipses are better
+   truncate-string-ellipsis "…"
    )
 
   ;; Never mix tabs and spaces. Never use tabs, period.
@@ -165,6 +165,7 @@ By default, the list of recent files gets cluttered up with the contents of down
   (use-package recentf
     :config
     (add-to-list 'recentf-exclude "\\elpa")
+    (add-to-list 'recentf-exclude "private/tmp")
     (recentf-mode))
 #+end_src
 
@@ -458,7 +459,7 @@ Emacs's keybinding for ~comment-dwim~ is ~M-;~, which is not convenient to type 
 ~iedit~ gives us the very popular idiom of automatically deploying multiple cursors to edit all occurrences of a particular word.
 
 #+begin_src emacs-lisp
-  (use-package iedit)
+  (use-package iedit :defer t)
 #+end_src
 
 Parenthesis matching is one of the flaws in my Emacs setup as of this writing. I know that there are a lot of options out there---~paredit~, ~smartparens~, etc.---but I haven't sat down and really capital-L Learned a better solution than the TextMate-style bracket completion (which Emacs calls, somewhat fancifully, 'electric').
@@ -479,7 +480,7 @@ I got used to a number of convenient TextMate-style commands.
   (bind-key "s-<return>" #'pt/eol-then-newline)
 #+end_src
 
-It's occasionally useful to be able to search a Unicode character by name.
+It's occasionally useful to be able to search a Unicode character by name. And it's a measure of Emacs's performance, when using native-comp and Vertico, that you can search the entire Unicode character space without any keystroke latency.
 
 #+begin_src emacs-lisp
   (bind-key "C-c U" #'insert-char)
@@ -831,7 +832,11 @@ Magit also allows integration with GitHub and other such forges (though I hate t
 The code-review package allows for integration with pull request comments and such.
 
 #+begin_src emacs-lisp
-  (use-package code-review :after magit)
+  (use-package code-review
+    :after magit
+    :bind (:map forge-topic-mode-map ("C-c r" . #'code-review-forge-pr-at-point))
+    :bind (:map code-review-mode-map (("C-c n" . #'code-review-comment-jump-next)
+                                      ("C-c p" . #'code-review-comment-jump-previous))))
 #+end_src
 
 ** Project navigation
@@ -893,11 +898,7 @@ My journey through the various Emacs completion facilities has been long and twi
            ("C-c y"   . #'pt/yank-pop)
            ("C-c R"   . #'consult-bookmark)
            ("C-c `"   . #'consult-flymake)
-           ;; I usually use ripgrep, but something in the package's
-           ;; internals is causing a lot of its async requests to fail.
-           ;; It also could be this bleeding-edge Emacs build. Whatever.
-           ;; Git grep is fine.
-           ("C-c h"   . #'consult-git-grep)
+           ("C-c h"   . #'consult-ripgrep)
            ("C-x C-f" . #'find-file)
            ("C-h a"   . #'consult-apropos)
            )
@@ -905,6 +906,7 @@ My journey through the various Emacs completion facilities has been long and twi
     (completion-in-region-function #'consult-completion-in-region)
     (xref-show-xrefs-function #'consult-xref)
     (xref-show-definitions-function #'consult-xref)
+    (consult-project-root-function #'deadgrep--project-root) ;; ensure ripgrep works
     )
 
   (use-package marginalia
@@ -1119,7 +1121,7 @@ I grew up writing in TextMate, so I got extremely used to text-expansion snippet
 
 #+begin_src emacs-lisp
   (use-package yasnippet
-    :defer 3 ;; takes a while to load, so do it async
+    :defer 15 ;; takes a while to load, so do it async
     :diminish yas-minor-mode
     :config (yas-global-mode)
     :custom (yas-prompt-functions '(yas-completing-prompt)))
