@@ -101,6 +101,10 @@ Fixing Emacs's defaults is a nontrivial problem. We'll start with UI concerns.
    native-comp-async-report-warnings-errors 'silent
    ;; unicode ellipses are better
    truncate-string-ellipsis "…"
+   ;; I want to close these fast, so switch to it so I can just hit 'q'
+   help-window-select t
+   ;; this certainly can't hurt anything
+   delete-by-moving-to-trash t
    )
 
   ;; Never mix tabs and spaces. Never use tabs, period.
@@ -175,7 +179,7 @@ Emoji don't work on Emacs versions < 27 (aside from the Mitsuharu Yamamoto emacs
   (set-fontset-font "fontset-default" 'unicode "Apple Color Emoji" nil 'prepend)
 #+end_src
 
-These libraries are helpful to have around when writing little bits of elisp, like the below. You can't possibly force me to remember the difference between the ~mapcar~, ~mapc~, ~mapcan~, ~mapconcat~, and the ~cl-~ versions of some of the aforementioned. I refuse.
+These libraries are helpful to have around when writing little bits of elisp, like the below. You can't possibly force me to remember the difference between the ~mapcar~, ~mapc~, ~mapcan~, ~mapconcat~, the ~cl-~ versions of some of the aforementioned, and ~seq-concatenate~. I refuse.
 
 #+begin_src emacs-lisp
   (use-package s)
@@ -211,7 +215,6 @@ By default, I want paste operations to indent their results. I could express thi
 
   (bind-key "C-y" #'pt/yank)
   (bind-key "s-v" #'pt/yank)
-  (bind-key "C-Y" #'yank)
 #+end_src
 
 Searching should be done with isearch, for UI purposes.
@@ -361,7 +364,7 @@ Highlighting the closing/opening pair associated with a given parenthesis is ess
 #+begin_src emacs-lisp
   (use-package paren
     :config (show-paren-mode)
-    :custom (show-paren-style 'expression))
+    :custom (show-paren-style 'parenthesis))
 
   (use-package rainbow-delimiters
     :hook ((prog-mode . rainbow-delimiters-mode)))
@@ -462,10 +465,17 @@ Emacs's keybinding for ~comment-dwim~ is ~M-;~, which is not convenient to type 
   (use-package iedit :defer t)
 #+end_src
 
-Parenthesis matching is one of the flaws in my Emacs setup as of this writing. I know that there are a lot of options out there---~paredit~, ~smartparens~, etc.---but I haven't sat down and really capital-L Learned a better solution than the TextMate-style bracket completion (which Emacs calls, somewhat fancifully, 'electric').
+I'm trying to learn how to take advantage of ~smartparens~, but it already provides a better editing experience.
 
 #+begin_src emacs-lisp
-  (electric-pair-mode)
+  (use-package smartparens
+    :bind (("C-(" . #'sp-backward-sexp)
+           ("C-)" . #'sp-forward-sexp)
+           ("C-c C-(" . #'sp-up-sexp)
+           ("C-c C-)" . #'sp-down-sexp))
+    :config
+    (require 'smartparens-config)
+    (smartparens-global-mode))
 #+end_src
 
 I got used to a number of convenient TextMate-style commands.
@@ -538,7 +548,8 @@ By default, Emacs uses a new buffer for every directory you visit in dired. This
 
   (add-hook 'dired-mode-hook #'my-dired-mode-hook)
 
-  (setq dired-use-ls-dired nil)
+  (setq dired-use-ls-dired nil
+        dired-create-destination-dirs 'ask)
 #+end_src
 
 Emacs has problems with very long lines. ~so-long~ detects them and takes appropriate action. Good for minified code and whatnot.
@@ -822,7 +833,10 @@ Magit also allows integration with GitHub and other such forges (though I hate t
 
 #+begin_src emacs-lisp
   (use-package forge
-    :after magit)
+    :after magit
+    :custom
+    (forge-pull-notifications t)
+    )
 
   ;; hack to eliminate weirdness
   (unless (boundp 'bug-reference-auto-setup-functions)
