@@ -341,7 +341,7 @@ Most major modes pollute the modeline, so we pull in diminish.el to quiesce them
     (diminish 'visual-line-mode))
 #+end_src
 
-The default modeline is pretty uninspiring, and ~mood-line~ is very minimal and pleasing. (UPDATE: It's crashing on install for some reason.)
+The default modeline is pretty uninspiring, and ~mood-line~ is very minimal and pleasing.
 
 #+begin_src emacs-lisp
   (use-package mood-line
