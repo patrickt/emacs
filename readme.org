@@ -163,13 +163,23 @@ Don't copy this to your config. This just prevents inexplicable failures from el
   (setq package-check-signature nil)
 #+end_src
 
+These libraries are helpful to have around when writing little bits of elisp, like the below. You can't possibly force me to remember the difference between the ~mapcar~, ~mapc~, ~mapcan~, ~mapconcat~, the ~cl-~ versions of some of the aforementioned, and ~seq-concatenate~. I refuse. ~shut-up~ is good for noisy packages.
+
+#+begin_src emacs-lisp
+  (use-package s)
+  (use-package dash)
+  (use-package shut-up)
+#+end_src
+
 By default, the list of recent files gets cluttered up with the contents of downloaded packages.
 
 #+begin_src emacs-lisp
   (use-package recentf
     :config
-    (add-to-list 'recentf-exclude "\\elpa")
-    (add-to-list 'recentf-exclude "private/tmp")
+    (setq recentf-exclude (-concat recentf-exclude '("\\elpa"
+                                                     "private/tmp" ; to avoid custom files
+                                                     "txt/roam"
+                                                     )))
     (recentf-mode))
 #+end_src
 
@@ -177,13 +187,6 @@ Emoji don't work on Emacs versions < 27 (aside from the Mitsuharu Yamamoto emacs
 
 #+begin_src emacs-lisp
   (set-fontset-font "fontset-default" 'unicode "Apple Color Emoji" nil 'prepend)
-#+end_src
-
-These libraries are helpful to have around when writing little bits of elisp, like the below. You can't possibly force me to remember the difference between the ~mapcar~, ~mapc~, ~mapcan~, ~mapconcat~, the ~cl-~ versions of some of the aforementioned, and ~seq-concatenate~. I refuse.
-
-#+begin_src emacs-lisp
-  (use-package s)
-  (use-package dash)
 #+end_src
 
 There are a great many keybindings that are actively hostile, in that they are bound to useless or obsolete functions that are really easy to trigger accidentally. (The lambda is because ~unbind-key~ is a macro.)
@@ -198,6 +201,8 @@ There are a great many keybindings that are actively hostile, in that they are b
                                       "<C-wheel-down>" ;; text scale adjust
                                       "<C-wheel-up>" ;; ditto
                                       "s-n" ;; make-frame
+                                      "s-t" ;; ns-popup-font-panel
+                                      "s-p" ;; ns-print-buffer
                                       "C-x C-q" ;; read-only-mode
                                       ))
 #+end_src
@@ -362,10 +367,6 @@ I find it useful to have a slightly more apparent indicator of which buffer is a
 Highlighting the closing/opening pair associated with a given parenthesis is essential. Furthermore, parentheses should be delimited by color. I may be colorblind, but it's good enough, usually.
 
 #+begin_src emacs-lisp
-  (use-package paren
-    :config (show-paren-mode)
-    :custom (show-paren-style 'parenthesis))
-
   (use-package rainbow-delimiters
     :hook ((prog-mode . rainbow-delimiters-mode)))
 #+end_src
@@ -394,10 +395,11 @@ As part of my day job, I hack on the [[https://tree-sitter.github.io][~tree-sitt
            (js-mode . tree-sitter-hl-mode)
            (rust-mode . tree-sitter-hl-mode)
            (sh-mode . tree-sitter-hl-mode)
+           (python-mode . tree-sitter-hl-mode)
            (c-mode . tree-sitter-hl-mode)
            (typescript-mode . tree-sitter-hl-mode)
            (go-mode . tree-sitter-hl-mode)))
-  (use-package tree-sitter-langs)
+  (shut-up (use-package tree-sitter-langs))
 #+end_src
 
 *** Tabs
@@ -453,16 +455,17 @@ Emacs's keybinding for ~comment-dwim~ is ~M-;~, which is not convenient to type 
 
 #+begin_src emacs-lisp
   (use-package avy
-    :bind (:map prog-mode-map ("C-'" . avy-goto-line))
-    :bind (:map org-mode-map ("C-'" . avy-goto-line))
-    :bind (("C-c l" . avy-goto-line)
-           ("C-c j" . avy-goto-char)))
+    :bind (:map prog-mode-map ("C-'" . #'avy-goto-line))
+    :bind (:map org-mode-map ("C-'" . #'avy-goto-line))
+    :bind (("C-c l" . #'avy-goto-line)
+           ("C-c j" . #'avy-goto-char)
+           ("C-c v" . #'avy-goto-word-1)))
 #+end_src
 
 ~iedit~ gives us the very popular idiom of automatically deploying multiple cursors to edit all occurrences of a particular word.
 
 #+begin_src emacs-lisp
-  (use-package iedit :defer t)
+  (shut-up (use-package iedit :bind ("C-;" . #'iedit-mode)))
 #+end_src
 
 I'm trying to learn how to take advantage of ~smartparens~, but it already provides a better editing experience.
@@ -475,7 +478,10 @@ I'm trying to learn how to take advantage of ~smartparens~, but it already provi
            ("C-c C-)" . #'sp-down-sexp))
     :config
     (require 'smartparens-config)
-    (smartparens-global-mode))
+    (setq sp-show-pair-delay 0
+          sp-show-pair-from-inside t)
+    (smartparens-global-mode)
+    (show-smartparens-global-mode t))
 #+end_src
 
 I got used to a number of convenient TextMate-style commands.
@@ -558,12 +564,6 @@ Emacs has problems with very long lines. ~so-long~ detects them and takes approp
   (global-so-long-mode)
 #+end_src
 
-I've never needed a font panel in Emacs, not even once.
-
-#+begin_src emacs-lisp
-  (unbind-key "s-t")
-#+end_src
-
 It's genuinely shocking that there's no "duplicate whatever's marked" command built-in.
 
 #+begin_src emacs-lisp
@@ -593,7 +593,7 @@ When I hit, accidentally or purposefully, a key chord that forms the prefix of s
     (which-key-enable-extended-define-key t)
     :config
     (which-key-mode)
-    (which-key-setup-minibuffer))
+    (which-key-setup-side-window-right))
 #+end_src
 
 #+begin_src emacs-lisp
@@ -737,6 +737,7 @@ One of the main problems with Emacs is how many ephemeral buffers it creates. I'
                                 "\\*deadgrep.\*"
                                 "\\*eldoc.\*"
                                 "\\*xref\\*"
+                                "\\*org-roam\\*"
                                 "\\*direnv\\*"
                                 "\\*Warnings\\*"
                                 "\\*Bookmark List\\*"
@@ -753,8 +754,9 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
 #+begin_src emacs-lisp
   (use-package org
     :hook (org-mode . visual-line-mode)
-    :bind (("C-c o c" . counsel-org-capture)
+    :bind (("C-c o c" . org-capture)
            ("C-c o a" . org-agenda)
+           ("C-c o A" . consult-org-agenda)
            :map org-mode-map
            ("M-<left>" . nil)
            ("M-<right>" . nil)
@@ -768,7 +770,7 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
     (org-return-follows-link t)
     (org-src-ask-before-returning-to-edit-buffer nil "org-src is kinda needy out of the box")
     (org-src-window-setup 'current-window)
-    (org-agenda-files (list (concat org-directory "/agenda.org")))
+    (org-agenda-files (list (concat org-directory "/todo.org")))
 
     :config
     (defun pt/org-mode-hook ()
@@ -791,13 +793,20 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
 
   (use-package org-roam
     :bind
-    (("C-c o r" . org-roam-capture)
-     ("C-c o f" . org-roam-node-find))
+    (("C-c o r" . #'org-roam-capture)
+     ("C-c o f" . #'org-roam-node-find)
+     ("C-c o t" . #'org-roam-tag-add)
+     ("C-c o i" . #'org-roam-node-insert)
+     ("C-c o :" . #'org-roam-buffer-toggle))
     :custom
     (org-roam-directory (expand-file-name "~/Dropbox/txt/roam"))
     (org-roam-v2-ack t)
     :config
     (org-roam-db-autosync-mode))
+
+  (use-package org-alert
+    :config (org-alert-enable)
+    :custom (alert-default-style 'osx-notifier))
 #+end_src
 
 * Keymacs support
@@ -821,6 +830,8 @@ Magit is one of the top three reasons anyone should use Emacs. What a brilliant 
     :custom
     (magit-repository-directories '(("~/src" . 1)))
     :config
+    (defun pt/commit-hook () (set-fill-column 80))
+    (add-hook 'git-commit-setup-hook #'pt/commit-hook)
     (add-to-list 'magit-no-confirm 'stage-all-changes))
 
   (use-package libgit :after magit)
@@ -833,10 +844,7 @@ Magit also allows integration with GitHub and other such forges (though I hate t
 
 #+begin_src emacs-lisp
   (use-package forge
-    :after magit
-    :custom
-    (forge-pull-notifications t)
-    )
+    :after magit)
 
   ;; hack to eliminate weirdness
   (unless (boundp 'bug-reference-auto-setup-functions)
@@ -936,11 +944,15 @@ My journey through the various Emacs completion facilities has been long and twi
     :config (prescient-persist-mode))
 #+end_src
 
-Dumb-jump is pretty good at figuring out where declarations of things might be. I'm using it with C because I'm too lazy to set up true C LSP integration.
+Dumb-jump is pretty good at figuring out where declarations of things might be. I'm using it with C because I'm too lazy to set up true C LSP integration. It complains about being deprecated and recommends ~xref~ instead, which is all well and good except I don't want to bother with creating ~etags~ tables for projects. So we pull in the ~shut-up~ package to quiesce those warnings.
 
 #+begin_src emacs-lisp
   (use-package dumb-jump
-    :bind (("C-c J" . #'dumb-jump-go)))
+    :config
+    (defun pt/quietly-dumb-jump ()
+      (interactive)
+      (shut-up (call-interactively 'dumb-jump-go)))
+    :bind (("C-c J" . #'pt/quietly-dumb-jump)))
 #+end_src
 
 ~embark~ is a cool package for discoverability.
@@ -1008,8 +1020,10 @@ Built-in ~xref~ and ~eldoc~ are powerful packages, though we pin them to GNU ELP
   (use-package xref
     :pin gnu
     :bind (("s-r" . #'xref-find-references)
-           ("s-[" . #'xref-go-back)
+           ("C-<down-mouse-1>" . #'xref-find-definitions)
+           ("C-S-<down-mouse-1>" . #'xref-find-references)
            ("C-<down-mouse-2>" . #'xref-go-back)
+           ("s-[" . #'xref-go-back)
            ("s-]" . #'xref-go-forward)))
 
   (use-package eldoc
@@ -1019,7 +1033,7 @@ Built-in ~xref~ and ~eldoc~ are powerful packages, though we pin them to GNU ELP
     :custom (eldoc-echo-area-prefer-doc-buffer t))
 #+end_src
 
-Though I used ~lsp-mode~ for ages, in my old age I've grown happier with packages that try to do less, as they are in almost all cases faster and more reliable. ~eglot~ is such a mode.
+Though I used ~lsp-mode~ for ages, in my old age I've grown happier with packages that try to do less, as they are in almost all cases faster and more reliable. ~eglot~ is such a mode. I add a few mouse-related keybindings in its mode map.
 
 #+begin_src emacs-lisp
   (use-package eglot
@@ -1027,9 +1041,9 @@ Though I used ~lsp-mode~ for ages, in my old age I've grown happier with package
            (haskell-mode . eglot-ensure)
            (rust-mode . eglot-ensure))
     :bind (:map eglot-mode-map
-                ("C-c a r" . #'eglot-rename)
                 ("C-<down-mouse-1>" . #'xref-find-definitions)
                 ("C-S-<down-mouse-1>" . #'xref-find-references)
+                ("C-c a r" . #'eglot-rename)
                 ("C-c C-c" . #'eglot-code-actions))
     :custom
     (eglot-autoshutdown t)
@@ -1112,6 +1126,7 @@ A thing I want to do someday is to write a framework for sending things like com
            ("C-\\" . #'popper-cycle)
            ("s-t" . #'vterm) ; Open up new tabs quickly
            ("s-v" . #'vterm-yank)
+           ("C-y" . #'vterm-yank)
            ))
 #+end_src
 
@@ -1169,9 +1184,12 @@ I occasionally write Go, generally as a glue language to munge things together. 
      (interactive)
      (setq gofmt-command (string-trim (shell-command-to-string "which gofmt"))))
 
+   ;; Note to self: there's a really helpful set of movement commands
+   ;; under C-c C-f in go mode.
    (use-package gotest
      :bind (:map go-mode-map
-                 ("C-c a t" . #'go-test-current-test)))
+                 ("C-c a t" . #'go-test-current-test)
+                 ("C-c a i" . #'go-import-add)))
  #+end_src
 
 Elm is a good language.
@@ -1283,25 +1301,25 @@ TRAMP mode is excellent for editing files on a remote machine or Docker containe
         tramp-verbose 1
         tramp-default-remote-shell "/bin/bash"
         tramp-connection-local-default-shell-variables
-          '((shell-file-name . "/bin/bash")
-            (shell-command-switch . "-c")))
+        '((shell-file-name . "/bin/bash")
+          (shell-command-switch . "-c")))
 
   (connection-local-set-profile-variables 'tramp-connection-local-default-shell-profile
-    '((shell-file-name . "/bin/bash")
-     (shell-command-switch . "-c")))
+                                          '((shell-file-name . "/bin/bash")
+                                            (shell-command-switch . "-c")))
 
-  (lsp-register-client
-   (make-lsp-client :new-connection (lsp-stdio-connection "gopls")
-                    :major-modes '(go-mode go-dot-mod-mode)
-                    :language-id "go"
-                    :remote? t
-                    :priority 0
-                    :server-id 'gopls-remote
-                    :completion-in-comments? t
-                    :library-folders-fn #'lsp-go--library-default-directories
-                    :after-open-fn (lambda ()
-                                     ;; https://github.com/golang/tools/commit/b2d8b0336
-                                     (setq-local lsp-completion-filter-on-incomplete nil))))
+  ;; (lsp-register-client
+  ;;  (make-lsp-client :new-connection (lsp-stdio-connection "gopls")
+  ;;                   :major-modes '(go-mode go-dot-mod-mode)
+  ;;                   :language-id "go"
+  ;;                   :remote? t
+  ;;                   :priority 0
+  ;;                   :server-id 'gopls-remote
+  ;;                   :completion-in-comments? t
+  ;;                   :library-folders-fn #'lsp-go--library-default-directories
+  ;;                   :after-open-fn (lambda ()
+  ;;                                    ;; https://github.com/golang/tools/commit/b2d8b0336
+  ;;                                    (setq-local lsp-completion-filter-on-incomplete nil))))
 
   ;; add gh codespaces ssh method support for tramp editing
   ;; e.g. C-x C-f /ghcs:codespace-name:/path/to/file
@@ -1315,6 +1333,12 @@ TRAMP mode is excellent for editing files on a remote machine or Docker containe
     ;; just for debugging the methods
     (if ghcs (setcdr ghcs ghcs-methods)
       (push (cons "ghcs" ghcs-methods) tramp-methods)))
+
+  (defun pt/codespace ()
+    "Connect to the default codespace. This is a host configured in my .ssh/config."
+    ;; Host github-codespaces, root/localhost,  2222, NoHostAuthenticationForLocalhost yes
+    (interactive)
+    (find-file "/ssh:github-codespaces:/workspaces"))
 #+end_src
 
 I use ~direnv~ to manage per-project environment variables. The Emacs direnv mode is quite sophisticated, automatically setting all relevant variables for you when you go in and out of a particular project.
