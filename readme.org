@@ -888,6 +888,13 @@ I used to use Projectile, but ~marginalia-mode~ doesn't appear to work out of th
     )
 #+end_src
 
+However, some projects (and here I am thinking of a certain Rails app) are too large for project.el /or/ Projectile to deal with, even with caching on. Luckily, we can use fuzzy finding via ~ripgrep~. The initial latency is a little higher, so I don't use it by default.
+
+#+begin_src emacs-lisp
+  (use-package affe
+    :bind ("C-c C-e f" . #'affe-find))
+#+end_src
+
 ** Completion and input
 
 My journey through the various Emacs completion facilities has been long and twisty. I started with Helm, then spent several years using Ivy, and am now using Vertico, with the consult and marginalia packages to yield an interface that is nicer and faster than Ivy.
@@ -900,12 +907,13 @@ My journey through the various Emacs completion facilities has been long and twi
     :custom
     (vertico-count 22)
     :bind (:map vertico-map
-                ("C-'"       . #'vertico-quick-exit)
-                ;; Have to rebind this because C-m is translated to RET.
-                ("<return>"  . #'exit-minibuffer)
-                ("C-m"       . #'vertico-insert)
-                ("C-c SPC"   . #'vertico-quick-exit)
-                ("DEL"       . #'vertico-directory-delete-char)))
+                ("C-'"           . #'vertico-quick-exit)
+                ("C-c '"         . #'vertico-quick-insert)
+                ("<return>"      . #'exit-minibuffer)
+                ("C-m"           . #'vertico-insert)
+                ("C-c SPC"       . #'vertico-quick-exit)
+                ("C-<backspace>" . #'vertico)
+                ("DEL"           . #'vertico-directory-delete-char)))
 
   (use-package consult
     :config
@@ -985,7 +993,7 @@ I remember the days before Emacs had real regular expressions. Nowadays, we have
 After a long journey with ~company~, I've settled on just using the builtin completion-at-point facilities for autocomplete. The UI considerations afforded by Vertico make it even nicer than what Company offered, and consistently faster, too. Someday I want to look into a more aggressive inline autocompletion thing like VSCode supports, but I don't know
 
 #+begin_src emacs-lisp
-  (bind-key "C-." #'completion-at-point)
+  (bind-key* "C-." #'completion-at-point)
 #+end_src
 
 ** Debugging
@@ -1049,6 +1057,7 @@ Though I used ~lsp-mode~ for ages, in my old age I've grown happier with package
                 ("C-c a r" . #'eglot-rename)
                 ("C-c C-c" . #'eglot-code-actions))
     :custom
+    (eglot-confirm-server-initiated-edits nil)
     (eglot-autoshutdown t)
     :config
     ;; Eglot doesn't correctly unescape markdown: https://github.com/joaotavora/eglot/issues/333
