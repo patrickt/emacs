@@ -163,11 +163,31 @@ Don't copy this to your config. This just prevents inexplicable failures from el
   (setq package-check-signature nil)
 #+end_src
 
-These libraries are helpful to have around when writing little bits of elisp, like the below. You can't possibly force me to remember the difference between the ~mapcar~, ~mapc~, ~mapcan~, ~mapconcat~, the ~cl-~ versions of some of the aforementioned, and ~seq-concatenate~. I refuse. ~shut-up~ is good for noisy packages.
+There are a great many keybindings that are actively hostile, in that they are bound to useless or obsolete functions that are really easy to trigger accidentally. (The lambda is because ~unbind-key~ is a macro.)
+
+#+begin_src emacs-lisp
+  (defun pt/unbind-bad-keybindings ()
+    "Remove unhelpful keybindings."
+    (-map (lambda (x) (unbind-key x)) '("C-x C-f" ;; find-file-read-only
+                                        "C-x C-d" ;; list-directory
+                                        "C-z" ;; suspend-frame
+                                        "C-x C-z" ;; again
+                                        "M-o" ;; facemenu-mode
+                                        "<mouse-2>" ;; pasting with mouse-wheel click
+                                        "<C-wheel-down>" ;; text scale adjust
+                                        "<C-wheel-up>" ;; ditto
+                                        "s-n" ;; make-frame
+                                        "s-t" ;; ns-popup-font-panel
+                                        "s-p" ;; ns-print-buffer
+                                        "C-x C-q" ;; read-only-mode
+                                        )))
+#+end_src
+
+These libraries are helpful to have around when writing little bits of elisp, like the above. You can't possibly force me to remember the difference between the ~mapcar~, ~mapc~, ~mapcan~, ~mapconcat~, the ~cl-~ versions of some of the aforementioned, and ~seq-map~. I refuse. ~shut-up~ is good for noisy packages.
 
 #+begin_src emacs-lisp
   (use-package s)
-  (use-package dash)
+  (use-package dash :config (pt/unbind-bad-keybindings))
   (use-package shut-up)
 #+end_src
 
@@ -175,6 +195,7 @@ By default, the list of recent files gets cluttered up with the contents of down
 
 #+begin_src emacs-lisp
   (use-package recentf
+    :after dash
     :config
     (setq recentf-exclude (-concat recentf-exclude '("\\elpa"
                                                      "private/tmp" ; to avoid custom files
@@ -187,24 +208,6 @@ Emoji don't work on Emacs versions < 27 (aside from the Mitsuharu Yamamoto emacs
 
 #+begin_src emacs-lisp
   (set-fontset-font "fontset-default" 'unicode "Apple Color Emoji" nil 'prepend)
-#+end_src
-
-There are a great many keybindings that are actively hostile, in that they are bound to useless or obsolete functions that are really easy to trigger accidentally. (The lambda is because ~unbind-key~ is a macro.)
-
-#+begin_src emacs-lisp
-  (-map (lambda (x) (unbind-key x)) '("C-x C-f" ;; find-file-read-only
-                                      "C-x C-d" ;; list-directory
-                                      "C-z" ;; suspend-frame
-                                      "C-x C-z" ;; again
-                                      "M-o" ;; facemenu-mode
-                                      "<mouse-2>" ;; pasting with mouse-wheel click
-                                      "<C-wheel-down>" ;; text scale adjust
-                                      "<C-wheel-up>" ;; ditto
-                                      "s-n" ;; make-frame
-                                      "s-t" ;; ns-popup-font-panel
-                                      "s-p" ;; ns-print-buffer
-                                      "C-x C-q" ;; read-only-mode
-                                      ))
 #+end_src
 
 By default, I want paste operations to indent their results. I could express this as defadvice around the yank command, but I try to avoid such measures if possible.
@@ -692,7 +695,7 @@ Normally I bind ~other-window~ to ~C-c ,~, but on my ultra-wide-screen monitor, 
     ;; Show the window designators in the modeline.
     (ace-window-display-mode)
 
-    :bind* (("C-<" . other-window) ("C-," . ace-window))
+    :bind* (("C-<" . other-window) ("C-," . ace-window) ("C-c ," . ace-window))
     :custom
     (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l) "Designate windows by home row keys, not numbers.")
     (aw-background nil))
@@ -1047,11 +1050,21 @@ Though I used ~lsp-mode~ for ages, in my old age I've grown happier with package
                 ("C-c C-c" . #'eglot-code-actions))
     :custom
     (eglot-autoshutdown t)
-    )
+    :config
+    ;; Eglot doesn't correctly unescape markdown: https://github.com/joaotavora/eglot/issues/333
+    (defun mpolden/gfm-unescape-string (string)
+      "Remove backslash-escape of punctuation characters in STRING."
+      ;; https://github.github.com/gfm/#backslash-escapes
+      (replace-regexp-in-string "[\\\\]\\([][!\"#$%&'()*+,./:;<=>?@\\^_`{|}~-]\\)" "\\1" string))
+
+    (advice-add 'eglot--format-markup :filter-return 'mpolden/gfm-unescape-string))
 
   (use-package consult-eglot
     :bind (:map eglot-mode-map ("s-t" . #'consult-eglot-symbols)))
 #+end_src
+
+#+RESULTS:
+: consult-eglot-symbols
 
 * Haskell
 
@@ -1370,5 +1383,6 @@ If you made it this far, well, may your deity of choice bless you. If you don't 
 Au revoir.
 
 #+begin_src emacs-lisp
+  (shut-up (server-start))
   (provide 'init)
 #+end_src
