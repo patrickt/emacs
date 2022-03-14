@@ -21,6 +21,7 @@ The most up-to-date version of this document is located [[https://github.com/pat
 ** TODOs
 
 - Make a popper function that gives Magit a bit more breathing room
+- Disable ~C-c g~ in org-src modes
 
 * Configuration: start!
 
@@ -111,6 +112,7 @@ Fixing Emacs's defaults is a nontrivial problem. We'll start with UI concerns.
   ;; We need the setq-default here because this becomes
   ;; a buffer-local variable when set.
   (setq-default indent-tabs-mode nil)
+(setq-default indent-tabs-mode nil)
 #+end_src
 
 It's good that Emacs supports the wide variety of file encodings it does, but UTF-8 should always, /always/ be the default.
@@ -225,11 +227,21 @@ By default, I want paste operations to indent their results. I could express thi
   (bind-key "s-v" #'pt/yank)
 #+end_src
 
+In the name of avoiding RSI, which has become a feared nemesis, I bind ~C-h~ to backwards-delete-char, as per the macOS keybindings. But this means I have to rebind the keys that I actually use for help purposes.
+
+#+begin_src emacs-lisp
+  (bind-key "C-h" #'backward-delete-char-untabify)
+  (bind-key* "C-c C-h k" #'describe-key)
+  (bind-key* "C-c C-h f" #'describe-function)
+  (bind-key* "C-c C-h m" #'describe-mode)
+  (bind-key* "C-c C-h v" #'describe-variable)
+#+end_src
+
 Searching should be done with isearch, for UI purposes.
 
 #+begin_src emacs-lisp
   (bind-key "C-s" #'isearch-forward-regexp)
-  (bind-key "C-c s" #'isearch-forward-symbol)
+(bind-key "C-c s" #'isearch-forward-symbol)
 #+end_src
 
 The out-of-the-box treatment of whitespace is unfortunate, but fixable.
@@ -237,6 +249,7 @@ The out-of-the-box treatment of whitespace is unfortunate, but fixable.
 #+begin_src emacs-lisp
   (add-hook 'before-save-hook #'delete-trailing-whitespace)
   (setq require-final-newline t)
+  (bind-key "C-c q" #'fill-paragraph)
 #+end_src
 
 Emacs instances started outside the terminal do not pick up ssh-agent information unless we use keychain-environment.
@@ -258,6 +271,7 @@ Emacs is also in love with showing you its NEWS file; it's bound to like four di
 #+begin_src emacs-lisp
   (defalias 'view-emacs-news 'ignore)
   (defalias 'describe-gnu-project 'ignore)
+  (defalias 'describe-copying 'ignore)
 #+end_src
 
 Undo has always been problematic for me in Emacs. The beauty of undo-tree is that it means that, once you've typed something into a buffer, you'll always be able to get it back. At least in theory. undo-tree has long-standing data loss bugs that are unlikely to be fixed. But no other package provides a comparable experience.
@@ -289,7 +303,7 @@ By default, Emacs ships with a nice completion system based on buffer contents, 
 
 #+begin_src emacs-lisp
   (use-package dabbrev
-    :bind (("C-/" . #'dabbrev-completion))
+    :bind* (("C-/" . #'dabbrev-completion))
     :custom
     (dabbrev-case-replace nil))
 
@@ -303,7 +317,7 @@ By default, Emacs ships with a nice completion system based on buffer contents, 
 Emacs looks a lot better when it has a modern monospaced font and VSCode-esque icons, as well as smooth scrolling.
 
 #+begin_src emacs-lisp
-  (ignore-errors (set-frame-font "JuliaMono-12"))
+  (ignore-errors (set-frame-font "Iosevka-12"))
 
   (use-package all-the-icons)
 
@@ -386,6 +400,99 @@ Compilation buffers should wrap their lines.
 
 #+begin_src emacs-lisp
   (add-hook 'compilation-mode-hook 'visual-line-mode)
+#+end_src
+
+URLs should be highlighted and linkified.
+
+#+begin_src emacs-lisp
+  (global-goto-address-mode)
+#+end_src
+
+~svg-tag-mode~ provides very fetching SVG icons for ~TODO~ items and the like.
+
+#+begin_src emacs-lisp
+  (use-package svg-tag-mode
+     :config
+     (defconst date-re "[0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}")
+     (defconst time-re "[0-9]\\{2\\}:[0-9]\\{2\\}")
+     (defconst day-re "[A-Za-z]\\{3\\}")
+
+     (defun svg-progress-percent (value)
+       (svg-image (svg-lib-concat
+                   (svg-lib-progress-bar (/ (string-to-number value) 100.0)
+                                         nil :margin 0 :stroke 2 :radius 3 :padding 2 :width 11)
+                   (svg-lib-tag (concat value "%")
+                                nil :stroke 0 :margin 0)) :ascent 'center))
+
+     (defun svg-progress-count (value)
+       (let* ((seq (mapcar #'string-to-number (split-string value "/")))
+              (count (float (car seq)))
+              (total (float (cadr seq))))
+         (svg-image (svg-lib-concat
+                     (svg-lib-progress-bar (/ count total) nil
+                                           :margin 0 :stroke 2 :radius 3 :padding 2 :width 11)
+                     (svg-lib-tag value nil
+                                  :stroke 0 :margin 0)) :ascent 'center)))
+
+     (setq svg-tag-tags
+           `(
+             ;; Org tags
+             ;; TODO fix these also match timestamps in LOGBOOK
+             ;; (":\\([A-Za-z0-9]+\\)" . ((lambda (tag) (svg-tag-make tag))))
+             ;; (":\\([A-Za-z0-9]+[ \-]\\)" . ((lambda (tag) tag)))
+
+             ;; Task priority
+             ("\\[#[A-Z]\\]" . ( (lambda (tag)
+                                   (svg-tag-make tag :face 'org-priority
+                                                 :beg 2 :end -1 :margin 0))))
+
+             ;; Progress
+             ("\\(\\[[0-9]\\{1,3\\}%\\]\\)" . ((lambda (tag)
+                                                 (svg-progress-percent (substring tag 1 -2)))))
+             ("\\(\\[[0-9]+/[0-9]+\\]\\)" . ((lambda (tag)
+                                               (svg-progress-count (substring tag 1 -1)))))
+
+             ;; TODO / DONE
+             ("TODO" . ((lambda (tag) (svg-tag-make "TODO " :face 'org-todo :inverse t))))
+             ("DONE" . ((lambda (tag) (svg-tag-make " DONE" :face 'org-done))))
+
+
+             ;; Citation of the form [cite:@Knuth:1984]
+             ("\\(\\[cite:@[A-Za-z]+:\\)" . ((lambda (tag)
+                                               (svg-tag-make tag
+                                                             :inverse t
+                                                             :beg 7 :end -1
+                                                             :crop-right t))))
+             ("\\[cite:@[A-Za-z]+:\\([0-9]+\\]\\)" . ((lambda (tag)
+                                                        (svg-tag-make tag
+                                                                      :end -1
+                                                                      :crop-left t))))
+
+
+             ;; Active date (without day name, with or without time)
+             (,(format "\\(<%s>\\)" date-re) .
+              ((lambda (tag)
+                 (svg-tag-make tag :beg 1 :end -1 :margin 0))))
+             (,(format "\\(<%s *\\)%s>" date-re time-re) .
+              ((lambda (tag)
+                 (svg-tag-make tag :beg 1 :inverse nil :crop-right t :margin 0))))
+             (,(format "<%s %s %s>" date-re day-re time-re) .
+              ((lambda (tag)
+                 (svg-tag-make tag :beg 1 :end -1 :inverse nil :margin 0))));
+             (,(format "<%s *\\(%s>\\)" date-re time-re) .
+              ((lambda (tag)
+                 (svg-tag-make tag :end -1 :inverse t :crop-left t :margin 0))))
+
+             ;; Inactive date  (without day name, with or without time)
+             (,(format "\\(\\[%s\\]\\)" date-re) .
+              ((lambda (tag)
+                 (svg-tag-make tag :beg 1 :end -1 :margin 0 :face 'org-date))))
+             (,(format "\\(\\[%s *\\)%s\\]" date-re time-re) .
+              ((lambda (tag)
+                 (svg-tag-make tag :beg 1 :inverse nil :crop-right t :margin 0 :face 'org-date))))
+             (,(format "\\[%s *\\(%s\\]\\)" date-re time-re) .
+              ((lambda (tag)
+                 (svg-tag-make tag :end -1 :inverse t :crop-left t :margin 0 :face 'org-date)))))))
 #+end_src
 
 *** Tree-sitter
@@ -484,7 +591,17 @@ I'm trying to learn how to take advantage of ~smartparens~, but it already provi
     (setq sp-show-pair-delay 0
           sp-show-pair-from-inside t)
     (smartparens-global-mode)
-    (show-smartparens-global-mode t))
+    (show-smartparens-global-mode t)
+    (set-face-attribute 'sp-pair-overlay-face nil :background "#0E131D")
+    (defun indent-between-pair (&rest _ignored)
+      (newline)
+      (indent-according-to-mode)
+      (forward-line -1)
+      (indent-according-to-mode))
+
+    (sp-local-pair 'prog-mode "{" nil :post-handlers '((indent-between-pair "RET")))
+    (sp-local-pair 'prog-mode "[" nil :post-handlers '((indent-between-pair "RET")))
+    (sp-local-pair 'prog-mode "(" nil :post-handlers '((indent-between-pair "RET"))))
 #+end_src
 
 I got used to a number of convenient TextMate-style commands.
@@ -756,7 +873,7 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
 
 #+begin_src emacs-lisp
   (use-package org
-    :hook (org-mode . visual-line-mode)
+    :hook ((org-mode . visual-line-mode) (org-mode . pt/org-mode-hook))
     :bind (("C-c o c" . org-capture)
            ("C-c o a" . org-agenda)
            ("C-c o A" . consult-org-agenda)
@@ -777,8 +894,7 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
 
     :config
     (defun pt/org-mode-hook ()
-      (when (s-suffix? "todo.org" (buffer-file-name (current-buffer)))
-        (real-auto-save-mode)))
+      (shut-up (svg-tag-mode t)))
     (defun make-inserter (c) '(lambda () (interactive) (insert-char c)))
     (defun zero-width () (interactive) (insert "​"))
 
@@ -892,7 +1008,17 @@ However, some projects (and here I am thinking of a certain Rails app) are too l
 
 #+begin_src emacs-lisp
   (use-package affe
-    :bind ("C-c C-e f" . #'affe-find))
+    :config
+    (defun pt/project-find-file-dwim ()
+      "Invoke either find-file-in-project or affe-find based on a denylist."
+      (interactive)
+      (let ((disallowed-projects (list "github"))
+            (proj (consult--project-name (project-root (project-current)))))
+        (call-interactively
+         (if (-contains? disallowed-projects proj)
+             #'affe-find
+           #'project-find-file))))
+    :bind ("C-c f" . #'pt/project-find-file-dwim))
 #+end_src
 
 ** Completion and input
@@ -924,16 +1050,16 @@ My journey through the various Emacs completion facilities has been long and twi
         (consult-yank-pop)
         (indent-region point-before (point))))
 
-    :bind (("C-c i"   . #'consult-imenu)
-           ("C-c b"   . #'consult-buffer)
-           ("C-x b"   . #'consult-buffer)
-           ("C-c r"   . #'consult-recent-file)
-           ("C-c y"   . #'pt/yank-pop)
-           ("C-c R"   . #'consult-bookmark)
-           ("C-c `"   . #'consult-flymake)
-           ("C-c h"   . #'consult-ripgrep)
-           ("C-x C-f" . #'find-file)
-           ("C-h a"   . #'consult-apropos)
+    :bind (("C-c i"     . #'consult-imenu)
+           ("C-c b"     . #'consult-buffer)
+           ("C-x b"     . #'consult-buffer)
+           ("C-c r"     . #'consult-recent-file)
+           ("C-c y"     . #'pt/yank-pop)
+           ("C-c R"     . #'consult-bookmark)
+           ("C-c `"     . #'consult-flymake)
+           ("C-c h"     . #'consult-ripgrep)
+           ("C-x C-f"   . #'find-file)
+           ("C-c C-h a" . #'consult-apropos)
            )
     :custom
     (completion-in-region-function #'consult-completion-in-region)
@@ -1044,7 +1170,7 @@ Built-in ~xref~ and ~eldoc~ are powerful packages, though we pin them to GNU ELP
     :custom (eldoc-echo-area-prefer-doc-buffer t))
 #+end_src
 
-Though I used ~lsp-mode~ for ages, in my old age I've grown happier with packages that try to do less, as they are in almost all cases faster and more reliable. ~eglot~ is such a mode. I add a few mouse-related keybindings in its mode map.
+Though I used ~lsp-mode~ for ages, in my old age I've grown happier with packages that try to do less, as they are in almost all cases faster and more reliable. ~eglot~ is such a mode. I add a few mouse-related keybindings in its mode map. TODO: add a menu item, with ~add-hook 'context-menu-functions~ and ~define-key-after menu [xref-find-ref]~ that adds ~eglot-find-implementations~.
 
 #+begin_src emacs-lisp
   (use-package eglot
@@ -1066,14 +1192,28 @@ Though I used ~lsp-mode~ for ages, in my old age I've grown happier with package
       ;; https://github.github.com/gfm/#backslash-escapes
       (replace-regexp-in-string "[\\\\]\\([][!\"#$%&'()*+,./:;<=>?@\\^_`{|}~-]\\)" "\\1" string))
 
-    (advice-add 'eglot--format-markup :filter-return 'mpolden/gfm-unescape-string))
+    (advice-add 'eglot--format-markup :filter-return 'mpolden/gfm-unescape-string)
+
+    (defun pt/add-eglot-to-prog-menu (old startmenu click)
+      "Add useful Eglot functions to the prog-mode context menu."
+      (let ((menu (funcall old startmenu click))
+            (identifier (save-excursion
+                          (mouse-set-point click)
+                          (xref-backend-identifier-at-point
+                           (xref-find-backend)))))
+        (when identifier
+          (define-key-after menu [eglot-find-impl]
+            `(menu-item "Find Implementations" eglot-find-implementation
+                        :help ,(format "Find implementations of `%s'" identifier))
+            'xref-find-ref))
+        menu))
+
+    (advice-add 'prog-context-menu :around #'pt/add-eglot-to-prog-menu)
+    )
 
   (use-package consult-eglot
     :bind (:map eglot-mode-map ("s-t" . #'consult-eglot-symbols)))
 #+end_src
-
-#+RESULTS:
-: consult-eglot-symbols
 
 * Haskell
 
