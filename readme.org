@@ -49,6 +49,7 @@ The most useful Emacs command is ~execute-extended-command~. It should be painle
 
 #+begin_src emacs-lisp
   (bind-key* "C-c ;" #'execute-extended-command)
+  (bind-key* "C-c C-;" #'execute-extended-command-for-buffer)
 #+end_src
 
 Since subsequent packages like ~libgit~ may depend on executables like ~cmake~, we need to ensure that Emacs has access to the PATH associated with the current environment.
@@ -106,13 +107,22 @@ Fixing Emacs's defaults is a nontrivial problem. We'll start with UI concerns.
    help-window-select t
    ;; this certainly can't hurt anything
    delete-by-moving-to-trash t
+   ;; keep the point in the same place while scrolling
+   scroll-preserve-screen-position t
+   ;; more info in completions
+   completions-detailed t
+   ;; highlight error messages more aggressively
+   next-error-message-highlight t
+   ;; don't let the minibuffer muck up my window tiling
+   read-minibuffer-restore-windows t
+   ;; scope save prompts to individual projects
+   save-some-buffers-default-predicate 'save-some-buffers-root
    )
 
   ;; Never mix tabs and spaces. Never use tabs, period.
   ;; We need the setq-default here because this becomes
   ;; a buffer-local variable when set.
   (setq-default indent-tabs-mode nil)
-(setq-default indent-tabs-mode nil)
 #+end_src
 
 It's good that Emacs supports the wide variety of file encodings it does, but UTF-8 should always, /always/ be the default.
@@ -174,7 +184,6 @@ There are a great many keybindings that are actively hostile, in that they are b
                                         "C-x C-d" ;; list-directory
                                         "C-z" ;; suspend-frame
                                         "C-x C-z" ;; again
-                                        "M-o" ;; facemenu-mode
                                         "<mouse-2>" ;; pasting with mouse-wheel click
                                         "<C-wheel-down>" ;; text scale adjust
                                         "<C-wheel-up>" ;; ditto
@@ -230,7 +239,8 @@ By default, I want paste operations to indent their results. I could express thi
 In the name of avoiding RSI, which has become a feared nemesis, I bind ~C-h~ to backwards-delete-char, as per the macOS keybindings. But this means I have to rebind the keys that I actually use for help purposes.
 
 #+begin_src emacs-lisp
-  (bind-key "C-h" #'backward-delete-char-untabify)
+  (bind-key "C-h" #'sp-backward-delete-char)
+  (bind-key "M-h" #'sp-backward-delete-word)
   (bind-key* "C-c C-h k" #'describe-key)
   (bind-key* "C-c C-h f" #'describe-function)
   (bind-key* "C-c C-h m" #'describe-mode)
@@ -307,9 +317,17 @@ By default, Emacs ships with a nice completion system based on buffer contents, 
     :custom
     (dabbrev-case-replace nil))
 
+
   ;; TODO: I want to use the fancy-dabbrev package everywhere,
   ;; but it uses popup.el rather than read-completion, and
   ;; I don't like how quickly it operates on its inline suggestions
+#+end_src
+
+I'm trying to use some abbrevs to help with tedious patterns like checking ~if err == nil~ in Go.
+
+#+begin_src emacs-lisp
+  (add-hook 'go-mode-hook #'abbrev-mode)
+  (setq abbrev-suggest t)
 #+end_src
 
 ** Visuals
@@ -317,7 +335,7 @@ By default, Emacs ships with a nice completion system based on buffer contents, 
 Emacs looks a lot better when it has a modern monospaced font and VSCode-esque icons, as well as smooth scrolling.
 
 #+begin_src emacs-lisp
-  (ignore-errors (set-frame-font "Iosevka-12"))
+  (ignore-errors (set-frame-font "Roboto Mono-10"))
 
   (use-package all-the-icons)
 
@@ -412,87 +430,87 @@ URLs should be highlighted and linkified.
 
 #+begin_src emacs-lisp
   (use-package svg-tag-mode
-     :config
-     (defconst date-re "[0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}")
-     (defconst time-re "[0-9]\\{2\\}:[0-9]\\{2\\}")
-     (defconst day-re "[A-Za-z]\\{3\\}")
+    :config
+    (defconst date-re "[0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}")
+    (defconst time-re "[0-9]\\{2\\}:[0-9]\\{2\\}")
+    (defconst day-re "[A-Za-z]\\{3\\}")
 
-     (defun svg-progress-percent (value)
-       (svg-image (svg-lib-concat
-                   (svg-lib-progress-bar (/ (string-to-number value) 100.0)
-                                         nil :margin 0 :stroke 2 :radius 3 :padding 2 :width 11)
-                   (svg-lib-tag (concat value "%")
-                                nil :stroke 0 :margin 0)) :ascent 'center))
+    (defun svg-progress-percent (value)
+      (svg-image (svg-lib-concat
+                  (svg-lib-progress-bar (/ (string-to-number value) 100.0)
+                                        nil :margin 0 :stroke 2 :radius 3 :padding 2 :width 11)
+                  (svg-lib-tag (concat value "%")
+                               nil :stroke 0 :margin 0)) :ascent 'center))
 
-     (defun svg-progress-count (value)
-       (let* ((seq (mapcar #'string-to-number (split-string value "/")))
-              (count (float (car seq)))
-              (total (float (cadr seq))))
-         (svg-image (svg-lib-concat
-                     (svg-lib-progress-bar (/ count total) nil
-                                           :margin 0 :stroke 2 :radius 3 :padding 2 :width 11)
-                     (svg-lib-tag value nil
-                                  :stroke 0 :margin 0)) :ascent 'center)))
+    (defun svg-progress-count (value)
+      (let* ((seq (mapcar #'string-to-number (split-string value "/")))
+             (count (float (car seq)))
+             (total (float (cadr seq))))
+        (svg-image (svg-lib-concat
+                    (svg-lib-progress-bar (/ count total) nil
+                                          :margin 0 :stroke 2 :radius 3 :padding 2 :width 11)
+                    (svg-lib-tag value nil
+                                 :stroke 0 :margin 0)) :ascent 'center)))
 
-     (setq svg-tag-tags
-           `(
-             ;; Org tags
-             ;; TODO fix these also match timestamps in LOGBOOK
-             ;; (":\\([A-Za-z0-9]+\\)" . ((lambda (tag) (svg-tag-make tag))))
-             ;; (":\\([A-Za-z0-9]+[ \-]\\)" . ((lambda (tag) tag)))
+    (setq svg-tag-tags
+          `(
+            ;; Org tags
+            ;; TODO fix these also match timestamps in LOGBOOK
+            ;; (":\\([A-Za-z0-9]+\\)" . ((lambda (tag) (svg-tag-make tag))))
+            ;; (":\\([A-Za-z0-9]+[ \-]\\)" . ((lambda (tag) tag)))
 
-             ;; Task priority
-             ("\\[#[A-Z]\\]" . ( (lambda (tag)
-                                   (svg-tag-make tag :face 'org-priority
-                                                 :beg 2 :end -1 :margin 0))))
+            ;; Task priority
+            ("\\[#[A-Z]\\]" . ( (lambda (tag)
+                                  (svg-tag-make tag :face 'org-priority
+                                                :beg 2 :end -1 :margin 0))))
 
-             ;; Progress
-             ("\\(\\[[0-9]\\{1,3\\}%\\]\\)" . ((lambda (tag)
-                                                 (svg-progress-percent (substring tag 1 -2)))))
-             ("\\(\\[[0-9]+/[0-9]+\\]\\)" . ((lambda (tag)
-                                               (svg-progress-count (substring tag 1 -1)))))
+            ;; Progress
+            ("\\(\\[[0-9]\\{1,3\\}%\\]\\)" . ((lambda (tag)
+                                                (svg-progress-percent (substring tag 1 -2)))))
+            ("\\(\\[[0-9]+/[0-9]+\\]\\)" . ((lambda (tag)
+                                              (svg-progress-count (substring tag 1 -1)))))
 
-             ;; TODO / DONE
-             ("TODO" . ((lambda (tag) (svg-tag-make "TODO " :face 'org-todo :inverse t))))
-             ("DONE" . ((lambda (tag) (svg-tag-make " DONE" :face 'org-done))))
-
-
-             ;; Citation of the form [cite:@Knuth:1984]
-             ("\\(\\[cite:@[A-Za-z]+:\\)" . ((lambda (tag)
-                                               (svg-tag-make tag
-                                                             :inverse t
-                                                             :beg 7 :end -1
-                                                             :crop-right t))))
-             ("\\[cite:@[A-Za-z]+:\\([0-9]+\\]\\)" . ((lambda (tag)
-                                                        (svg-tag-make tag
-                                                                      :end -1
-                                                                      :crop-left t))))
+            ;; TODO / DONE
+            ("TODO" . ((lambda (tag) (svg-tag-make "TODO" :face 'org-todo :padding 2 :scootch 0))))
+            ("DONE" . ((lambda (tag) (svg-tag-make "DONE" :face 'org-done :padding 2 :scootch 0))))
 
 
-             ;; Active date (without day name, with or without time)
-             (,(format "\\(<%s>\\)" date-re) .
-              ((lambda (tag)
-                 (svg-tag-make tag :beg 1 :end -1 :margin 0))))
-             (,(format "\\(<%s *\\)%s>" date-re time-re) .
-              ((lambda (tag)
-                 (svg-tag-make tag :beg 1 :inverse nil :crop-right t :margin 0))))
-             (,(format "<%s %s %s>" date-re day-re time-re) .
-              ((lambda (tag)
-                 (svg-tag-make tag :beg 1 :end -1 :inverse nil :margin 0))));
-             (,(format "<%s *\\(%s>\\)" date-re time-re) .
-              ((lambda (tag)
-                 (svg-tag-make tag :end -1 :inverse t :crop-left t :margin 0))))
+            ;; Citation of the form [cite:@Knuth:1984]
+            ("\\(\\[cite:@[A-Za-z]+:\\)" . ((lambda (tag)
+                                              (svg-tag-make tag
+                                                            :inverse t
+                                                            :beg 7 :end -1
+                                                            :crop-right t))))
+            ("\\[cite:@[A-Za-z]+:\\([0-9]+\\]\\)" . ((lambda (tag)
+                                                       (svg-tag-make tag
+                                                                     :end -1
+                                                                     :crop-left t))))
 
-             ;; Inactive date  (without day name, with or without time)
-             (,(format "\\(\\[%s\\]\\)" date-re) .
-              ((lambda (tag)
-                 (svg-tag-make tag :beg 1 :end -1 :margin 0 :face 'org-date))))
-             (,(format "\\(\\[%s *\\)%s\\]" date-re time-re) .
-              ((lambda (tag)
-                 (svg-tag-make tag :beg 1 :inverse nil :crop-right t :margin 0 :face 'org-date))))
-             (,(format "\\[%s *\\(%s\\]\\)" date-re time-re) .
-              ((lambda (tag)
-                 (svg-tag-make tag :end -1 :inverse t :crop-left t :margin 0 :face 'org-date)))))))
+
+            ;; Active date (without day name, with or without time)
+            (,(format "\\(<%s>\\)" date-re) .
+             ((lambda (tag)
+                (svg-tag-make tag :beg 1 :end -1 :margin 0))))
+            (,(format "\\(<%s *\\)%s>" date-re time-re) .
+             ((lambda (tag)
+                (svg-tag-make tag :beg 1 :inverse nil :crop-right t :margin 0))))
+            (,(format "<%s %s %s>" date-re day-re time-re) .
+             ((lambda (tag)
+                (svg-tag-make tag :beg 1 :end -1 :inverse nil :margin 0))));
+            (,(format "<%s *\\(%s>\\)" date-re time-re) .
+             ((lambda (tag)
+                (svg-tag-make tag :end -1 :inverse t :crop-left t :margin 0))))
+
+            ;; Inactive date  (without day name, with or without time)
+            (,(format "\\(\\[%s\\]\\)" date-re) .
+             ((lambda (tag)
+                (svg-tag-make tag :beg 1 :end -1 :margin 0 :face 'org-date))))
+            (,(format "\\(\\[%s *\\)%s\\]" date-re time-re) .
+             ((lambda (tag)
+                (svg-tag-make tag :beg 1 :inverse nil :crop-right t :margin 0 :face 'org-date))))
+            (,(format "\\[%s *\\(%s\\]\\)" date-re time-re) .
+             ((lambda (tag)
+                (svg-tag-make tag :end -1 :inverse t :crop-left t :margin 0 :face 'org-date)))))))
 #+end_src
 
 *** Tree-sitter
@@ -555,10 +573,11 @@ Textmate-style tap-to-expand-into-the-current-delimiter is very useful and curio
     :bind (("C-c n" . er/expand-region)))
 #+end_src
 
-Emacs's keybinding for ~comment-dwim~ is ~M-;~, which is not convenient to type or particularly mnemonic outside of an elisp context (where commenting is indeed ~;~). Better to bind it somewhere sensible.
+Emacs's keybinding for ~comment-dwim~ is ~M-;~, which is not convenient to type or particularly mnemonic outside of an elisp context (where commenting is indeed ~;~). Better to bind it somewhere sensible. Also, it's nice to have a binding for ~upcase-dwim~.
 
 #+begin_src emacs-lisp
   (bind-key* "C-c /" #'comment-dwim)
+  (bind-key* "C-c 0" #'upcase-dwim)
 #+end_src
 
 ~avy~ gives us fluent jump-to-line commands mapped to the home row.
@@ -575,7 +594,9 @@ Emacs's keybinding for ~comment-dwim~ is ~M-;~, which is not convenient to type 
 ~iedit~ gives us the very popular idiom of automatically deploying multiple cursors to edit all occurrences of a particular word.
 
 #+begin_src emacs-lisp
-  (shut-up (use-package iedit :bind ("C-;" . #'iedit-mode)))
+  (shut-up (use-package iedit
+             :bind (:map iedit-mode-keymap ("C-h" . #'sp-backward-delete-char))
+             :bind ("C-;" . #'iedit-mode)))
 #+end_src
 
 I'm trying to learn how to take advantage of ~smartparens~, but it already provides a better editing experience.
@@ -660,22 +681,23 @@ Emacs makes it weirdly hard to just, like, edit a file as root, probably due to 
   (use-package sudo-edit)
 #+end_src
 
-By default, Emacs uses a new buffer for every directory you visit in dired. This is not only terrible from a UI perspective---Emacs warns you if you try to use the sensible behavior (the ~a~ key, ~dired-find-alternate-file~). Willfully obtuse. The ~dired+.el~ library fixes this, but because it's not on MELPA, I refuse to use it out of principle (this man's refusal to compromise is nothing short of crankery, and it would be intellectually remiss of me to abet his crankery). But, as always, we can make Emacs do the right thing. Manually. Furthermore, dired complains every time it's opened on Darwin, so we should fix that.
+Dired needs a couple customizations to work in a sensible manner.
 
 #+begin_src emacs-lisp
-  (defun dired-up-directory-same-buffer ()
-    "Go up in the same buffer."
-    (find-alternate-file ".."))
-
-  (defun my-dired-mode-hook ()
-    (put 'dired-find-alternate-file 'disabled nil) ; Disables the warning.
-    (define-key dired-mode-map (kbd "RET") 'dired-find-alternate-file)
-    (define-key dired-mode-map (kbd "^") 'dired-up-directory-same-buffer))
-
-  (add-hook 'dired-mode-hook #'my-dired-mode-hook)
-
-  (setq dired-use-ls-dired nil
-        dired-create-destination-dirs 'ask)
+  (setq
+   ;; I use exa, which doesn't have a --dired flag
+   dired-use-ls-dired nil
+   ;; Why wouldn't you create destination directories when copying files, Emacs?
+   dired-create-destination-dirs 'ask
+   ;; Before the existence of this option, you had to either hack
+   ;; dired commands or use the dired+ library, the maintainer
+   ;; of which refuses to use a VCS. So fuck him.
+   dired-kill-when-opening-new-dired-buffer t
+   ;; Update directory listings automatically (again, why isn't this default?)
+   dired-do-revert-buffer t
+   ;; Sensible mark behavior
+   dired-mark-region t
+   )
 #+end_src
 
 Emacs has problems with very long lines. ~so-long~ detects them and takes appropriate action. Good for minified code and whatnot.
@@ -1273,6 +1295,8 @@ A thing I want to do someday is to write a framework for sending things like com
 
 #+begin_src emacs-lisp
   (use-package vterm
+    :custom
+    (vterm-timer-delay 0.05)
     :config
     (defun turn-off-chrome ()
       (hl-line-mode -1)
@@ -1289,6 +1313,7 @@ A thing I want to do someday is to write a framework for sending things like com
            ("s-t" . #'vterm) ; Open up new tabs quickly
            ("s-v" . #'vterm-yank)
            ("C-y" . #'vterm-yank)
+           ("C-h" . #'vterm-send-backspace)
            ))
 #+end_src
 
@@ -1372,7 +1397,8 @@ I don't write a lot of Python, but when I do I like to use the extremely opinion
 Some other miscellaneous languages that I don't write often but for which I need syntax highlighting, at least.
 
 #+begin_src emacs-lisp
-  (use-package typescript-mode :defer t)
+  (use-package typescript-mode
+    :custom (typescript-indent-level 2))
   (use-package csharp-mode :defer t)
   (setq-default js-indent-level 2)
 #+end_src
@@ -1413,6 +1439,7 @@ I generally use GitHub-flavored Markdown, so we default to that.
 
  #+begin_src emacs-lisp
    (use-package markdown-mode
+     :hook (gfm-mode . visual-line-mode)
      :bind (:map markdown-mode-map ("C-c C-s a" . markdown-table-align))
      :mode ("\\.md$" . gfm-mode))
  #+end_src
