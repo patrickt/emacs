@@ -866,6 +866,7 @@ One of the main problems with Emacs is how many ephemeral buffers it creates. I'
     :bind (("C-`"   . popper-toggle-latest)
            ("C-\\"  . popper-cycle)
            ("C-M-`" . popper-toggle-type))
+    :hook (prog-mode . popper-mode)
     :config
     (popper-mode +1)
     (popper-echo-mode +1)
