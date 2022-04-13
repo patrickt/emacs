@@ -907,6 +907,23 @@ Magit also allows integration with GitHub and other such forges (though I hate t
     (defvar bug-reference-auto-setup-functions '()))
 #+end_src
 
+I'm trying out this git-status-in-the-fringe package, which looks fairly visually appealing.
+
+#+begin_src emacs-lisp
+  (use-package diff-hl
+    :config
+    (global-diff-hl-mode)
+    (diff-hl-flydiff-mode)
+    :custom
+    (diff-hl-disable-on-remote t)
+    (diff-hl-margin-symbols-alist
+     '((insert . "┃")
+       (delete . "┃")
+       (change . "┃")
+       (unknown . "?")
+       (ignored . "i"))))
+#+end_src
+
 The code-review package allows for integration with pull request comments and such.
 
 #+begin_src emacs-lisp
@@ -933,7 +950,7 @@ I used to use Projectile, but ~marginalia-mode~ doesn't appear to work out of th
     ;; This is one of my favorite things: you can customize
     ;; the options shown upon switching projects.
     (project-switch-commands
-     '((project-find-file "Find file")
+     '((pt/project-find-file-dwim "Find file")
        (magit-project-status "Magit" ?g)
        (deadgrep "Grep" ?h)))
     (compilation-always-kill t)
@@ -952,7 +969,7 @@ However, some projects (and here I am thinking of a certain Rails app) are too l
       (let ((disallowed-projects (list "github"))
             (proj (consult--project-name (project-root (project-current)))))
         (call-interactively
-         (if (-contains? disallowed-projects proj)
+         (if (and (-contains? disallowed-projects proj) (not tramp-current-connection))
              #'affe-find
            #'project-find-file))))
     :bind ("C-c f" . #'pt/project-find-file-dwim))
