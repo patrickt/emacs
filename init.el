@@ -17,7 +17,7 @@
 (setq package-native-compile t)
 (unless (package-installed-p 'use-package)
   (message "refreshing contents")
-  (package-refresh-contents)
+  (unless package-archive-contents (package-refresh-contents))
   (package-install 'use-package))
 
 (eval-when-compile

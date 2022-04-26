@@ -117,6 +117,8 @@ Fixing Emacs's defaults is a nontrivial problem. We'll start with UI concerns.
    read-minibuffer-restore-windows t
    ;; scope save prompts to individual projects
    save-some-buffers-default-predicate 'save-some-buffers-root
+   ;; don't keep duplicate entries in kill ring
+   kill-do-not-save-duplicates t
    )
 
   ;; Never mix tabs and spaces. Never use tabs, period.
@@ -138,6 +140,8 @@ We also need to turn on a few modes to have behavior that's even remotely modern
   (delete-selection-mode t)
   (global-display-line-numbers-mode t)
   (column-number-mode)
+  (global-display-line-numbers-mode)
+  (savehist-mode)
 #+end_src
 
 Emacs 27 comes with fast current-line highlight functionality, but it can produce some visual feedback in ~vterm~ buffers, so we only activate it in programming or text modes.
@@ -234,6 +238,7 @@ By default, I want paste operations to indent their results. I could express thi
 
   (bind-key "C-y" #'pt/yank)
   (bind-key "s-v" #'pt/yank)
+  (bind-key "C-c z" #'zap-to-char)
 #+end_src
 
 In the name of avoiding RSI, which has become a feared nemesis, I bind ~C-h~ to backwards-delete-char, as per the macOS keybindings. But this means I have to rebind the keys that I actually use for help purposes.
@@ -251,7 +256,7 @@ Searching should be done with isearch, for UI purposes.
 
 #+begin_src emacs-lisp
   (bind-key "C-s" #'isearch-forward-regexp)
-(bind-key "C-c s" #'isearch-forward-symbol)
+  (bind-key "C-c s" #'isearch-forward-symbol)
 #+end_src
 
 The out-of-the-box treatment of whitespace is unfortunate, but fixable.
@@ -284,15 +289,12 @@ Emacs is also in love with showing you its NEWS file; it's bound to like four di
   (defalias 'describe-copying 'ignore)
 #+end_src
 
-Undo has always been problematic for me in Emacs. The beauty of undo-tree is that it means that, once you've typed something into a buffer, you'll always be able to get it back. At least in theory. undo-tree has long-standing data loss bugs that are unlikely to be fixed. But no other package provides a comparable experience.
+Undo has always been problematic for me in Emacs. I used to use ~undo-tree-mode~ but it's been unmaintained for some time. I'm giving ~vundo~ a shot for the time being.
 
 #+begin_src emacs-lisp
-  (use-package undo-tree
+  (use-package vundo
     :diminish
-    :bind (("C-c _" . undo-tree-visualize))
-    :config
-    (global-undo-tree-mode +1)
-    (unbind-key "M-_" undo-tree-map))
+    :bind (("C-c _" . vundo)))
 #+end_src
 
 I define a couple of my own configuration variables with ~defvar~, and no matter how many times I mark the variable as safe, it warns me every time I set it in the ~.dir-locals~ file. Disabling these warnings is probably (?) the right thing to do.
@@ -357,6 +359,12 @@ Window chrome both wastes space and looks unappealing. (This is actually pasted 
     (tool-bar-mode -1)
     (scroll-bar-mode -1)
     (tooltip-mode -1))
+
+  (use-package yascroll
+    :config
+    (global-yascroll-bar-mode)
+    :custom-face
+    (yascroll:thumb-fringe ((t (:background "#3b4252" :foreground "#3b4252")))))
 #+end_src
 
 I use the [[https://github.com/hlissner/emacs-doom-themes][Doom Emacs themes]], which are gorgeous. I sometimes also use Modus Vivendi, the excellent new theme that now ships with Emacs.
@@ -655,10 +663,11 @@ When I hit, accidentally or purposefully, a key chord that forms the prefix of s
     (message "Welcome back."))
 #+end_src
 
-Emacs has an ~executable-prefix-env~ command that adds a magic shebang line to scripts in interpreted languages. With a little cajoling, it can use ~env(1)~ instead of hardcoding the interpreter path, which is slightly more robust in certain circumstances.
+Emacs has an ~executable-prefix-env~ command that adds a magic shebang line to scripts in interpreted languages. With a little cajoling, it can use ~env(1)~ instead of hardcoding the interpreter path, which is slightly more robust in certain circumstances. Furthermore, we can automatically chmod a file containing a shebang into executable mode.
 
 #+begin_src emacs-lisp
   (setq executable-prefix-env t)
+  (add-hook 'after-save-hook #'executable-make-buffer-file-executable-if-script-p)
 #+end_src
 
 The new ~context-menu-mode~ in Emacs 28 makes right-click a lot more useful. But for terminal emacs, it's handy to have the menubar at hand.
@@ -808,6 +817,7 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
 #+begin_src emacs-lisp
   (use-package org
     :hook ((org-mode . visual-line-mode) (org-mode . pt/org-mode-hook))
+    :hook ((org-src-mode . display-line-numbers-mode))
     :bind (("C-c o c" . org-capture)
            ("C-c o a" . org-agenda)
            ("C-c o A" . consult-org-agenda)
@@ -914,12 +924,15 @@ I'm trying out this git-status-in-the-fringe package, which looks fairly visuall
     :config
     (global-diff-hl-mode)
     (diff-hl-flydiff-mode)
+    (diff-hl-margin-mode)
+    (add-hook 'magit-pre-refresh-hook 'diff-hl-magit-pre-refresh)
+    (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)
     :custom
     (diff-hl-disable-on-remote t)
     (diff-hl-margin-symbols-alist
-     '((insert . "┃")
-       (delete . "┃")
-       (change . "┃")
+     '((insert . " ")
+       (delete . " ")
+       (change . " ")
        (unknown . "?")
        (ignored . "i"))))
 #+end_src
@@ -950,7 +963,7 @@ I used to use Projectile, but ~marginalia-mode~ doesn't appear to work out of th
     ;; This is one of my favorite things: you can customize
     ;; the options shown upon switching projects.
     (project-switch-commands
-     '((pt/project-find-file-dwim "Find file")
+     '((project-find-file "Find file")
        (magit-project-status "Magit" ?g)
        (deadgrep "Grep" ?h)))
     (compilation-always-kill t)
@@ -986,6 +999,7 @@ My journey through the various Emacs completion facilities has been long and twi
     (vertico-mouse-mode)
     :custom
     (vertico-count 22)
+    (vertico-cycle t)
     :bind (:map vertico-map
                 ("C-'"           . #'vertico-quick-exit)
                 ("C-c '"         . #'vertico-quick-insert)
@@ -1026,7 +1040,7 @@ My journey through the various Emacs completion facilities has been long and twi
     :config (marginalia-mode))
 
   (use-package orderless
-    :custom (completion-styles '(orderless)))
+    :custom (completion-styles '(orderless basic)))
 
   (use-package ctrlf
     :config (ctrlf-mode))
