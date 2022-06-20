@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: c2off
+# key: c2off
+# --
+{#offsetof $1->$2#}
