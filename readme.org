@@ -865,7 +865,7 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
       (org-emphasize ?~)))
 
   (use-package org-modern
-    :config (org-modern-global-mode)
+    :config (global-org-modern-mode)
     :custom (org-modern-variable-pitch nil))
 
   (use-package org-ref
@@ -980,7 +980,8 @@ I used to use Projectile, but ~marginalia-mode~ doesn't appear to work out of th
     (project-switch-commands
      '((project-find-file "Find file")
        (magit-project-status "Magit" ?g)
-       (deadgrep "Grep" ?h)))
+       (deadgrep "Grep" ?h)
+       (pt/project-run-vterm "vterm" ?t)))
     (compilation-always-kill t)
     (project-vc-merge-submodules nil)
     )
@@ -1259,8 +1260,24 @@ A thing I want to do someday is to write a framework for sending things like com
     :config
     (defun pt/turn-off-chrome ()
       (hl-line-mode -1)
-      (yascroll-bar-mode nil)
+      ;;(yascroll-bar-mode nil)
       (display-line-numbers-mode -1))
+
+    (defun pt/project-run-vterm ()
+      "Invoke `vterm' in the project's root.
+
+   Switch to the project specific term buffer if it already exists."
+      (interactive)
+      (let* ((project (project-current))
+             (buffer (format "*vterm %s*" (consult--project-name (project-root project)))))
+        (unless (buffer-live-p (get-buffer buffer))
+          (unless (require 'vterm nil 'noerror)
+            (error "Package 'vterm' is not available"))
+          (vterm buffer)
+          (vterm-send-string (concat "cd " (project-root project)))
+          (vterm-send-return))
+        (switch-to-buffer buffer)))
+
     :hook (vterm-mode . pt/turn-off-chrome))
 
   (use-package vterm-toggle
