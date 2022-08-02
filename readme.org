@@ -49,6 +49,7 @@ The most useful Emacs command is ~execute-extended-command~. It should be painle
 
 #+begin_src emacs-lisp
   (bind-key* "C-c ;" #'execute-extended-command)
+  (bind-key* "C-c 4" #'execute-extended-command) ;; for a purely left-handed combo
   (bind-key* "C-c C-;" #'execute-extended-command-for-buffer)
 #+end_src
 
@@ -140,7 +141,6 @@ We also need to turn on a few modes to have behavior that's even remotely modern
   (delete-selection-mode t)
   (global-display-line-numbers-mode t)
   (column-number-mode)
-  (global-display-line-numbers-mode)
   (savehist-mode)
 #+end_src
 
@@ -206,19 +206,6 @@ These libraries are helpful to have around when writing little bits of elisp, li
   (use-package shut-up)
 #+end_src
 
-By default, the list of recent files gets cluttered up with the contents of downloaded packages.
-
-#+begin_src emacs-lisp
-  (use-package recentf
-    :after dash
-    :config
-    (setq recentf-exclude (-concat recentf-exclude '("\\elpa"
-                                                     "private/tmp" ; to avoid custom files
-                                                     "txt/roam"
-                                                     )))
-    (recentf-mode))
-#+end_src
-
 Emoji don't work on Emacs versions < 27 (aside from the Mitsuharu Yamamoto emacs-mac port). However, we can just do this.
 
 #+begin_src emacs-lisp
@@ -262,6 +249,7 @@ The out-of-the-box treatment of whitespace is unfortunate, but fixable.
   (bind-key "C-c I" #'pt/indent-just-yanked)
 
   (use-package auto-indent-mode
+    :disabled ;; fucks with vertico
     :custom (auto-indent-start-org-indent nil)
     :config (auto-indent-mode))
 #+end_src
@@ -347,7 +335,7 @@ It's a mystery why Emacs doesn't allow colors by default in its compilation buff
 Emacs looks a lot better when it has a modern monospaced font and VSCode-esque icons, as well as smooth scrolling.
 
 #+begin_src emacs-lisp
-  (ignore-errors (set-frame-font "Fira Code-10"))
+  (ignore-errors (set-frame-font "Menlo-11"))
 
   (use-package all-the-icons)
 
@@ -383,7 +371,7 @@ I use the [[https://github.com/hlissner/emacs-doom-themes][Doom Emacs themes]], 
 #+begin_src emacs-lisp
   (use-package doom-themes
     :config
-    (let ((chosen-theme 'doom-ir-black))
+    (let ((chosen-theme 'doom-sourcerer))
       (doom-themes-visual-bell-config)
       (doom-themes-org-config)
       (setq doom-challenger-deep-brighter-comments t
@@ -403,11 +391,30 @@ Most major modes pollute the modeline, so we pull in diminish.el to quiesce them
     (diminish 'visual-line-mode))
 #+end_src
 
-The default modeline is pretty uninspiring, and ~mood-line~ is very minimal and pleasing.
+The default modeline is pretty uninspiring, and ~mood-line~ is very minimal and pleasing. With a bit of elbow grease, it can be convinced to show the project-relative file name.
 
 #+begin_src emacs-lisp
+  (defun pt/project-relative-file-name (do-not-strip-prefix)
+    (letrec
+        ((fullname (if (equal major-mode 'dired-mode) default-directory (buffer-file-name)))
+         (root (project-root (project-current)))
+         (relname (if fullname (file-relative-name fullname root) fullname))
+         (should-strip (and root (not do-not-strip-prefix))))
+      (if should-strip relname fullname)))
+
   (use-package mood-line
-    :config (mood-line-mode))
+    :config
+    (defun pt/mood-line-segment-project-advice (oldfun)
+      "Advice to use project-relative file names where possible."
+      (let
+          ((project-relative (pt/project-relative-file-name nil)))
+           (if
+               (and (project-current) (not org-src-mode) project-relative)
+               (propertize (format "%s  " project-relative) 'face 'mood-line-buffer-name)
+             (funcall oldfun))))
+
+    (advice-add 'mood-line-segment-buffer-name :around #'pt/mood-line-segment-project-advice)
+    (mood-line-mode))
 #+end_src
 
 I find it useful to have a slightly more apparent indicator of which buffer is active at the moment.
@@ -460,10 +467,11 @@ As part of my day job, I hack on the [[https://tree-sitter.github.io][~tree-sitt
 
 *** Tabs
 
-The long-awaited Emacs 27 support for native tabs is shaky, both visually and in terms of functionality. As such, ~centaur-tabs~ is the best way to simulate a conventional tabs setup, in which tab sets are grouped by the toplevel project working directory.
+For some reason ~centaur-tabs~ has stopped working. I'm keeping the config around in case I ever figure out why. But for now we're using the (fairly lackluster) builtin ~tab-line-mode.~
 
 #+begin_src emacs-lisp
   (use-package centaur-tabs
+    :disabled
     :config
     (centaur-tabs-mode t)
     :custom
@@ -475,6 +483,20 @@ The long-awaited Emacs 27 support for native tabs is shaky, both visually and in
     :bind
     (("s-{" . #'centaur-tabs-backward)
      ("s-}" . #'centaur-tabs-forward)))
+
+  (use-package tab-line
+    :after dash
+    :config
+    (setq tab-line-separator " | ")
+    (setq tab-line-tabs-function 'tab-line-tabs-mode-buffers)
+    ;;(setq tab-line-exclude-modes '(completion-list-mode help-mode git-commit-mode))
+    (global-tab-line-mode t)
+    :custom
+    (tab-line-new-button-show nil)
+    (tab-line-close-button-show nil)
+    :bind
+    (("s-}" . #'tab-line-switch-to-next-tab)
+     ("s-{" . #'tab-line-switch-to-prev-tab)))
 #+end_src
 
 ** Text manipulation
@@ -747,12 +769,8 @@ VS Code has a great feature where you can just copy a filename to the clipboard.
   (defun copy-file-name-to-clipboard (do-not-strip-prefix)
     "Copy the current buffer file name to the clipboard. The path will be relative to the project's root directory, if set. Invoking with a prefix argument copies the full path."
     (interactive "P")
-    (letrec
-        ((fullname (if (equal major-mode 'dired-mode) default-directory (buffer-file-name)))
-         (root (project-root (project-current)))
-         (relname (file-relative-name fullname root))
-         (should-strip (and root (not do-not-strip-prefix)))
-         (filename (if should-strip relname fullname)))
+    (let
+        ((filename (pt/project-relative-file-name do-not-strip-prefix)))
       (kill-new filename)
       (message "Copied buffer file name '%s' to the clipboard." filename)))
 
@@ -791,7 +809,7 @@ It's useful to have a scratch buffer around, and more useful to have a key chord
   (bind-key "C-c a s" #'switch-to-scratch-buffer)
 #+end_src
 
-One of the main problems with Emacs is how many ephemeral buffers it creates. I'm giving ~popper-mode~ a try to see if it can stem the flood thereof. Note that vterm is not included here because vterm-toggle doesn't play particularly nicely with popper.
+One of the main problems with Emacs is how many ephemeral buffers it creates. I'm giving ~popper-mode~ a try to see if it can stem the flood thereof.
 
 #+begin_src emacs-lisp
   (use-package popper
@@ -888,6 +906,8 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
   (use-package org-alert
     :config (org-alert-enable)
     :custom (alert-default-style 'osx-notifier))
+
+  (use-package ob-mermaid)
 #+end_src
 
 * Keymacs support
@@ -910,6 +930,7 @@ Magit is one of the top three reasons anyone should use Emacs. What a brilliant 
     :bind (("C-c g" . #'magit-status))
     :custom
     (magit-repository-directories '(("~/src" . 1)))
+    (magit-list-refs-sortby "-creatordate")
     :config
     (defun pt/commit-hook () (set-fill-column 80))
     (add-hook 'git-commit-setup-hook #'pt/commit-hook)
@@ -1400,6 +1421,7 @@ I'm trying to learn APL, because I've lost control of my life.
    (use-package yaml-mode :defer t)
    (use-package dockerfile-mode :defer t)
    (use-package toml-mode :defer t)
+   (use-package dhall-mode)
  #+end_src
 
 I use Bazel for some Haskell projects.
@@ -1471,48 +1493,67 @@ TRAMP mode is excellent for editing files on a remote machine or Docker containe
 
 #+begin_src emacs-lisp
   (require 'tramp)
-  (setq tramp-default-method "ssh"
-        tramp-verbose 1
-        tramp-default-remote-shell "/bin/bash"
-        tramp-connection-local-default-shell-variables
-        '((shell-file-name . "/bin/bash")
-          (shell-command-switch . "-c")))
 
-  (connection-local-set-profile-variables 'tramp-connection-local-default-shell-profile
-                                          '((shell-file-name . "/bin/bash")
-                                            (shell-command-switch . "-c")))
+  ;; Needs to be called from recentf's :init
+  ;; todo: make this into a use-package invocation
+  (defun pt/customize-tramp ()
 
-  ;; (lsp-register-client
-  ;;  (make-lsp-client :new-connection (lsp-stdio-connection "gopls")
-  ;;                   :major-modes '(go-mode go-dot-mod-mode)
-  ;;                   :language-id "go"
-  ;;                   :remote? t
-  ;;                   :priority 0
-  ;;                   :server-id 'gopls-remote
-  ;;                   :completion-in-comments? t
-  ;;                   :library-folders-fn #'lsp-go--library-default-directories
-  ;;                   :after-open-fn (lambda ()
-  ;;                                    ;; https://github.com/golang/tools/commit/b2d8b0336
-  ;;                                    (setq-local lsp-completion-filter-on-incomplete nil))))
+    (setq tramp-default-method "ssh"
+          tramp-verbose 1
+          tramp-default-remote-shell "/bin/bash"
+          tramp-connection-local-default-shell-variables
+          '((shell-file-name . "/bin/bash")
+            (shell-command-switch . "-c")))
 
-  ;; add gh codespaces ssh method support for tramp editing
-  ;; e.g. C-x C-f /ghcs:codespace-name:/path/to/file
-  ;; thanks to my coworker Bas for this one
-  (let ((ghcs (assoc "ghcs" tramp-methods))
-        (ghcs-methods '((tramp-login-program "gh")
-                        (tramp-login-args (("codespace") ("ssh") ("-c") ("%h")))
-                        (tramp-remote-shell "/bin/sh")
-                        (tramp-remote-shell-login ("-l"))
-                        (tramp-remote-shell-args ("-c")))))
-    ;; just for debugging the methods
-    (if ghcs (setcdr ghcs ghcs-methods)
-      (push (cons "ghcs" ghcs-methods) tramp-methods)))
+    (connection-local-set-profile-variables 'tramp-connection-local-default-shell-profile
+                                            '((shell-file-name . "/bin/bash")
+                                              (shell-command-switch . "-c")))
+
+    ;; (lsp-register-client
+    ;;  (make-lsp-client :new-connection (lsp-stdio-connection "gopls")
+    ;;                   :major-modes '(go-mode go-dot-mod-mode)
+    ;;                   :language-id "go"
+    ;;                   :remote? t
+    ;;                   :priority 0
+    ;;                   :server-id 'gopls-remote
+    ;;                   :completion-in-comments? t
+    ;;                   :library-folders-fn #'lsp-go--library-default-directories
+    ;;                   :after-open-fn (lambda ()
+    ;;                                    ;; https://github.com/golang/tools/commit/b2d8b0336
+    ;;                                    (setq-local lsp-completion-filter-on-incomplete nil))))
+
+    ;; add gh codespaces ssh method support for tramp editing
+    ;; e.g. C-x C-f /ghcs:codespace-name:/path/to/file
+    ;; thanks to my coworker Bas for this one
+    (let ((ghcs (assoc "ghcs" tramp-methods))
+          (ghcs-methods '((tramp-login-program "gh")
+                          (tramp-login-args (("codespace") ("ssh") ("-c") ("%h")))
+                          (tramp-remote-shell "/bin/sh")
+                          (tramp-remote-shell-login ("-l"))
+                          (tramp-remote-shell-args ("-c")))))
+      ;; just for debugging the methods
+      (if ghcs (setcdr ghcs ghcs-methods)
+        (push (cons "ghcs" ghcs-methods) tramp-methods))))
 
   (defun pt/codespace ()
     "Connect to the default codespace. This is a host configured in my .ssh/config."
     ;; Host github-codespaces, root/localhost,  2222, NoHostAuthenticationForLocalhost yes
     (interactive)
     (find-file "/ssh:github-codespaces:/workspaces"))
+#+end_src
+
+By default, the list of recent files gets cluttered up with the contents of downloaded packages.
+
+#+begin_src emacs-lisp
+  (use-package recentf
+    :after dash
+    :init (pt/customize-tramp)
+    :config
+    (setq recentf-exclude (-concat recentf-exclude '("\\elpa"
+                                                     "private/tmp" ; to avoid custom files
+                                                     "txt/roam"
+                                                     )))
+    (recentf-mode))
 #+end_src
 
 I use ~direnv~ to manage per-project environment variables. The Emacs direnv mode is quite sophisticated, automatically setting all relevant variables for you when you go in and out of a particular project.
