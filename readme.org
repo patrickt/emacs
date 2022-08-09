@@ -1184,7 +1184,7 @@ Built-in ~xref~ and ~eldoc~ are powerful packages, though we pin them to GNU ELP
     (eldoc-echo-area-use-multiline-p nil))
 #+end_src
 
-Though I used ~lsp-mode~ for ages, in my old age I've grown happier with packages that try to do less, as they are in almost all cases faster and more reliable. ~eglot~ is such a mode. I add a few mouse-related keybindings in its mode map. TODO: add a menu item, with ~add-hook 'context-menu-functions~ and ~define-key-after menu [xref-find-ref]~ that adds ~eglot-find-implementations~.
+Though I used ~lsp-mode~ for ages, in my old age I've grown happier with packages that try to do less, as they are in almost all cases faster and more reliable. ~eglot~ is such a mode. I add a few mouse-related keybindings in its mode map.
 
 #+begin_src emacs-lisp
   (use-package eglot
