@@ -33,10 +33,11 @@ We have to be sure to set ~lexical-binding~ in the file header to opt into Emacs
 ;; -*- coding: utf-8; lexical-binding: t -*-
 #+end_src
 
-Many of Emacs's defaults are ill-suited for my purposes, but the first one that needs fixing is the shockingly low garbage-collection threshold, which defaults to a paltry *:8kb*. Setting it to *:100mb* seems to strike a nice balance between GC pauses and performance.
+Many of Emacs's defaults are ill-suited for my purposes, but the first one that needs fixing is the shockingly low garbage-collection threshold, which defaults to a paltry *:8kb*. Setting it to *:100mb* seems to strike a nice balance between GC pauses and performance. We also need to bump the number of bindings/unwind-protects (~max-specpdl-size~).
 
 #+begin_src emacs-lisp
   (setq gc-cons-threshold 100000000)
+  (setq max-specpdl-size 5000)
 #+end_src
 
  We use ~use-package~ everywhere (it is loaded in the [[https://github.com/patrickt/emacs/blob/master/init.el][~init.el~]] that bootstraps this whole enterprise), save for packages already built into Emacs, and by default we want it to install all mentioned packages. There are some bugs associated with this approach, I am told, but it tends to work for me, and if I get a message about a missing package I just call ~package-install~.
@@ -56,7 +57,11 @@ The most useful Emacs command is ~execute-extended-command~. It should be painle
 Since subsequent packages like ~libgit~ may depend on executables like ~cmake~, we need to ensure that Emacs has access to the PATH associated with the current environment.
 
 #+begin_src emacs-lisp
+  (setq fish-location "/usr/local/bin/fish")
+  (unless (file-exists-p fish-location) (warn "Couldn't find fish shell!"))
+
   (use-package exec-path-from-shell
+    :custom (exec-path-from-shell-shell-name fish-location)
     :init (exec-path-from-shell-initialize))
 #+end_src
 
@@ -222,6 +227,13 @@ In the name of avoiding RSI, which has become a feared nemesis, I bind ~C-h~ to 
   (bind-key* "C-c C-h m" #'describe-mode)
   (bind-key* "C-c C-h v" #'describe-variable)
   (bind-key* "C-c C-h l" #'view-lossage)
+#+end_src
+
+Emacs can jump between header files and implementation files, or implementations and tests, as needed.
+
+#+begin_src emacs-lisp
+  (bind-key "s-<up>" #'ff-find-related-file)
+  (bind-key "C-c a f" #'ff-find-related-file)
 #+end_src
 
 Searching should be done with isearch, for UI purposes.
@@ -407,7 +419,7 @@ The default modeline is pretty uninspiring, and ~mood-line~ is very minimal and 
     (defun pt/mood-line-segment-project-advice (oldfun)
       "Advice to use project-relative file names where possible."
       (let
-          ((project-relative (pt/project-relative-file-name nil)))
+          ((project-relative (ignore-errors (pt/project-relative-file-name nil))))
            (if
                (and (project-current) (not org-src-mode) project-relative)
                (propertize (format "%s  " project-relative) 'face 'mood-line-buffer-name)
@@ -1278,6 +1290,7 @@ A thing I want to do someday is to write a framework for sending things like com
   (use-package vterm
     :custom
     (vterm-timer-delay 0.05)
+    (vterm-shell fish-location)
     :config
     (defun pt/turn-off-chrome ()
       (hl-line-mode -1)
