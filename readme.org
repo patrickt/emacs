@@ -65,6 +65,18 @@ Since subsequent packages like ~libgit~ may depend on executables like ~cmake~, 
     :init (exec-path-from-shell-initialize))
 #+end_src
 
+With this auxiliary package for ~use-package~, we can instruct Emacs that a given package depends on the presence of a system tool. It will even install this tool with the system's recommended package manager.
+
+#+begin_src emacs-lisp
+  (use-package use-package-ensure-system-package)
+#+end_src
+
+The ~try~ function lets me try out a new Emacs package without it cluttering up my system permanently.
+
+#+begin_src emacs-lisp
+  (use-package try)
+#+end_src
+
 ** Fixing defaults
 
 Fixing Emacs's defaults is a nontrivial problem. We'll start with UI concerns.
@@ -347,7 +359,7 @@ It's a mystery why Emacs doesn't allow colors by default in its compilation buff
 Emacs looks a lot better when it has a modern monospaced font and VSCode-esque icons, as well as smooth scrolling.
 
 #+begin_src emacs-lisp
-  (ignore-errors (set-frame-font "Menlo-11"))
+  (ignore-errors (set-frame-font "Menlo-10"))
 
   (use-package all-the-icons)
 
@@ -550,7 +562,7 @@ Emacs's keybinding for ~comment-dwim~ is ~M-;~, which is not convenient to type 
            ("C-c j k" . #'avy-kill-whole-line)
            ("C-c j j" . #'avy-goto-line)
            ("C-c j h" . #'avy-kill-region)
-           ("C-c v" . #'avy-goto-word-1)))
+           ("C-c v" . #'avy-goto-char)))
 
   (use-package avy-zap
     :bind (("C-c z" . #'avy-zap-to-char)
@@ -635,6 +647,14 @@ Given how often I tweak my config, I bind ~C-c e~ to take me to my config file.
   (bind-key "C-c e" #'open-init-file)
 #+end_src
 
+It's weird that Emacs doesn't come with a standard way to insert the current date.
+
+#+begin_src emacs-lisp
+  (defun pt/insert-current-date () (interactive)
+    "Insert the current date (Y-m-d) at point."
+    (insert (shell-command-to-string "echo -n $(date +%Y-%m-%d)")))
+#+end_src
+
 Standard macOS conventions would have ~s-w~ close the current buffer, not the whole window.
 
 #+begin_src emacs-lisp
@@ -684,6 +704,20 @@ It's genuinely shocking that there's no "duplicate whatever's marked" command bu
       (call-interactively #'next-line))
     :bind (("C-c u" . pt/duplicate-thing)
            ("C-c C-u" . pt/duplicate-thing)))
+#+end_src
+
+Vim comes with support for incrementing and decrementing numbers at point. Shame that Emacs doesn't. But fixable.
+
+#+begin_src emacs-lisp
+  (defun increment-number-at-point ()
+    "Increment the number at point. Taken from EmacsWiki."
+    (interactive)
+    (skip-chars-backward "0-9")
+    (or (looking-at "[0-9]+")
+        (error "No number at point"))
+    (replace-match (number-to-string (1+ (string-to-number (match-string 0))))))
+
+  (bind-key "C-c a 1" #'increment-number-at-point)
 #+end_src
 
 We need to support reading large blobs of data for LSP's sake.
@@ -848,11 +882,11 @@ One of the main problems with Emacs is how many ephemeral buffers it creates. I'
                                 "\\*org-roam\\*"
                                 "\\*direnv\\*"
                                 "\\*Warnings\\*"
+                                "\\*Go Test\\*"
                                 "\\*Bookmark List\\*"
                                 haskell-compilation-mode
                                 compilation-mode
-                                bqn-inferior-mode))
-    )
+                                bqn-inferior-mode)))
 #+end_src
 
 ** Org-mode
@@ -951,6 +985,7 @@ Magit is one of the top three reasons anyone should use Emacs. What a brilliant 
   (use-package libgit :after magit)
 
   (use-package magit-libgit
+    :disabled
     :after (magit libgit))
 #+end_src
 
@@ -1014,27 +1049,20 @@ I used to use Projectile, but ~marginalia-mode~ doesn't appear to work out of th
      '((project-find-file "Find file")
        (magit-project-status "Magit" ?g)
        (deadgrep "Grep" ?h)
-       (pt/project-run-vterm "vterm" ?t)))
+       (pt/project-run-vterm "vterm" ?t)
+       (project-dired "Dired" ?d)))
     (compilation-always-kill t)
     (project-vc-merge-submodules nil)
     )
 #+end_src
 
-However, some projects (and here I am thinking of a certain Rails app) are too large for project.el /or/ Projectile to deal with, even with caching on. Luckily, we can use fuzzy finding via ~ripgrep~. The initial latency is a little higher, so I don't use it by default.
+I wrote [[https://github.com/patrickt/codespaces.el][my first Emacs package]], which provides a nice ~completing-read~ interface to the ~gh~ command line tool, and that drops you into a Dired buffer over TRAMP upon selection.
 
 #+begin_src emacs-lisp
-  (use-package affe
-    :config
-    (defun pt/project-find-file-dwim ()
-      "Invoke either find-file-in-project or affe-find based on a denylist."
-      (interactive)
-      (let ((disallowed-projects (list "github"))
-            (proj (consult--project-name (project-root (project-current)))))
-        (call-interactively
-         (if (and (-contains? disallowed-projects proj) (not tramp-current-connection))
-             #'affe-find
-           #'project-find-file))))
-    :bind ("C-c f" . #'pt/project-find-file-dwim))
+  (use-package codespaces
+    :ensure-system-package gh
+    :config (codespaces-setup)
+    :bind (("C-c S" . #'codespaces-connect)))
 #+end_src
 
 ** Completion and input
@@ -1116,6 +1144,7 @@ deadgrep is the bee's knees for project-wide search, as it uses ~ripgrep~. I def
 
 #+begin_src emacs-lisp
   (use-package deadgrep
+    :ensure-system-package rg
     :bind (("C-c H" . #'deadgrep)))
 #+end_src
 
@@ -1128,7 +1157,7 @@ I remember the days before Emacs had real regular expressions. Nowadays, we have
 
 ** Autocomplete
 
-After a long journey with ~company~, I've settled on just using the builtin completion-at-point facilities for autocomplete. The UI considerations afforded by Vertico make it even nicer than what Company offered, and consistently faster, too. Someday I want to look into a more aggressive inline autocompletion thing like VSCode supports, but I don't know
+After a long journey with ~company~, I've settled on just using the builtin completion-at-point facilities for autocomplete. The UI considerations afforded by Vertico make it even nicer than what Company offered, and consistently faster, too. Someday I want to look into a more aggressive inline autocompletion thing like VSCode supports, but the only thing I saw wasn't compatible with my philosophy regarding completions.
 
 #+begin_src emacs-lisp
   (bind-key* "C-." #'completion-at-point)
@@ -1395,6 +1424,7 @@ I occasionally write Go, generally as a glue language to munge things together. 
    (use-package gotest
      :bind (:map go-mode-map
                  ("C-c a t" . #'go-test-current-test)
+                 ("C-c a T" . #'go-test-current-file)
                  ("C-c a i" . #'go-import-add)))
  #+end_src
 
@@ -1487,6 +1517,13 @@ I usually use curly quotes when writing in markup languages, which ~typo-mode~ m
  #+end_src
 
 * Miscellany
+
+Emacs can provide a nice interface for selecting ~make~ tasks.
+
+#+begin_src emacs-lisp
+  (use-package makefile-executor
+    :bind ("C-c M" . makefile-executor-execute-project-target))
+#+end_src
 
  ~restclient~ is a terrific interface for running HTTP requests against local or remote services.
 
