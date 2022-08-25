@@ -1259,6 +1259,13 @@ Though I used ~lsp-mode~ for ages, in my old age I've grown happier with package
     :bind (:map eglot-mode-map ("s-t" . #'consult-eglot-symbols)))
 #+end_src
 
+And lastly, the built-in ~flymake~ does a great job, and ~eglot~ builds upon it.
+
+#+begin_src emacs-lisp
+  (use-package flymake
+    :hook (emacs-lisp-mode . flymake-mode))
+#+end_src
+
 * Haskell
 
 Haskell is my day-to-day programming language, so I've tinkered with it a good deal. Featuring automatic ~ormolu~ or ~stylish-haskell~ invocation, as based on a per-project variable, so I can default to ~ormolu~ but choose ~stylish-haskell~ for the projects that don't.
@@ -1633,7 +1640,3 @@ I use ~direnv~ to manage per-project environment variables. The Emacs direnv mod
 If you made it this far, well, may your deity of choice bless you. If you don't use Emacs already, I hope I tempted you a little. If you do, I hope you learned a couple new tricks, just as I have learned so many tricks from reading dozens of other people's configs.
 
 Au revoir.
-
-#+begin_src emacs-lisp
-  (provide 'init)
-#+end_src

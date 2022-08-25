@@ -33,3 +33,5 @@
 (setq max-lisp-eval-depth 2000)
 
 (reload-config)
+(provide 'init)
+;;; init.el ends here
