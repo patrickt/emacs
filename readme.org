@@ -583,6 +583,8 @@ I'm trying to learn how to take advantage of ~smartparens~, but it already provi
   (use-package smartparens
     :bind (("C-(" . #'sp-backward-sexp)
            ("C-)" . #'sp-forward-sexp)
+           ("<left>" . #'sp-backward-sexp)
+           ("<right>" . #'sp-forward-sexp)
            ("C-c C-(" . #'sp-up-sexp)
            ("C-c C-)" . #'sp-down-sexp))
     :config
@@ -601,6 +603,14 @@ I'm trying to learn how to take advantage of ~smartparens~, but it already provi
     (sp-local-pair 'prog-mode "{" nil :post-handlers '((indent-between-pair "RET")))
     (sp-local-pair 'prog-mode "[" nil :post-handlers '((indent-between-pair "RET")))
     (sp-local-pair 'prog-mode "(" nil :post-handlers '((indent-between-pair "RET"))))
+#+end_src
+
+Emacs Lisp doesn't have namespaces, which can be ugly when hacking on libraries. Though Emacs 28 added a feature called "[[https://www.gnu.org/software/emacs/manual/html_node/elisp/Shorthands.html][shorthands]]" that mucks with the reader to desugar some specified prefixes (in ~Local Variables~ blocks) into longer equivalents, it's kind of silly specifying them per-file, when what I just want is to hide the common prefix in my function definitions and calls. ~nameless~ does that and provides a shortcut (~C-c C--~) to insert the prefix.
+
+#+begin_src emacs-lisp
+  (use-package nameless
+    :custom
+    (nameless-private-prefix t))
 #+end_src
 
 I got used to a number of convenient TextMate-style commands.
@@ -636,7 +646,7 @@ We start by binding a few builtin commands to more-convenient keystrokes.
   (bind-key "C-c 3" #'pt/split-window-thirds)
 #+end_src
 
-Given how often I tweak my config, I bind ~C-c e~ to take me to my config file.
+Given how often I tweak my config, I bind ~C-c E~ to take me to my config file.
 
 #+begin_src emacs-lisp
   (defun open-init-file ()
@@ -644,7 +654,7 @@ Given how often I tweak my config, I bind ~C-c e~ to take me to my config file.
     (interactive)
     (find-file "~/.config/emacs/readme.org"))
 
-  (bind-key "C-c e" #'open-init-file)
+  (bind-key "C-c E" #'open-init-file)
 #+end_src
 
 It's weird that Emacs doesn't come with a standard way to insert the current date.
@@ -878,9 +888,11 @@ One of the main problems with Emacs is how many ephemeral buffers it creates. I'
                                 "magit:.\*"
                                 "\\*deadgrep.\*"
                                 "\\*eldoc.\*"
+                                "\\*Codespaces\\*"
                                 "\\*xref\\*"
                                 "\\*org-roam\\*"
                                 "\\*direnv\\*"
+                                "\\*Checkdoc Status\\*"
                                 "\\*Warnings\\*"
                                 "\\*Go Test\\*"
                                 "\\*Bookmark List\\*"
@@ -1132,10 +1144,11 @@ Dumb-jump is pretty good at figuring out where declarations of things might be. 
     :bind (("C-c J" . #'pt/quietly-dumb-jump)))
 #+end_src
 
-~embark~ is a cool package for discoverability.
+~embark~ is a cool package for discoverability. It provides ~embark-act~, which opens a contextual menu about the thing at point. In essence, it changes Emacs interactions from being verb-oriented (aka Lispy-functional) to noun-oriented (like our more OO languages). But it makes things like variable customization easy: no longer do I have to, when I want to tweak a variable name, figure out its name, copy-paste it, hit ~M-:~ and write ~(setq var whatever)~ myself. Just ~embark-act~, hit ~=~ (for assignment), and then I can type in the new value.
 
 #+begin_src emacs-lisp
-  (use-package embark :bind ("C-c E" . #'embark-act))
+  (use-package embark :bind ("C-c e" . #'embark-act))
+  (use-package embark-consult :after (embark consult))
 #+end_src
 
 ** Searching
@@ -1263,7 +1276,9 @@ And lastly, the built-in ~flymake~ does a great job, and ~eglot~ builds upon it.
 
 #+begin_src emacs-lisp
   (use-package flymake
-    :hook (emacs-lisp-mode . flymake-mode))
+    :config
+    (setq elisp-flymake-byte-compile-load-path load-path)
+    :hook ((emacs-lisp-mode . flymake-mode)))
 #+end_src
 
 * Haskell
@@ -1523,6 +1538,13 @@ I usually use curly quotes when writing in markup languages, which ~typo-mode~ m
    (use-package fish-mode :defer t)
  #+end_src
 
+Emacs can be a really great editor for shell scripts, but it needs a little love first.
+
+#+begin_src emacs-lisp
+  (setq sh-basic-offset 2
+        sh-basic-indentation 2)
+#+end_src
+
 * Miscellany
 
 Emacs can provide a nice interface for selecting ~make~ tasks.
@@ -1564,7 +1586,7 @@ TRAMP mode is excellent for editing files on a remote machine or Docker containe
 
     (connection-local-set-profile-variables 'tramp-connection-local-default-shell-profile
                                             '((shell-file-name . "/bin/bash")
-                                              (shell-command-switch . "-c")))
+                                              (shell-command-switch . "-c"))))
 
     ;; (lsp-register-client
     ;;  (make-lsp-client :new-connection (lsp-stdio-connection "gopls")
@@ -1579,24 +1601,6 @@ TRAMP mode is excellent for editing files on a remote machine or Docker containe
     ;;                                    ;; https://github.com/golang/tools/commit/b2d8b0336
     ;;                                    (setq-local lsp-completion-filter-on-incomplete nil))))
 
-    ;; add gh codespaces ssh method support for tramp editing
-    ;; e.g. C-x C-f /ghcs:codespace-name:/path/to/file
-    ;; thanks to my coworker Bas for this one
-    (let ((ghcs (assoc "ghcs" tramp-methods))
-          (ghcs-methods '((tramp-login-program "gh")
-                          (tramp-login-args (("codespace") ("ssh") ("-c") ("%h")))
-                          (tramp-remote-shell "/bin/sh")
-                          (tramp-remote-shell-login ("-l"))
-                          (tramp-remote-shell-args ("-c")))))
-      ;; just for debugging the methods
-      (if ghcs (setcdr ghcs ghcs-methods)
-        (push (cons "ghcs" ghcs-methods) tramp-methods))))
-
-  (defun pt/codespace ()
-    "Connect to the default codespace. This is a host configured in my .ssh/config."
-    ;; Host github-codespaces, root/localhost,  2222, NoHostAuthenticationForLocalhost yes
-    (interactive)
-    (find-file "/ssh:github-codespaces:/workspaces"))
 #+end_src
 
 By default, the list of recent files gets cluttered up with the contents of downloaded packages.
