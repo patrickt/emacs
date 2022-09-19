@@ -30,7 +30,13 @@ The most up-to-date version of this document is located [[https://github.com/pat
 We have to be sure to set ~lexical-binding~ in the file header to opt into Emacs lexical scope. Emacs Lisp really isn't the worst language once you pull in the community's /de facto/ standard libraries, but you need lexical scope.
 
 #+begin_src emacs-lisp
-;; -*- coding: utf-8; lexical-binding: t -*-
+  ;; -*- coding: utf-8; lexical-binding: t -*-
+#+end_src
+
+I used to set ~use-package-always-ensure~ here, but now that is conditional, as always-ensure means that we hit the network every time on startup. Seems unnecessary. As such, we set it in the [[https://github.com/patrickt/emacs/blob/master/init.el][~init.el~]] that bootstraps this whole enterprise if ~use-package~ wasn't installed, which is only true on a fresh install or wiped ~elpa~ directory.
+
+#+begin_src emacs-lisp
+  (require 'use-package)
 #+end_src
 
 Many of Emacs's defaults are ill-suited for my purposes, but the first one that needs fixing is the shockingly low garbage-collection threshold, which defaults to a paltry *:8kb*. Setting it to *:100mb* seems to strike a nice balance between GC pauses and performance. We also need to bump the number of bindings/unwind-protects (~max-specpdl-size~).
@@ -39,12 +45,6 @@ Many of Emacs's defaults are ill-suited for my purposes, but the first one that 
   (setq gc-cons-threshold 100000000)
   (setq max-specpdl-size 5000)
 #+end_src
-
- We use ~use-package~ everywhere (it is loaded in the [[https://github.com/patrickt/emacs/blob/master/init.el][~init.el~]] that bootstraps this whole enterprise), save for packages already built into Emacs, and by default we want it to install all mentioned packages. There are some bugs associated with this approach, I am told, but it tends to work for me, and if I get a message about a missing package I just call ~package-install~.
-
- #+begin_src emacs-lisp
-   (setq use-package-always-ensure t)
- #+end_src
 
 The most useful Emacs command is ~execute-extended-command~. It should be painless to access from the home row. (~bind-key*~ ensures that this setting is propagated through all major modes, which saves us a bunch of ~unbind-key~ calls in ~use-package~ stanzas.) Why not something even easier, like ~C-;~, you ask? Unfortunately, macOS Terminal.app swallows that keybinding and does nothing with it. I'm sure this is correct behavior by some sort of standard, but I have to work around it, since occasionally I do use Emacs in the terminal.
 
@@ -57,12 +57,19 @@ The most useful Emacs command is ~execute-extended-command~. It should be painle
 Since subsequent packages like ~libgit~ may depend on executables like ~cmake~, we need to ensure that Emacs has access to the PATH associated with the current environment.
 
 #+begin_src emacs-lisp
-  (setq fish-location "/usr/local/bin/fish")
-  (unless (file-exists-p fish-location) (warn "Couldn't find fish shell!"))
+  ;; exec-path-from shell was misbehaving, this hack seems to mollify it
+  (defvar fish-location "/usr/local/bin/fish")
 
   (use-package exec-path-from-shell
-    :custom (exec-path-from-shell-shell-name fish-location)
-    :init (exec-path-from-shell-initialize))
+    :init
+    (if (file-exists-p fish-location) (setq exec-path-from-shell-shell-name fish-location))
+    (exec-path-from-shell-initialize))
+#+end_src
+
+I'm experimenting with ~package-quickstart~ to speed up startup.
+
+#+begin_src emacs-lisp
+  (advice-add 'package-install :after #'package-quickstart-refresh)
 #+end_src
 
 With this auxiliary package for ~use-package~, we can instruct Emacs that a given package depends on the presence of a system tool. It will even install this tool with the system's recommended package manager.
@@ -71,7 +78,7 @@ With this auxiliary package for ~use-package~, we can instruct Emacs that a give
   (use-package use-package-ensure-system-package)
 #+end_src
 
-The ~try~ function lets me try out a new Emacs package without it cluttering up my system permanently.
+The ~try~ package lets me try out a new Emacs package without it cluttering up my system permanently.
 
 #+begin_src emacs-lisp
   (use-package try)
@@ -101,10 +108,6 @@ Fixing Emacs's defaults is a nontrivial problem. We'll start with UI concerns.
    kill-whole-line t
    ;; search should be case-sensitive by default
    case-fold-search nil
-   ;; no need to prompt for the read command _every_ time
-   compilation-read-command nil
-   ;; scroll to first error
-   compilation-scroll-output 'first-error
    ;; accept 'y' or 'n' instead of yes/no
    ;; the documentation advises against setting this variable
    ;; the documentation can get bent imo
@@ -232,8 +235,8 @@ Emoji don't work on Emacs versions < 27 (aside from the Mitsuharu Yamamoto emacs
 In the name of avoiding RSI, which has become a feared nemesis, I bind ~C-h~ to backwards-delete-char, as per the macOS keybindings. But this means I have to rebind the keys that I actually use for help purposes.
 
 #+begin_src emacs-lisp
-  (bind-key "C-h" #'sp-backward-delete-char)
-  (bind-key "M-h" #'sp-backward-delete-word)
+  (bind-key* "C-h" #'backward-delete-char)
+  (bind-key* "M-h" #'backward-delete-word)
   (bind-key* "C-c C-h k" #'describe-key)
   (bind-key* "C-c C-h f" #'describe-function)
   (bind-key* "C-c C-h m" #'describe-mode)
@@ -344,6 +347,18 @@ I'm trying to use some abbrevs to help with tedious patterns like checking ~if e
   (setq abbrev-suggest t)
 #+end_src
 
+I almost never want to quit if readme.org is in a bad state. This warns me should I accidentally do so.
+
+#+begin_src emacs-lisp
+  (defun check-config ()
+    "Warn if exiting Emacs with a readme.org that doesn't load."
+    (or
+     (ignore-errors (org-babel-load-file "~/.config/emacs/readme.org"))
+     (y-or-n-p "Configuration file may be malformed: really exit?")))
+
+  (push #'check-config kill-emacs-query-functions)
+#+end_src
+
 ** Visuals
 
 It's a mystery why Emacs doesn't allow colors by default in its compilation buffer, but this has been fixed recently with this builtin package.
@@ -359,7 +374,7 @@ It's a mystery why Emacs doesn't allow colors by default in its compilation buff
 Emacs looks a lot better when it has a modern monospaced font and VSCode-esque icons, as well as smooth scrolling.
 
 #+begin_src emacs-lisp
-  (ignore-errors (set-frame-font "Menlo-10"))
+  (ignore-errors (set-frame-font "Menlo-12"))
 
   (use-package all-the-icons)
 
@@ -418,12 +433,13 @@ Most major modes pollute the modeline, so we pull in diminish.el to quiesce them
 The default modeline is pretty uninspiring, and ~mood-line~ is very minimal and pleasing. With a bit of elbow grease, it can be convinced to show the project-relative file name.
 
 #+begin_src emacs-lisp
-  (defun pt/project-relative-file-name (do-not-strip-prefix)
+  (defun pt/project-relative-file-name (include-prefix)
+    "Return the project-relative filename, or the full path if INCLUDE-PREFIX is t."
     (letrec
         ((fullname (if (equal major-mode 'dired-mode) default-directory (buffer-file-name)))
          (root (project-root (project-current)))
          (relname (if fullname (file-relative-name fullname root) fullname))
-         (should-strip (and root (not do-not-strip-prefix))))
+         (should-strip (and root (not include-prefix))))
       (if should-strip relname fullname)))
 
   (use-package mood-line
@@ -583,6 +599,7 @@ I'm trying to learn how to take advantage of ~smartparens~, but it already provi
   (use-package smartparens
     :bind (("C-(" . #'sp-backward-sexp)
            ("C-)" . #'sp-forward-sexp)
+           ("C-c d w" . #'sp-delete-word)
            ("<left>" . #'sp-backward-sexp)
            ("<right>" . #'sp-forward-sexp)
            ("C-c C-(" . #'sp-up-sexp)
@@ -660,8 +677,9 @@ Given how often I tweak my config, I bind ~C-c E~ to take me to my config file.
 It's weird that Emacs doesn't come with a standard way to insert the current date.
 
 #+begin_src emacs-lisp
-  (defun pt/insert-current-date () (interactive)
+  (defun pt/insert-current-date ()
     "Insert the current date (Y-m-d) at point."
+    (interactive)
     (insert (shell-command-to-string "echo -n $(date +%Y-%m-%d)")))
 #+end_src
 
@@ -783,10 +801,17 @@ I almost always want to default to a two-buffer setup.
   (bind-key "C-x !" #'delete-other-windows) ;; Access to the old keybinding.
 #+end_src
 
-~keyboard-quit~ doesn't exit the minibuffer, so I give ~abort-recursive-edit~, which does, a more convenient keybinding.
+~keyboard-quit~ sometimes isn't enough, especially if the minibuffer is open, so here's a beefed-up version.
 
 #+begin_src emacs-lisp
-  (bind-key "s-g" #'abort-recursive-edit)
+  (defun pt/abort ()
+    "Remove auxiliary buffers."
+    (interactive)
+    (ignore-errors (exit-recursive-edit))
+    (popper-close-latest)
+    (call-interactively #'keyboard-quit))
+
+  (bind-key* "s-g" #'pt/abort)
 #+end_src
 
 Completion systems make ~kill-buffer~ give you a list of possible results, which isn't generally what I want.
@@ -1047,13 +1072,19 @@ The code-review package allows for integration with pull request comments and su
 I used to use Projectile, but ~marginalia-mode~ doesn't appear to work out of the box with it. Besides, there's no reason to pull in a separate package when the builtin ~project.el~ works fine. We pin it to GNU ELPA to pull the latest version.
 
 #+begin_src emacs-lisp
+  (use-package compile
+    :custom
+    (compilation-read-command nil "Don't prompt every time.")
+    (compilation-scroll-output 'first-error))
+
   (use-package project
     :pin gnu
     :bind (("C-c k" . #'project-kill-buffers)
            ("C-c m" . #'project-compile)
            ("C-x f" . #'find-file)
            ("C-c f" . #'project-find-file)
-           ("C-c F" . #'project-switch-project))
+           ("C-c F" . #'project-switch-project)
+           ("C-c R" . #'pt/recentf-in-project))
     :custom
     ;; This is one of my favorite things: you can customize
     ;; the options shown upon switching projects.
@@ -1062,10 +1093,19 @@ I used to use Projectile, but ~marginalia-mode~ doesn't appear to work out of th
        (magit-project-status "Magit" ?g)
        (deadgrep "Grep" ?h)
        (pt/project-run-vterm "vterm" ?t)
-       (project-dired "Dired" ?d)))
+       (project-dired "Dired" ?d)
+       (pt/recentf-in-project "Recently opened" ?r)))
     (compilation-always-kill t)
     (project-vc-merge-submodules nil)
     )
+
+  (defun pt/recentf-in-project ()
+    "As `recentf', but filtering based on the current project root."
+    (interactive)
+    (let* ((proj (project-current))
+           (root (if proj (project-root proj) (user-error "Not in a project"))))
+      (cl-flet ((ok (fpath) (string-prefix-p root fpath)))
+        (find-file (completing-read "Find recent file:" recentf-list #'ok)))))
 #+end_src
 
 I wrote [[https://github.com/patrickt/codespaces.el][my first Emacs package]], which provides a nice ~completing-read~ interface to the ~gh~ command line tool, and that drops you into a Dired buffer over TRAMP upon selection.
@@ -1104,8 +1144,8 @@ My journey through the various Emacs completion facilities has been long and twi
            ("C-c b"     . #'consult-buffer)
            ("C-x b"     . #'consult-buffer)
            ("C-c r"     . #'consult-recent-file)
-           ("C-c R"     . #'consult-bookmark)
-           ("C-c `"     . #'consult-flymake)
+           ("C-c B"     . #'consult-bookmark)
+           ("C-c `"     . #'flymake-goto-next-error)
            ("C-c h"     . #'consult-ripgrep)
            ("C-c y"     . #'consult-yank-pop)
            ("C-x C-f"   . #'find-file)
@@ -1147,7 +1187,9 @@ Dumb-jump is pretty good at figuring out where declarations of things might be. 
 ~embark~ is a cool package for discoverability. It provides ~embark-act~, which opens a contextual menu about the thing at point. In essence, it changes Emacs interactions from being verb-oriented (aka Lispy-functional) to noun-oriented (like our more OO languages). But it makes things like variable customization easy: no longer do I have to, when I want to tweak a variable name, figure out its name, copy-paste it, hit ~M-:~ and write ~(setq var whatever)~ myself. Just ~embark-act~, hit ~=~ (for assignment), and then I can type in the new value.
 
 #+begin_src emacs-lisp
-  (use-package embark :bind ("C-c e" . #'embark-act))
+  (use-package embark
+    :bind ("C-c e" . #'embark-act)
+    :bind ("C-<escape>" . #'embark-act))
   (use-package embark-consult :after (embark consult))
 #+end_src
 
@@ -1223,7 +1265,7 @@ Built-in ~xref~ and ~eldoc~ are powerful packages, though we pin them to GNU ELP
     :bind ("s-d" . #'eldoc)
     :custom
     (eldoc-echo-area-prefer-doc-buffer t)
-    (eldoc-echo-area-use-multiline-p nil))
+    (eldoc-echo-area-use-multiline-p t))
 #+end_src
 
 Though I used ~lsp-mode~ for ages, in my old age I've grown happier with packages that try to do less, as they are in almost all cases faster and more reliable. ~eglot~ is such a mode. I add a few mouse-related keybindings in its mode map.
@@ -1242,6 +1284,7 @@ Though I used ~lsp-mode~ for ages, in my old age I've grown happier with package
     :custom
     (eglot-confirm-server-initiated-edits nil)
     (eglot-autoshutdown t)
+    (eglot-send-changes-idle-time 0.1)
     :config
     ;; Eglot doesn't correctly unescape markdown: https://github.com/joaotavora/eglot/issues/333
     (defun mpolden/gfm-unescape-string (string)
@@ -1287,7 +1330,8 @@ Haskell is my day-to-day programming language, so I've tinkered with it a good d
 
 #+begin_src emacs-lisp
   (use-package haskell-mode
-
+    :custom
+    (haskell-compile-cabal-build-command (string-join haskell-compile-cabal-build-command " -funclutter-valid-hole-fits"))
     :config
     (defcustom haskell-formatter 'ormolu
       "The Haskell formatter to use. One of: 'ormolu, 'stylish, nil. Set it per-project in .dir-locals."
@@ -1547,6 +1591,13 @@ Emacs can be a really great editor for shell scripts, but it needs a little love
 
 * Miscellany
 
+Being able to Google something I'm looking at is really nice.
+
+#+begin_src emacs-lisp
+  (use-package google-this
+    :bind ("C-c G" . #'google-this))
+#+end_src
+
 Emacs can provide a nice interface for selecting ~make~ tasks.
 
 #+begin_src emacs-lisp
@@ -1565,7 +1616,7 @@ Emacs can provide a nice interface for selecting ~make~ tasks.
 
 #+begin_src emacs-lisp
   (use-package dash-at-point
-    :bind ("C-c d" . dash-at-point))
+    :bind ("C-c D" . dash-at-point))
 #+end_src
 
 TRAMP mode is excellent for editing files on a remote machine or Docker container, but it needs some TLC.
