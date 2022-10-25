@@ -62,14 +62,13 @@ Since subsequent packages like ~libgit~ may depend on executables like ~cmake~, 
 
   (use-package exec-path-from-shell
     :init
-    (if (file-exists-p fish-location) (setq exec-path-from-shell-shell-name fish-location))
     (exec-path-from-shell-initialize))
 #+end_src
 
 I'm experimenting with ~package-quickstart~ to speed up startup.
 
 #+begin_src emacs-lisp
-  (advice-add 'package-install :after #'package-quickstart-refresh)
+  ;; (advice-add 'package-install :after #'package-quickstart-refresh)
 #+end_src
 
 With this auxiliary package for ~use-package~, we can instruct Emacs that a given package depends on the presence of a system tool. It will even install this tool with the system's recommended package manager.
@@ -369,12 +368,15 @@ It's a mystery why Emacs doesn't allow colors by default in its compilation buff
     (add-hook 'compilation-filter-hook #'ansi-color-compilation-filter)
     (ansi-color-for-comint-mode-on)
     (setq ansi-color-for-compilation-mode t))
+
+  (use-package fancy-compilation)
 #+end_src
 
 Emacs looks a lot better when it has a modern monospaced font and VSCode-esque icons, as well as smooth scrolling.
 
 #+begin_src emacs-lisp
-  (ignore-errors (set-frame-font "Menlo-12"))
+  (ignore-errors (set-frame-font "Menlo-13"))
+  (set-face-attribute 'variable-pitch nil :font "SF Mono-12")
 
   (use-package all-the-icons)
 
@@ -525,6 +527,7 @@ For some reason ~centaur-tabs~ has stopped working. I'm keeping the config aroun
      ("s-}" . #'centaur-tabs-forward)))
 
   (use-package tab-line
+    :disabled
     :after dash
     :config
     (setq tab-line-separator " | ")
@@ -689,6 +692,32 @@ Standard macOS conventions would have ~s-w~ close the current buffer, not the wh
   (bind-key "s-w" #'kill-this-buffer)
 #+end_src
 
+One of Emacs's most broken UI decisions is to prompt for saving buffers that are marked as modified, even if their contents are the same as on disc. It's totally asinine that this doesn't work like it does everywhere else.
+
+#+begin_src emacs-lisp
+  (defun pt/check-file-modification (&optional _)
+    "Clear modified bit on all unmodified buffers."
+    (interactive)
+    (dolist (buf (buffer-list))
+      (with-current-buffer buf
+        (when (and buffer-file-name (buffer-modified-p) (not (file-remote-p buffer-file-name)) (current-buffer-matches-file-p))
+          (set-buffer-modified-p nil)))))
+
+  (defun current-buffer-matches-file-p ()
+    "Return t if the current buffer is identical to its associated file."
+    (autoload 'diff-no-select "diff")
+    (when buffer-file-name
+      (diff-no-select buffer-file-name (current-buffer) nil 'noasync)
+      (with-current-buffer "*Diff*"
+        (and (search-forward-regexp "^Diff finished \(no differences\)\." (point-max) 'noerror) t))))
+
+  ;; (advice-add 'save-some-buffers :before #'pt/check-file-modification)
+
+  ;; (add-hook 'before-save-hook #'pt/check-file-modification)
+  ;; (add-hook 'kill-buffer-hook #'pt/check-file-modification)
+  (advice-add 'magit-status :before #'pt/check-file-modification)
+#+end_src
+
 Emacs makes it weirdly hard to just, like, edit a file as root, probably due to supporting operating systems not built on ~sudo~. Enter the ~sudo-edit~ package.
 
 #+begin_src emacs-lisp
@@ -820,6 +849,7 @@ Completion systems make ~kill-buffer~ give you a list of possible results, which
   (defun kill-this-buffer ()
     "Kill the current buffer."
     (interactive)
+    (pt/check-file-modification)
     (kill-buffer nil)
     )
 
@@ -1010,7 +1040,7 @@ Magit is one of the top three reasons anyone should use Emacs. What a brilliant 
   (use-package magit
     :diminish magit-auto-revert-mode
     :diminish auto-revert-mode
-    :bind (("C-c g" . #'magit-status))
+    :bind (("C-c g" . #'magit-status-quick))
     :custom
     (magit-repository-directories '(("~/src" . 1)))
     (magit-list-refs-sortby "-creatordate")
@@ -1018,12 +1048,6 @@ Magit is one of the top three reasons anyone should use Emacs. What a brilliant 
     (defun pt/commit-hook () (set-fill-column 80))
     (add-hook 'git-commit-setup-hook #'pt/commit-hook)
     (add-to-list 'magit-no-confirm 'stage-all-changes))
-
-  (use-package libgit :after magit)
-
-  (use-package magit-libgit
-    :disabled
-    :after (magit libgit))
 #+end_src
 
 Magit also allows integration with GitHub and other such forges (though I hate that term).
@@ -1060,10 +1084,21 @@ I'm trying out this git-status-in-the-fringe package, which looks fairly visuall
 The code-review package allows for integration with pull request comments and such.
 
 #+begin_src emacs-lisp
+  (use-package emojify :config (global-emojify-mode))
+
   (use-package code-review
-    :after magit
+    :custom
+    (forge-owned-accounts '(("patrickt" . nil)))
+    (code-review-auth-login-marker 'forge)
+    (code-review-fill-column 80)
+    (code-review-new-buffer-window-strategy #'switch-to-buffer-other-window)
+    :after (magit forge emojify)
+    :bind (:map forge-pullreq-section-map (("RET" . #'forge-browse-dwim)
+                                           ("C-c r" . #'code-review-forge-pr-at-point)))
     :bind (:map forge-topic-mode-map ("C-c r" . #'code-review-forge-pr-at-point))
     :bind (:map code-review-mode-map (("C-c n" . #'code-review-comment-jump-next)
+                                      ("N" . #'code-review-comment-jump-next)
+                                      ("P" . #'code-review-comment-jump-previous)
                                       ("C-c p" . #'code-review-comment-jump-previous))))
 #+end_src
 
@@ -1113,7 +1148,9 @@ I wrote [[https://github.com/patrickt/codespaces.el][my first Emacs package]], w
 #+begin_src emacs-lisp
   (use-package codespaces
     :ensure-system-package gh
-    :config (codespaces-setup)
+    :config
+    (codespaces-setup)
+    (setq vc-handled-backends '(Git)) ;; speeds EVERYTHING up
     :bind (("C-c S" . #'codespaces-connect)))
 #+end_src
 
@@ -1190,7 +1227,9 @@ Dumb-jump is pretty good at figuring out where declarations of things might be. 
   (use-package embark
     :bind ("C-c e" . #'embark-act)
     :bind ("C-<escape>" . #'embark-act))
+
   (use-package embark-consult :after (embark consult))
+  (use-package embark-vc :after embark)
 #+end_src
 
 ** Searching
@@ -1251,7 +1290,7 @@ Built-in ~xref~ and ~eldoc~ are powerful packages, though we pin them to GNU ELP
 
 #+begin_src emacs-lisp
   (use-package xref
-    :pin gnu
+    :pin gnu :ensure t
     :bind (("s-r" . #'xref-find-references)
            ("C-<down-mouse-1>" . #'xref-find-definitions)
            ("C-S-<down-mouse-1>" . #'xref-find-references)
@@ -1312,7 +1351,12 @@ Though I used ~lsp-mode~ for ages, in my old age I've grown happier with package
     )
 
   (use-package consult-eglot
-    :bind (:map eglot-mode-map ("s-t" . #'consult-eglot-symbols)))
+    :config
+    (defun pt/consult-eglot ()
+      (interactive)
+      (let ((completion-styles '(emacs22)))
+        (call-interactively #'consult-eglot-symbols)))
+    :bind (:map eglot-mode-map ("s-t" . #'pt/consult-eglot)))
 #+end_src
 
 And lastly, the built-in ~flymake~ does a great job, and ~eglot~ builds upon it.
@@ -1383,9 +1427,9 @@ A thing I want to do someday is to write a framework for sending things like com
 
 #+begin_src emacs-lisp
   (use-package vterm
+    :ensure-system-package cmake
     :custom
     (vterm-timer-delay 0.05)
-    (vterm-shell fish-location)
     :config
     (defun pt/turn-off-chrome ()
       (hl-line-mode -1)
@@ -1524,6 +1568,28 @@ I'm trying to learn APL, because I've lost control of my life.
   (use-package dyalog-mode :defer t)
 #+end_src
 
+I think enough people have taken potshots at JavaScript that I hardly need to add mine to the barrage. Let's just say that it's not an ideal language but we do our best.
+
+#+begin_src emacs-lisp
+  (use-package js2-mode
+    :hook (js2-mode . js2-imenu-extras-mode)
+    :mode ("\\.js$" . js2-mode)
+    :ensure t
+    :custom
+    (js2-mode-assume-strict t)
+    (js2-warn-about-unused-function-arguments t)
+    )
+
+  (use-package xref-js2
+    :ensure t
+    :hook (js2-mode . pt/js-hook)
+    :custom
+    (xref-js2-search-program 'rg)
+    :config
+    (defun pt/js-hook ()
+      (add-hook 'xref-backend-functions #'xref-js2-xref-backend nil t)))
+#+end_src
+
 *** Configuration
 
  #+begin_src emacs-lisp
@@ -1565,7 +1631,8 @@ Occasionally I need to edit Rails .erb templates, God help me.
 #+begin_src emacs-lisp
   (use-package web-mode
     :custom (web-mode-markup-indent-offset 2)
-    :mode ("\\.html.erb$" . web-mode))
+    :mode ("\\.html.erb$" . web-mode)
+    :mode ("\\.art$" . web-mode))
 #+end_src
 
 I usually use curly quotes when writing in markup languages, which ~typo-mode~ makes easy.
@@ -1623,6 +1690,7 @@ TRAMP mode is excellent for editing files on a remote machine or Docker containe
 
 #+begin_src emacs-lisp
   (require 'tramp)
+  (setq remote-file-name-inhibit-locks t)
 
   ;; Needs to be called from recentf's :init
   ;; todo: make this into a use-package invocation
@@ -1659,13 +1727,15 @@ By default, the list of recent files gets cluttered up with the contents of down
 #+begin_src emacs-lisp
   (use-package recentf
     :after dash
-    :init (pt/customize-tramp)
-    :config
-    (setq recentf-exclude (-concat recentf-exclude '("\\elpa"
-                                                     "private/tmp" ; to avoid custom files
-                                                     "txt/roam"
-                                                     )))
-    (recentf-mode))
+    :init (pt/customize-tramp) ;; so that tramp urls work ok in recentf
+    :custom
+    (recentf-exclude (-concat recentf-exclude '("\\elpa"
+                                                "private/tmp" ; to avoid custom files
+                                                "txt/roam"
+                                                )))
+    (recentf-max-saved-items 50)
+    (recentf-max-menu-items 30)
+    :config (recentf-mode))
 #+end_src
 
 I use ~direnv~ to manage per-project environment variables. The Emacs direnv mode is quite sophisticated, automatically setting all relevant variables for you when you go in and out of a particular project.

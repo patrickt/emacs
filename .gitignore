@@ -1,5 +1,9 @@
 custom.el
+code-review-error.log
 readme.el
+emojis/
+var/prescient-save.el
+history
 .lsp-session*
 amx-items
 *.sqlite

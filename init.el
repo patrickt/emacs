@@ -15,6 +15,7 @@
 (add-to-list 'package-archives '("ublt" . "https://elpa.ubolonton.org/packages/") t)
 (add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/") t)
 (setq package-native-compile t)
+(setq use-package-always-ensure t)
 (unless (package-installed-p 'use-package)
   (message "refreshing contents")
   (unless package-archive-contents (package-refresh-contents))
