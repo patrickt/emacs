@@ -358,17 +358,17 @@ I almost never want to quit if readme.org is in a bad state. This warns me shoul
   (push #'check-config kill-emacs-query-functions)
 #+end_src
 
-** Visuals
-
-It's a mystery why Emacs doesn't allow colors by default in its compilation buffer, but this has been fixed recently with this builtin package.
+My RSI hurts a lot.
 
 #+begin_src emacs-lisp
-  (use-package ansi-color
-    :config
-    (add-hook 'compilation-filter-hook #'ansi-color-compilation-filter)
-    (ansi-color-for-comint-mode-on)
-    (setq ansi-color-for-compilation-mode t))
+  (type-break-mode)
+#+end_src
 
+** Visuals
+
+It's a mystery why Emacs doesn't allow colors by default in its compilation buffer, but ~fancy-compilation~ addresses that (and ensures the background color is set to something dark so that programs that make assumptions about)
+
+#+begin_src emacs-lisp
   (use-package fancy-compilation)
 #+end_src
 
@@ -397,14 +397,8 @@ Window chrome both wastes space and looks unappealing. (This is actually pasted 
   (when (window-system)
     (tool-bar-mode -1)
     (scroll-bar-mode -1)
-    (tooltip-mode -1))
-
-  (use-package yascroll
-    :disabled
-    :config
-    (global-yascroll-bar-mode)
-    :custom-face
-    (yascroll:thumb-fringe ((t (:background "#3b4252" :foreground "#3b4252")))))
+    (tooltip-mode -1)
+    (pixel-scroll-mode))
 #+end_src
 
 I use the [[https://github.com/hlissner/emacs-doom-themes][Doom Emacs themes]], which are gorgeous. I sometimes also use Modus Vivendi, the excellent new theme that now ships with Emacs.
@@ -581,7 +575,8 @@ Emacs's keybinding for ~comment-dwim~ is ~M-;~, which is not convenient to type 
            ("C-c j k" . #'avy-kill-whole-line)
            ("C-c j j" . #'avy-goto-line)
            ("C-c j h" . #'avy-kill-region)
-           ("C-c v" . #'avy-goto-char)))
+           ("C-c j w" . #'avy-copy-line)
+           ("C-c v v" . #'avy-goto-char)))
 
   (use-package avy-zap
     :bind (("C-c z" . #'avy-zap-to-char)
@@ -606,6 +601,7 @@ I'm trying to learn how to take advantage of ~smartparens~, but it already provi
            ("<left>" . #'sp-backward-sexp)
            ("<right>" . #'sp-forward-sexp)
            ("C-c C-(" . #'sp-up-sexp)
+           ("C-c v w" . #'sp-copy-sexp)
            ("C-c C-)" . #'sp-down-sexp))
     :config
     (require 'smartparens-config)
@@ -716,6 +712,7 @@ One of Emacs's most broken UI decisions is to prompt for saving buffers that are
   ;; (add-hook 'before-save-hook #'pt/check-file-modification)
   ;; (add-hook 'kill-buffer-hook #'pt/check-file-modification)
   (advice-add 'magit-status :before #'pt/check-file-modification)
+  (advice-add 'save-buffers-kill-terminal :before #'pt/check-file-modification)
 #+end_src
 
 Emacs makes it weirdly hard to just, like, edit a file as root, probably due to supporting operating systems not built on ~sudo~. Enter the ~sudo-edit~ package.
@@ -1104,7 +1101,7 @@ The code-review package allows for integration with pull request comments and su
 
 ** Project navigation
 
-I used to use Projectile, but ~marginalia-mode~ doesn't appear to work out of the box with it. Besides, there's no reason to pull in a separate package when the builtin ~project.el~ works fine. We pin it to GNU ELPA to pull the latest version.
+I prefer the built-in ~project.el~ to ~projectile~, but because ~projectile~ caches very aggressively, it's nice to use when on a TRAMP connection.
 
 #+begin_src emacs-lisp
   (use-package compile
@@ -1117,7 +1114,6 @@ I used to use Projectile, but ~marginalia-mode~ doesn't appear to work out of th
     :bind (("C-c k" . #'project-kill-buffers)
            ("C-c m" . #'project-compile)
            ("C-x f" . #'find-file)
-           ("C-c f" . #'project-find-file)
            ("C-c F" . #'project-switch-project)
            ("C-c R" . #'pt/recentf-in-project))
     :custom
@@ -1133,6 +1129,17 @@ I used to use Projectile, but ~marginalia-mode~ doesn't appear to work out of th
     (compilation-always-kill t)
     (project-vc-merge-submodules nil)
     )
+
+  (use-package projectile
+    :custom (projectile-enable-caching t)
+    :config
+    (defun pt/find-file-dwim ()
+      (interactive)
+      (if (and buffer-file-name (file-remote-p buffer-file-name))
+          (unless projectile-mode (projectile-mode t))
+          (projectile-find-file)
+        (project-find-file)))
+    :bind (("C-c f" . #'pt/find-file-dwim)))
 
   (defun pt/recentf-in-project ()
     "As `recentf', but filtering based on the current project root."
@@ -1163,6 +1170,7 @@ My journey through the various Emacs completion facilities has been long and twi
     :config
     (vertico-mode)
     (vertico-mouse-mode)
+    (set-face-attribute 'vertico-mouse nil :inherit nil)
     (savehist-mode)
     :custom
     (vertico-count 22)
@@ -1698,6 +1706,8 @@ TRAMP mode is excellent for editing files on a remote machine or Docker containe
 
     (setq tramp-default-method "ssh"
           tramp-verbose 1
+          remote-file-name-inhibit-cache nil
+          tramp-use-ssh-controlmaster-options nil
           tramp-default-remote-shell "/bin/bash"
           tramp-connection-local-default-shell-variables
           '((shell-file-name . "/bin/bash")
@@ -1705,7 +1715,10 @@ TRAMP mode is excellent for editing files on a remote machine or Docker containe
 
     (connection-local-set-profile-variables 'tramp-connection-local-default-shell-profile
                                             '((shell-file-name . "/bin/bash")
-                                              (shell-command-switch . "-c"))))
+                                              (shell-command-switch . "-c")))
+    ;;(add-to-list 'tramp-remote-path 'tramp-own-remote-path)
+
+    )
 
     ;; (lsp-register-client
     ;;  (make-lsp-client :new-connection (lsp-stdio-connection "gopls")
