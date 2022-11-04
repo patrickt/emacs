@@ -10,10 +10,12 @@
   (scroll-bar-mode -1)
   (tooltip-mode -1))
 
+(when (eq system-type 'darwin)
+  (setq ns-auto-hide-menu-bar t))
+
 (require 'package)
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (add-to-list 'package-archives '("ublt" . "https://elpa.ubolonton.org/packages/") t)
-(add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/") t)
 (setq package-native-compile t)
 (setq use-package-always-ensure t)
 (unless (package-installed-p 'use-package)

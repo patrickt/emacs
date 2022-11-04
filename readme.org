@@ -18,11 +18,6 @@ This configuration assumes you're running Emacs 28, the latest version (though I
 
 The most up-to-date version of this document is located [[https://github.com/patrickt/emacs][on GitHub]]. A better-rendered version can be found [[https://blog.sumtypeofway.com/posts/emacs-config.html][on my blog]], but might not be as current as the first version.
 
-** TODOs
-
-- Make a popper function that gives Magit a bit more breathing room
-- Disable ~C-c g~ in org-src modes
-
 * Configuration: start!
 
 ** Preliminaries
@@ -58,18 +53,11 @@ Since subsequent packages like ~libgit~ may depend on executables like ~cmake~, 
 
 #+begin_src emacs-lisp
   ;; exec-path-from shell was misbehaving, this hack seems to mollify it
-  (defvar fish-location "/usr/local/bin/fish")
-
   (use-package exec-path-from-shell
     :init
     (exec-path-from-shell-initialize))
 #+end_src
 
-I'm experimenting with ~package-quickstart~ to speed up startup.
-
-#+begin_src emacs-lisp
-  ;; (advice-add 'package-install :after #'package-quickstart-refresh)
-#+end_src
 
 With this auxiliary package for ~use-package~, we can instruct Emacs that a given package depends on the presence of a system tool. It will even install this tool with the system's recommended package manager.
 
@@ -273,11 +261,6 @@ The out-of-the-box treatment of whitespace is unfortunate, but fixable.
     (deactivate-mark))
 
   (bind-key "C-c I" #'pt/indent-just-yanked)
-
-  (use-package auto-indent-mode
-    :disabled ;; fucks with vertico
-    :custom (auto-indent-start-org-indent nil)
-    :config (auto-indent-mode))
 #+end_src
 
 Emacs instances started outside the terminal do not pick up ssh-agent information unless we use keychain-environment.
@@ -361,7 +344,8 @@ I almost never want to quit if readme.org is in a bad state. This warns me shoul
 My RSI hurts a lot.
 
 #+begin_src emacs-lisp
-  (type-break-mode)
+ (setq type-break-file-name nil)
+ (type-break-mode)
 #+end_src
 
 ** Visuals
@@ -369,16 +353,18 @@ My RSI hurts a lot.
 It's a mystery why Emacs doesn't allow colors by default in its compilation buffer, but ~fancy-compilation~ addresses that (and ensures the background color is set to something dark so that programs that make assumptions about)
 
 #+begin_src emacs-lisp
-  (use-package fancy-compilation)
+  (use-package fancy-compilation :config (fancy-compilation-mode))
 #+end_src
 
 Emacs looks a lot better when it has a modern monospaced font and VSCode-esque icons, as well as smooth scrolling.
 
 #+begin_src emacs-lisp
-  (ignore-errors (set-frame-font "Menlo-13"))
+  (set-face-attribute 'default nil :font "Menlo-13")
   (set-face-attribute 'variable-pitch nil :font "SF Mono-12")
 
-  (use-package all-the-icons)
+  (let ((installed (package-installed-p 'all-the-icons)))
+    (use-package all-the-icons)
+    (unless installed (all-the-icons-install-fonts)))
 
   (use-package all-the-icons-dired
     :after all-the-icons
@@ -399,6 +385,9 @@ Window chrome both wastes space and looks unappealing. (This is actually pasted 
     (scroll-bar-mode -1)
     (tooltip-mode -1)
     (pixel-scroll-mode))
+
+  (when (eq system-type 'darwin)
+    (setq ns-auto-hide-menu-bar t))
 #+end_src
 
 I use the [[https://github.com/hlissner/emacs-doom-themes][Doom Emacs themes]], which are gorgeous. I sometimes also use Modus Vivendi, the excellent new theme that now ships with Emacs.
@@ -406,7 +395,7 @@ I use the [[https://github.com/hlissner/emacs-doom-themes][Doom Emacs themes]], 
 #+begin_src emacs-lisp
   (use-package doom-themes
     :config
-    (let ((chosen-theme 'doom-sourcerer))
+    (let ((chosen-theme 'doom-material-dark))
       (doom-themes-visual-bell-config)
       (doom-themes-org-config)
       (setq doom-challenger-deep-brighter-comments t
@@ -453,19 +442,11 @@ The default modeline is pretty uninspiring, and ~mood-line~ is very minimal and 
     (mood-line-mode))
 #+end_src
 
-I find it useful to have a slightly more apparent indicator of which buffer is active at the moment.
-
-#+begin_src emacs-lisp
-  (use-package dimmer
-    :disabled
-    :custom (dimmer-fraction 0.3)
-    :config (dimmer-mode))
-#+end_src
-
 Highlighting the closing/opening pair associated with a given parenthesis is essential. Furthermore, parentheses should be delimited by color. I may be colorblind, but it's good enough, usually.
 
 #+begin_src emacs-lisp
   (use-package rainbow-delimiters
+    :disabled
     :hook ((prog-mode . rainbow-delimiters-mode)))
 #+end_src
 
@@ -507,33 +488,18 @@ For some reason ~centaur-tabs~ has stopped working. I'm keeping the config aroun
 
 #+begin_src emacs-lisp
   (use-package centaur-tabs
-    :disabled
     :config
     (centaur-tabs-mode t)
     :custom
-    (centaur-tabs-set-icons nil)
+    (centaur-tabs-set-icons t)
     (centaur-tabs-show-new-tab-button nil)
     (centaur-tabs-set-close-button nil)
     (centaur-tabs-enable-ido-completion nil)
+    (centaur-tabs-gray-out-icons t)
 
     :bind
     (("s-{" . #'centaur-tabs-backward)
      ("s-}" . #'centaur-tabs-forward)))
-
-  (use-package tab-line
-    :disabled
-    :after dash
-    :config
-    (setq tab-line-separator " | ")
-    (setq tab-line-tabs-function 'tab-line-tabs-mode-buffers)
-    ;;(setq tab-line-exclude-modes '(completion-list-mode help-mode git-commit-mode))
-    (global-tab-line-mode t)
-    :custom
-    (tab-line-new-button-show nil)
-    (tab-line-close-button-show nil)
-    :bind
-    (("s-}" . #'tab-line-switch-to-next-tab)
-     ("s-{" . #'tab-line-switch-to-prev-tab)))
 #+end_src
 
 ** Text manipulation
@@ -576,7 +542,8 @@ Emacs's keybinding for ~comment-dwim~ is ~M-;~, which is not convenient to type 
            ("C-c j j" . #'avy-goto-line)
            ("C-c j h" . #'avy-kill-region)
            ("C-c j w" . #'avy-copy-line)
-           ("C-c v v" . #'avy-goto-char)))
+           ("C-z" . #'avy-goto-char)
+           ("C-c v" . #'avy-goto-char)))
 
   (use-package avy-zap
     :bind (("C-c z" . #'avy-zap-to-char)
@@ -601,7 +568,7 @@ I'm trying to learn how to take advantage of ~smartparens~, but it already provi
            ("<left>" . #'sp-backward-sexp)
            ("<right>" . #'sp-forward-sexp)
            ("C-c C-(" . #'sp-up-sexp)
-           ("C-c v w" . #'sp-copy-sexp)
+           ("C-c j s" . #'sp-copy-sexp)
            ("C-c C-)" . #'sp-down-sexp))
     :config
     (require 'smartparens-config)
@@ -763,15 +730,8 @@ It's genuinely shocking that there's no "duplicate whatever's marked" command bu
 Vim comes with support for incrementing and decrementing numbers at point. Shame that Emacs doesn't. But fixable.
 
 #+begin_src emacs-lisp
-  (defun increment-number-at-point ()
-    "Increment the number at point. Taken from EmacsWiki."
-    (interactive)
-    (skip-chars-backward "0-9")
-    (or (looking-at "[0-9]+")
-        (error "No number at point"))
-    (replace-match (number-to-string (1+ (string-to-number (match-string 0))))))
-
-  (bind-key "C-c a 1" #'increment-number-at-point)
+  (use-package evil-numbers
+    :bind ("C-c a 1" . #'evil-numbers/inc-at-pt))
 #+end_src
 
 We need to support reading large blobs of data for LSP's sake.
@@ -834,6 +794,7 @@ I almost always want to default to a two-buffer setup.
     "Remove auxiliary buffers."
     (interactive)
     (ignore-errors (exit-recursive-edit))
+    (ignore-errors (ctrlf-cancel))
     (popper-close-latest)
     (call-interactively #'keyboard-quit))
 
@@ -1009,6 +970,7 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
      ("C-c o :" . #'org-roam-buffer-toggle))
     :custom
     (org-roam-directory (expand-file-name "~/Dropbox/txt/roam"))
+    (org-roam-completion-everywhere t)
     (org-roam-v2-ack t)
     :config
     (org-roam-db-autosync-mode))
@@ -1037,7 +999,7 @@ Magit is one of the top three reasons anyone should use Emacs. What a brilliant 
   (use-package magit
     :diminish magit-auto-revert-mode
     :diminish auto-revert-mode
-    :bind (("C-c g" . #'magit-status-quick))
+    :bind (("C-c g" . #'magit-status))
     :custom
     (magit-repository-directories '(("~/src" . 1)))
     (magit-list-refs-sortby "-creatordate")
@@ -1052,10 +1014,6 @@ Magit also allows integration with GitHub and other such forges (though I hate t
 #+begin_src emacs-lisp
   (use-package forge
     :after magit)
-
-  ;; hack to eliminate weirdness
-  (unless (boundp 'bug-reference-auto-setup-functions)
-    (defvar bug-reference-auto-setup-functions '()))
 #+end_src
 
 I'm trying out this git-status-in-the-fringe package, which looks fairly visually appealing.
@@ -1136,8 +1094,10 @@ I prefer the built-in ~project.el~ to ~projectile~, but because ~projectile~ cac
     (defun pt/find-file-dwim ()
       (interactive)
       (if (and buffer-file-name (file-remote-p buffer-file-name))
-          (unless projectile-mode (projectile-mode t))
-          (projectile-find-file)
+          (progn
+            (projectile-mode t)
+            (projectile-find-file)
+            )
         (project-find-file)))
     :bind (("C-c f" . #'pt/find-file-dwim)))
 
@@ -1186,7 +1146,7 @@ My journey through the various Emacs completion facilities has been long and twi
 
   (use-package consult
     :bind (("C-c i"     . #'consult-imenu)
-           ("C-c b"     . #'consult-buffer)
+           ("C-c b"     . #'consult-project-buffer)
            ("C-x b"     . #'consult-buffer)
            ("C-c r"     . #'consult-recent-file)
            ("C-c B"     . #'consult-bookmark)
@@ -1299,6 +1259,7 @@ Built-in ~xref~ and ~eldoc~ are powerful packages, though we pin them to GNU ELP
 #+begin_src emacs-lisp
   (use-package xref
     :pin gnu :ensure t
+    :custom (xref-auto-jump-to-first-xref t)
     :bind (("s-r" . #'xref-find-references)
            ("C-<down-mouse-1>" . #'xref-find-definitions)
            ("C-S-<down-mouse-1>" . #'xref-find-references)
@@ -1525,25 +1486,66 @@ Rust is one of my favorite languages in the world.
 
 I occasionally write Go, generally as a glue language to munge things together. I find certain aspects of its creators' philosophies to be repellent, but a language is more than its creators, and it's hard to argue with the success it's found in industry or the degree to which people find it easy to pick up.
 
+Amusingly enough, the built-in ~go-remove-unused-imports~ function is useless to put in a save hook, because it requires that the file be saved first, and… yeah, you can imagine how that goes. Cheers to Rob Figueiredo, who wrote a function that uses the ~goimports~ tool like a normal tool would instead of the monstrosity that is ~go-remove-unused-imports~, which searches the current flymake buffer with a regex. 🙄
+
  #+begin_src emacs-lisp
-   (use-package go-mode
-     :defer t
-     :config
-     (add-hook 'before-save-hook #'gofmt-before-save))
+  (use-package go-mode
+    :defer t
+    :config
+    (defun robfig/goimports ()
+      "Formats the current buffer according to the goimports tool."
 
-   (use-package go-snippets :defer t)
+      (interactive)
+      (let ((tmpfile (make-temp-file "gofmt" nil ".go"))
+            (patchbuf (get-buffer-create "*Gofmt patch*"))
+            (errbuf (get-buffer-create "*Gofmt Errors*"))
+            (coding-system-for-read 'utf-8)
+            (coding-system-for-write 'utf-8))
 
-   (defun fix-messed-up-gofmt-path ()
-     (interactive)
-     (setq gofmt-command (string-trim (shell-command-to-string "which gofmt"))))
+        (with-current-buffer errbuf
+          (setq buffer-read-only nil)
+          (erase-buffer))
+        (with-current-buffer patchbuf
+          (erase-buffer))
 
-   ;; Note to self: there's a really helpful set of movement commands
-   ;; under C-c C-f in go mode.
-   (use-package gotest
-     :bind (:map go-mode-map
-                 ("C-c a t" . #'go-test-current-test)
-                 ("C-c a T" . #'go-test-current-file)
-                 ("C-c a i" . #'go-import-add)))
+        (write-region nil nil tmpfile)
+
+        ;; We're using errbuf for the mixed stdout and stderr output. This
+        ;; is not an issue because gofmt -w does not produce any stdout
+        ;; output in case of success.
+        (if (zerop (call-process "goimports" nil errbuf nil "-w" tmpfile))
+            (if (zerop (call-process-region (point-min) (point-max) "diff" nil patchbuf nil "-n" "-" tmpfile))
+                (progn
+                  (kill-buffer errbuf)
+                  (message "Buffer is already gofmted"))
+              (go--apply-rcs-patch patchbuf)
+              (kill-buffer errbuf)
+              (message "Applied gofmt"))
+          (message "Could not apply gofmt. Check errors for details")
+          (gofmt--process-errors (buffer-file-name) tmpfile errbuf))
+
+        (kill-buffer patchbuf)
+        (delete-file tmpfile)))
+
+    (defun pt/go-specific-save-hook ()
+      (when (eq major-mode 'go-mode)
+        (gofmt-before-save)
+        (robfig/goimports)))
+    (add-hook 'before-save-hook #'pt/go-specific-save-hook))
+
+  (use-package go-snippets :defer t)
+
+  (defun fix-messed-up-gofmt-path ()
+    (interactive)
+    (setq gofmt-command (string-trim (shell-command-to-string "which gofmt"))))
+
+  ;; Note to self: there's a really helpful set of movement commands
+  ;; under C-c C-f in go mode.
+  (use-package gotest
+    :bind (:map go-mode-map
+                ("C-c a t" . #'go-test-current-test)
+                ("C-c a T" . #'go-test-current-file)
+                ("C-c a i" . #'go-import-add)))
  #+end_src
 
 Elm is a good language.
@@ -1745,6 +1747,7 @@ By default, the list of recent files gets cluttered up with the contents of down
     (recentf-exclude (-concat recentf-exclude '("\\elpa"
                                                 "private/tmp" ; to avoid custom files
                                                 "txt/roam"
+                                                "type-break"
                                                 )))
     (recentf-max-saved-items 50)
     (recentf-max-menu-items 30)
