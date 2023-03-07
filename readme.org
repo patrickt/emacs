@@ -1073,7 +1073,8 @@ I prefer the built-in ~project.el~ to ~projectile~, but because ~projectile~ cac
            ("C-c m" . #'project-compile)
            ("C-x f" . #'find-file)
            ("C-c F" . #'project-switch-project)
-           ("C-c R" . #'pt/recentf-in-project))
+           ("C-c R" . #'pt/recentf-in-project)
+           ("C-c f" . #'project-find-file))
     :custom
     ;; This is one of my favorite things: you can customize
     ;; the options shown upon switching projects.
@@ -1089,16 +1090,18 @@ I prefer the built-in ~project.el~ to ~projectile~, but because ~projectile~ cac
     )
 
   (use-package projectile
+    :disabled
     :custom (projectile-enable-caching t)
     :config
     (defun pt/find-file-dwim ()
       (interactive)
-      (if (and buffer-file-name (file-remote-p buffer-file-name))
-          (progn
-            (projectile-mode t)
-            (projectile-find-file)
-            )
-        (project-find-file)))
+      (project-find-file))
+      ;; (if (and buffer-file-name (file-remote-p buffer-file-name))
+      ;;     (progn
+      ;;       (projectile-mode t)
+      ;;       (projectile-find-file)
+      ;;       )
+      ;;   (project-find-file)))
     :bind (("C-c f" . #'pt/find-file-dwim)))
 
   (defun pt/recentf-in-project ()
@@ -1136,25 +1139,25 @@ My journey through the various Emacs completion facilities has been long and twi
     (vertico-count 22)
     (vertico-cycle t)
     :bind (:map vertico-map
-                ("C-'"           . #'vertico-quick-exit)
-                ("C-c '"         . #'vertico-quick-insert)
-                ("<return>"      . #'exit-minibuffer)
-                ("C-m"           . #'vertico-insert)
-                ("C-c SPC"       . #'vertico-quick-exit)
-                ("C-<backspace>" . #'vertico)
-                ("DEL"           . #'vertico-directory-delete-char)))
+                ("C-'"           . vertico-quick-exit)
+                ("C-c '"         . vertico-quick-insert)
+                ("<return>"      . exit-minibuffer)
+                ("C-m"           . vertico-insert)
+                ("C-c SPC"       . vertico-quick-exit)
+                ("C-<backspace>" . vertico)
+                ("DEL"           . vertico-directory-delete-char)))
 
   (use-package consult
-    :bind (("C-c i"     . #'consult-imenu)
-           ("C-c b"     . #'consult-project-buffer)
-           ("C-x b"     . #'consult-buffer)
-           ("C-c r"     . #'consult-recent-file)
-           ("C-c B"     . #'consult-bookmark)
-           ("C-c `"     . #'flymake-goto-next-error)
-           ("C-c h"     . #'consult-ripgrep)
-           ("C-c y"     . #'consult-yank-pop)
-           ("C-x C-f"   . #'find-file)
-           ("C-c C-h a" . #'consult-apropos)
+    :bind (("C-c i"     . consult-imenu)
+           ("C-c b"     . consult-project-buffer)
+           ("C-x b"     . consult-buffer)
+           ("C-c r"     . consult-recent-file)
+           ("C-c B"     . consult-bookmark)
+           ("C-c `"     . flymake-goto-next-error)
+           ("C-c h"     . consult-ripgrep)
+           ("C-c y"     . consult-yank-pop)
+           ("C-x C-f"   . find-file)
+           ("C-c C-h a" . describe-symbol)
            )
     :custom
     (consult-narrow-key (kbd ";"))
@@ -1281,7 +1284,7 @@ Though I used ~lsp-mode~ for ages, in my old age I've grown happier with package
 #+begin_src emacs-lisp
   (use-package eglot
     :hook ((go-mode . eglot-ensure)
-           (haskell-mode . eglot-ensure)
+           (haskell-mode . pt/haskell-eglot-except-tidal)
            (rust-mode . eglot-ensure)
            )
     :bind (:map eglot-mode-map
@@ -1294,6 +1297,8 @@ Though I used ~lsp-mode~ for ages, in my old age I've grown happier with package
     (eglot-autoshutdown t)
     (eglot-send-changes-idle-time 0.1)
     :config
+    (defun pt/haskell-eglot-except-tidal ()
+      (unless (string-equal "tidal" (file-name-extension (buffer-file-name))) (eglot-ensure)))
     ;; Eglot doesn't correctly unescape markdown: https://github.com/joaotavora/eglot/issues/333
     (defun mpolden/gfm-unescape-string (string)
       "Remove backslash-escape of punctuation characters in STRING."
@@ -1343,8 +1348,8 @@ Haskell is my day-to-day programming language, so I've tinkered with it a good d
 
 #+begin_src emacs-lisp
   (use-package haskell-mode
-    :custom
-    (haskell-compile-cabal-build-command (string-join haskell-compile-cabal-build-command " -funclutter-valid-hole-fits"))
+    ;; :custom
+    ;; (haskell-compile-cabal-build-command (string-join haskell-compile-cabal-build-command " -funclutter-valid-hole-fits"))
     :config
     (defcustom haskell-formatter 'ormolu
       "The Haskell formatter to use. One of: 'ormolu, 'stylish, nil. Set it per-project in .dir-locals."
@@ -1489,63 +1494,64 @@ I occasionally write Go, generally as a glue language to munge things together. 
 Amusingly enough, the built-in ~go-remove-unused-imports~ function is useless to put in a save hook, because it requires that the file be saved first, and… yeah, you can imagine how that goes. Cheers to Rob Figueiredo, who wrote a function that uses the ~goimports~ tool like a normal tool would instead of the monstrosity that is ~go-remove-unused-imports~, which searches the current flymake buffer with a regex. 🙄
 
  #+begin_src emacs-lisp
-  (use-package go-mode
-    :defer t
-    :config
-    (defun robfig/goimports ()
-      "Formats the current buffer according to the goimports tool."
+   (use-package go-mode
+     :defer t
+     :config
+     (defun robfig/goimports ()
+       "Formats the current buffer according to the goimports tool."
 
-      (interactive)
-      (let ((tmpfile (make-temp-file "gofmt" nil ".go"))
-            (patchbuf (get-buffer-create "*Gofmt patch*"))
-            (errbuf (get-buffer-create "*Gofmt Errors*"))
-            (coding-system-for-read 'utf-8)
-            (coding-system-for-write 'utf-8))
+       (interactive)
+       (let ((tmpfile (make-temp-file "gofmt" nil ".go"))
+             (patchbuf (get-buffer-create "*Gofmt patch*"))
+             (errbuf (get-buffer-create "*Gofmt Errors*"))
+             (coding-system-for-read 'utf-8)
+             (coding-system-for-write 'utf-8))
 
-        (with-current-buffer errbuf
-          (setq buffer-read-only nil)
-          (erase-buffer))
-        (with-current-buffer patchbuf
-          (erase-buffer))
+         (with-current-buffer errbuf
+           (setq buffer-read-only nil)
+           (erase-buffer))
+         (with-current-buffer patchbuf
+           (erase-buffer))
 
-        (write-region nil nil tmpfile)
+         (write-region nil nil tmpfile)
 
-        ;; We're using errbuf for the mixed stdout and stderr output. This
-        ;; is not an issue because gofmt -w does not produce any stdout
-        ;; output in case of success.
-        (if (zerop (call-process "goimports" nil errbuf nil "-w" tmpfile))
-            (if (zerop (call-process-region (point-min) (point-max) "diff" nil patchbuf nil "-n" "-" tmpfile))
-                (progn
-                  (kill-buffer errbuf)
-                  (message "Buffer is already gofmted"))
-              (go--apply-rcs-patch patchbuf)
-              (kill-buffer errbuf)
-              (message "Applied gofmt"))
-          (message "Could not apply gofmt. Check errors for details")
-          (gofmt--process-errors (buffer-file-name) tmpfile errbuf))
+         ;; We're using errbuf for the mixed stdout and stderr output. This
+         ;; is not an issue because gofmt -w does not produce any stdout
+         ;; output in case of success.
+         (if (zerop (call-process "goimports" nil errbuf nil "-w" tmpfile))
+             (if (zerop (call-process-region (point-min) (point-max) "diff" nil patchbuf nil "-n" "-" tmpfile))
+                 (progn
+                   (kill-buffer errbuf)
+                   (message "Buffer is already gofmted"))
+               (go--apply-rcs-patch patchbuf)
+               (kill-buffer errbuf)
+               (message "Applied gofmt"))
+           (message "Could not apply gofmt. Check errors for details")
+           (gofmt--process-errors (buffer-file-name) tmpfile errbuf))
 
-        (kill-buffer patchbuf)
-        (delete-file tmpfile)))
+         (kill-buffer patchbuf)
+         (delete-file tmpfile)))
 
-    (defun pt/go-specific-save-hook ()
-      (when (eq major-mode 'go-mode)
-        (gofmt-before-save)
-        (robfig/goimports)))
-    (add-hook 'before-save-hook #'pt/go-specific-save-hook))
+     (defun pt/go-specific-save-hook ()
+       (when (eq major-mode 'go-mode)
+         (gofmt-before-save)
+         (robfig/goimports)))
+     (add-hook 'before-save-hook #'pt/go-specific-save-hook))
 
-  (use-package go-snippets :defer t)
+   (use-package go-snippets :defer t)
 
-  (defun fix-messed-up-gofmt-path ()
-    (interactive)
-    (setq gofmt-command (string-trim (shell-command-to-string "which gofmt"))))
+   (defun fix-messed-up-gofmt-path ()
+     (interactive)
+     (setq gofmt-command (string-trim (shell-command-to-string "which gofmt"))))
 
-  ;; Note to self: there's a really helpful set of movement commands
-  ;; under C-c C-f in go mode.
-  (use-package gotest
-    :bind (:map go-mode-map
-                ("C-c a t" . #'go-test-current-test)
-                ("C-c a T" . #'go-test-current-file)
-                ("C-c a i" . #'go-import-add)))
+   ;; Note to self: there's a really helpful set of movement commands
+   ;; under C-c C-f in go mode.
+   (use-package gotest
+     :after go-mode
+     :bind (:map go-mode-map
+                 ("C-c a t" . #'go-test-current-test)
+                 ("C-c a T" . #'go-test-current-file)
+                 ("C-c a i" . #'go-import-add)))
  #+end_src
 
 Elm is a good language.
@@ -1598,6 +1604,19 @@ I think enough people have taken potshots at JavaScript that I hardly need to ad
     :config
     (defun pt/js-hook ()
       (add-hook 'xref-backend-functions #'xref-js2-xref-backend nil t)))
+#+end_src
+
+*** Music
+
+#+begin_src emacs-lisp
+  (use-package tidal
+    :config
+    (defun pt/hush ()
+      (interactive)
+      (tidal-send-string "quiet"))
+    :bind (:map tidal-mode-map
+            (("C-c c" . tidal-run-multiple-lines)
+             ("C-c d" . pt-hush))))
 #+end_src
 
 *** Configuration
@@ -1682,6 +1701,12 @@ Emacs can provide a nice interface for selecting ~make~ tasks.
     :bind ("C-c M" . makefile-executor-execute-project-target))
 #+end_src
 
+~just~ is a nice general-purpose ~make(1)~ replacement.
+
+#+begin_src emacs-lisp
+  (use-package just-mode)
+#+end_src
+
  ~restclient~ is a terrific interface for running HTTP requests against local or remote services.
 
  #+begin_src emacs-lisp
@@ -1741,14 +1766,15 @@ By default, the list of recent files gets cluttered up with the contents of down
 
 #+begin_src emacs-lisp
   (use-package recentf
+    :pin gnu
     :after dash
     :init (pt/customize-tramp) ;; so that tramp urls work ok in recentf
     :custom
-    (recentf-exclude (-concat recentf-exclude '("\\elpa"
-                                                "private/tmp" ; to avoid custom files
-                                                "txt/roam"
-                                                "type-break"
-                                                )))
+    ;; (recentf-exclude (-concat recentf-exclude '("\\elpa"
+    ;;                                             "private/tmp" ; to avoid custom files
+    ;;                                             "txt/roam"
+    ;;                                             "type-break"
+    ;;                                             )))
     (recentf-max-saved-items 50)
     (recentf-max-menu-items 30)
     :config (recentf-mode))
