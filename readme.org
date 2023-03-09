@@ -524,11 +524,11 @@ Textmate-style tap-to-expand-into-the-current-delimiter is very useful and curio
     :bind (("C-c n" . er/expand-region)))
 #+end_src
 
-Emacs's keybinding for ~comment-dwim~ is ~M-;~, which is not convenient to type or particularly mnemonic outside of an elisp context (where commenting is indeed ~;~). Better to bind it somewhere sensible. Also, it's nice to have a binding for ~upcase-dwim~.
+Emacs's keybinding for ~comment-dwim~ is ~M-;~, which is not convenient to type or particularly mnemonic outside of an elisp context (where commenting is indeed ~;~). Better to bind it somewhere sensible. Also, it's nice to have a binding for ~capitalize-dwim~.
 
 #+begin_src emacs-lisp
   (bind-key* "C-c /" #'comment-dwim)
-  (bind-key* "C-c 0" #'upcase-dwim)
+  (bind-key* "C-c 0" #'capitalize-dwim)
 #+end_src
 
 ~avy~ gives us fluent jump-to-line commands mapped to the home row.
@@ -1131,7 +1131,7 @@ My journey through the various Emacs completion facilities has been long and twi
 #+begin_src emacs-lisp
   (use-package vertico
     :config
-    (vertico-mode)
+    (vertico-mode t) (vertico-mode nil) (vertico-mode t)
     (vertico-mouse-mode)
     (set-face-attribute 'vertico-mouse nil :inherit nil)
     (savehist-mode)
@@ -1234,6 +1234,7 @@ In Haskell, my language of choice, I rarely need a step-through debugger, as des
 
 #+begin_src emacs-lisp
   (use-package dap-mode
+    :disabled
     :bind
     (:map dap-mode-map
      ("C-c b b" . dap-breakpoint-toggle)
@@ -1616,7 +1617,24 @@ I think enough people have taken potshots at JavaScript that I hardly need to ad
       (tidal-send-string "quiet"))
     :bind (:map tidal-mode-map
             (("C-c c" . tidal-run-multiple-lines)
-             ("C-c d" . pt-hush))))
+             ("C-c d" . pt/hush))
+             ("C-c C-d" . pt/hush)
+             ))
+
+  (use-package evil-numbers
+    :after tidal
+    :config
+    (defun pt/tidal-inc ()
+      (interactive)
+      (call-interactively #'evil-numbers/inc-at-pt)
+      (tidal-run-multiple-lines))
+    (defun pt/tidal-dec ()
+      (interactive)
+      (call-interactively #'evil-numbers/dec-at-pt)
+      (tidal-run-multiple-lines))
+    :bind (:map tidal-mode-map
+                (("s-k" . pt/tidal-inc)
+                 ("s-j" . pt/tidal-dec))))
 #+end_src
 
 *** Configuration
