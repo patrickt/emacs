@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: prelude
+# key: pre
+# --
+
+setbpm $1
+
+d1 clicktrack

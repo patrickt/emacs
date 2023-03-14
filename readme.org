@@ -705,6 +705,8 @@ Dired needs a couple customizations to work in a sensible manner.
    ;; Sensible mark behavior
    dired-mark-region t
    )
+
+  (use-package dired-recent :config (dired-recent-mode))
 #+end_src
 
 Emacs has problems with very long lines. ~so-long~ detects them and takes appropriate action. Good for minified code and whatnot.
@@ -905,6 +907,7 @@ One of the main problems with Emacs is how many ephemeral buffers it creates. I'
                                 "\\*xref\\*"
                                 "\\*org-roam\\*"
                                 "\\*direnv\\*"
+                                "\\*tidal\\*"
                                 "\\*Checkdoc Status\\*"
                                 "\\*Warnings\\*"
                                 "\\*Go Test\\*"
@@ -1612,14 +1615,27 @@ I think enough people have taken potshots at JavaScript that I hardly need to ad
 #+begin_src emacs-lisp
   (use-package tidal
     :config
+    (defun pt/replace-char (chr)
+      (save-excursion (delete-char 1) (insert chr)))
+    (defun pt/toggle-hash-or-dollar ()
+      (interactive)
+      (cl-case (char-after)
+        (?# (pt/replace-char ?$))
+        (?$ (pt/replace-char ?#))))
     (defun pt/hush ()
       (interactive)
       (tidal-send-string "quiet"))
+    (defun pt/new-tidal-file ()
+      (interactive)
+      (let* ((title (read-string "Enter song attribute:"))
+             (date (shell-command-to-string "echo -n $(date +%Y%m%d)")))
+        (find-file (format "~/beats/%s%s.tidal" title date))))
     :bind (:map tidal-mode-map
-            (("C-c c" . tidal-run-multiple-lines)
-             ("C-c d" . pt/hush))
-             ("C-c C-d" . pt/hush)
-             ))
+                (("C-c c" . tidal-run-multiple-lines)
+                 ("C-c d" . pt/hush)
+                 ("C-c C-d" . pt/hush)
+                 ("s-3" . pt/toggle-hash-or-dollar)
+                 )))
 
   (use-package evil-numbers
     :after tidal
@@ -1635,6 +1651,31 @@ I think enough people have taken potshots at JavaScript that I hardly need to ad
     :bind (:map tidal-mode-map
                 (("s-k" . pt/tidal-inc)
                  ("s-j" . pt/tidal-dec))))
+
+  (use-package emms
+    :bind (:map dired-mode-map
+                ("z" . pt/emms-play-at-dired-point)
+                ("J" . pt/emms-next-then-play)
+                ("K" . pt/emms-prev-then-play)
+                ("s-k" . dired-up-directory)
+                ("s-j" . dired-find-file))
+    :config
+    (emms-all)
+    (define-emms-simple-player afplay '(file)
+      (regexp-opt '(".mp3" ".m4a" ".aac" ".wav"))
+      "afplay")
+    (setq emms-player-list `(,emms-player-afplay))
+    (defun pt/emms-play-at-dired-point ()
+      (interactive)
+      (shut-up (emms-play-file (dired-file-name-at-point))))
+    (defun pt/emms-next-then-play ()
+      (interactive)
+      (call-interactively #'dired-next-line)
+      (pt/emms-play-at-dired-point))
+    (defun pt/emms-prev-then-play ()
+      (interactive)
+      (call-interactively #'dired-previous-line)
+      (pt/emms-play-at-dired-point)))
 #+end_src
 
 *** Configuration
