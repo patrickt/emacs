@@ -1,6 +1,7 @@
 # -*- mode: snippet -*-
 # name: prelude
 # key: pre
+# expand-env: ((yas-indent-line 'fixed))
 # --
 
 setbpm $1

@@ -1627,7 +1627,7 @@ I think enough people have taken potshots at JavaScript that I hardly need to ad
       (tidal-send-string "quiet"))
     (defun pt/new-tidal-file ()
       (interactive)
-      (let* ((title (read-string "Enter song attribute:"))
+      (let* ((title (s-upcase (read-string "Enter song attribute: ")))
              (date (shell-command-to-string "echo -n $(date +%Y%m%d)")))
         (find-file (format "~/beats/%s%s.tidal" title date))))
     :bind (:map tidal-mode-map
@@ -1655,6 +1655,7 @@ I think enough people have taken potshots at JavaScript that I hardly need to ad
   (use-package emms
     :bind (:map dired-mode-map
                 ("z" . pt/emms-play-at-dired-point)
+                ("Z" . emms-stop)
                 ("J" . pt/emms-next-then-play)
                 ("K" . pt/emms-prev-then-play)
                 ("s-k" . dired-up-directory)
