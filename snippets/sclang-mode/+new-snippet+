@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: synthdef
+# key: synthdef
+# --
+SynthDef(\\$1, {
+	var sig = \freq.ar(440);
+        Out.ar(\out.kr(1), DirtPan.ar(sig, ~dirt.numChannels, \pan.ar(0.5)))
+}).add;

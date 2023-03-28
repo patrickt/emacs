@@ -904,6 +904,7 @@ One of the main problems with Emacs is how many ephemeral buffers it creates. I'
                                 "\\*deadgrep.\*"
                                 "\\*eldoc.\*"
                                 "\\*Codespaces\\*"
+                                "\\*SCLang:PostBuffer\\*"
                                 "\\*xref\\*"
                                 "\\*org-roam\\*"
                                 "\\*direnv\\*"
@@ -924,7 +925,8 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
 #+begin_src emacs-lisp
   (use-package org
     :hook ((org-mode . visual-line-mode) (org-mode . pt/org-mode-hook))
-    :hook ((org-src-mode . display-line-numbers-mode))
+    :hook ((org-src-mode . display-line-numbers-mode)
+           (org-src-mode . pt/disable-elisp-checking))
     :bind (("C-c o c" . org-capture)
            ("C-c o a" . org-agenda)
            ("C-c o A" . consult-org-agenda)
@@ -951,6 +953,8 @@ Even though my whole-ass blogging workflow is built around org-mode, I still can
     (defun make-inserter (c) '(lambda () (interactive) (insert-char c)))
     (defun zero-width () (interactive) (insert "​"))
 
+    (defun pt/disable-elisp-checking ()
+      (flymake-mode nil))
     (defun org-mode-insert-code ()
       "Like markdown-insert-code, but for org instead."
       (interactive)
@@ -1042,7 +1046,7 @@ I'm trying out this git-status-in-the-fringe package, which looks fairly visuall
 The code-review package allows for integration with pull request comments and such.
 
 #+begin_src emacs-lisp
-  (use-package emojify :config (global-emojify-mode))
+  (use-package emojify)
 
   (use-package code-review
     :custom
@@ -1133,6 +1137,7 @@ My journey through the various Emacs completion facilities has been long and twi
 
 #+begin_src emacs-lisp
   (use-package vertico
+    :ensure t
     :config
     (vertico-mode t) (vertico-mode nil) (vertico-mode t)
     (vertico-mouse-mode)
@@ -1301,8 +1306,9 @@ Though I used ~lsp-mode~ for ages, in my old age I've grown happier with package
     (eglot-autoshutdown t)
     (eglot-send-changes-idle-time 0.1)
     :config
+    (defvar pt/disable-haskell-here t)
     (defun pt/haskell-eglot-except-tidal ()
-      (unless (string-equal "tidal" (file-name-extension (buffer-file-name))) (eglot-ensure)))
+      (unless (or pt/disable-haskell-here (string-equal "tidal" (file-name-extension (buffer-file-name)))) (eglot-ensure)))
     ;; Eglot doesn't correctly unescape markdown: https://github.com/joaotavora/eglot/issues/333
     (defun mpolden/gfm-unescape-string (string)
       "Remove backslash-escape of punctuation characters in STRING."
@@ -1622,20 +1628,78 @@ I think enough people have taken potshots at JavaScript that I hardly need to ad
       (cl-case (char-after)
         (?# (pt/replace-char ?$))
         (?$ (pt/replace-char ?#))))
+    (defun pt/tidal-see-output-no-select ()
+      "Show haskell output."
+      (interactive)
+      (save-current-buffer
+        (with-current-buffer tidal-buffer
+          (goto-char (point-max)))))
+    (defun pt/tidal-dwim ()
+      (interactive)
+      (popper-display-popup-at-bottom (get-buffer "*tidal*"))
+      (tidal-run-multiple-lines)
+      (pt/tidal-see-output-no-select))
     (defun pt/hush ()
       (interactive)
-      (tidal-send-string "quiet"))
+      (tidal-send-string "quiet >> clock"))
     (defun pt/new-tidal-file ()
+      "Create a new track."
       (interactive)
       (let* ((title (s-upcase (read-string "Enter song attribute: ")))
              (date (shell-command-to-string "echo -n $(date +%Y%m%d)")))
         (find-file (format "~/beats/%s%s.tidal" title date))))
     :bind (:map tidal-mode-map
-                (("C-c c" . tidal-run-multiple-lines)
+                (("C-c c" . pt/tidal-dwim)
                  ("C-c d" . pt/hush)
                  ("C-c C-d" . pt/hush)
+                 ("C-c a v" . pt/see-output-no-select)
                  ("s-3" . pt/toggle-hash-or-dollar)
                  )))
+
+  (add-to-list 'load-path "/Users/patrickt/Library/Application Support/SuperCollider/downloaded-quarks/scel/el")
+
+  (use-package sclang
+    :ensure nil
+    :demand
+    :load-path "/Users/patrickt/Library/Application Support/SuperCollider/downloaded-quarks/scel/el"
+    :mode ("\\.scd\\'" . sclang-mode)
+    :bind (:map sclang-mode-map
+           ("C-c c" . pt/sclang-dwim)
+           ("C-c d" . pt/hush)
+           ("C-c C-d" . pt/hush))
+    :config
+    (defun pt/sclang-hook ()
+      (add-to-list 'imenu-generic-expression '(("SynthDefs" "SynthDef(\\\([A-z0-9]+\)" 0) )))
+    (defun pt/sclang-dwim ()
+      (interactive)
+        (popper-display-popup-at-bottom (get-buffer "*SCLang:PostBuffer*"))
+        (sclang-eval-defun))
+
+    (defun pt/sclang-var-to-namedcontrol ()
+      "Turn the selected variable into a NamedControl."
+      (interactive)
+      (backward-word)
+      (insert-char ?\\)
+      (forward-word)
+      (insert ".ar()")
+      (backward-char))
+    (defun pt/sclang-region-to-namedcontrol ()
+      "Turn the selected region into a NamedControl."
+      (interactive)
+      (unless mark-active (user-error "Mark the desired region first"))
+      (let ((name (read-string "Control name: ")))
+        (call-interactively #'kill-region)
+        (insert (format "\\%s.ar()" name))
+        (backward-char)
+        (call-interactively #'yank))))
+
+  (add-to-list 'load-path "/Users/patrickt/.config/emacs/pith")
+
+  ;; an in-progress UI for Tidal + SuperCollider
+  (use-package pith
+    :after (tidal sclang)
+    :load-path "/Users/patrickt/.config/emacs/pith"
+    :bind (("C-c x" . pith-dispatch)))
 
   (use-package evil-numbers
     :after tidal
@@ -1646,8 +1710,8 @@ I think enough people have taken potshots at JavaScript that I hardly need to ad
       (tidal-run-multiple-lines))
     (defun pt/tidal-dec ()
       (interactive)
-      (call-interactively #'evil-numbers/dec-at-pt)
-      (tidal-run-multiple-lines))
+        (call-interactively #'evil-numbers/dec-at-pt)
+        (tidal-run-multiple-lines))
     :bind (:map tidal-mode-map
                 (("s-k" . pt/tidal-inc)
                  ("s-j" . pt/tidal-dec))))
