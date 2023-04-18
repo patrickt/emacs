@@ -314,6 +314,7 @@ By default, Emacs ships with a nice completion system based on buffer contents, 
   (use-package dabbrev
     :bind* (("C-/" . #'dabbrev-completion))
     :custom
+    (dabbrev-check-all-buffers t)
     (dabbrev-case-replace nil))
 
 
@@ -329,7 +330,7 @@ I'm trying to use some abbrevs to help with tedious patterns like checking ~if e
   (setq abbrev-suggest t)
 #+end_src
 
-I almost never want to quit if readme.org is in a bad state. This warns me should I accidentally do so.
+I never want to quit if readme.org is in a bad state. This warns me should I accidentally do so.
 
 #+begin_src emacs-lisp
   (defun check-config ()
@@ -341,16 +342,9 @@ I almost never want to quit if readme.org is in a bad state. This warns me shoul
   (push #'check-config kill-emacs-query-functions)
 #+end_src
 
-My RSI hurts a lot.
-
-#+begin_src emacs-lisp
- (setq type-break-file-name nil)
- (type-break-mode)
-#+end_src
-
 ** Visuals
 
-It's a mystery why Emacs doesn't allow colors by default in its compilation buffer, but ~fancy-compilation~ addresses that (and ensures the background color is set to something dark so that programs that make assumptions about)
+It's a mystery why Emacs doesn't allow colors by default in its compilation buffer, but ~fancy-compilation~ addresses that (and ensures the background color is set to something dark so that programs that make assumptions about its colors don't break).
 
 #+begin_src emacs-lisp
   (use-package fancy-compilation :config (fancy-compilation-mode))
@@ -729,6 +723,11 @@ It's genuinely shocking that there's no "duplicate whatever's marked" command bu
            ("C-c C-u" . pt/duplicate-thing)))
 #+end_src
 
+#+begin_src emacs-lisp
+  (require 're-builder)
+  (setq reb-re-syntax 'string)
+#+end_src
+
 Vim comes with support for incrementing and decrementing numbers at point. Shame that Emacs doesn't. But fixable.
 
 #+begin_src emacs-lisp
@@ -1008,6 +1007,7 @@ Magit is one of the top three reasons anyone should use Emacs. What a brilliant 
     :diminish auto-revert-mode
     :bind (("C-c g" . #'magit-status))
     :custom
+    (magit-diff-refine-hunk t)
     (magit-repository-directories '(("~/src" . 1)))
     (magit-list-refs-sortby "-creatordate")
     :config
@@ -1138,8 +1138,9 @@ My journey through the various Emacs completion facilities has been long and twi
 #+begin_src emacs-lisp
   (use-package vertico
     :ensure t
+    :demand
     :config
-    (vertico-mode t) (vertico-mode nil) (vertico-mode t)
+    (vertico-mode t)
     (vertico-mouse-mode)
     (set-face-attribute 'vertico-mouse nil :inherit nil)
     (savehist-mode)
@@ -1156,10 +1157,10 @@ My journey through the various Emacs completion facilities has been long and twi
                 ("DEL"           . vertico-directory-delete-char)))
 
   (use-package consult
+    :bind* (("C-c r"     . consult-recent-file))
     :bind (("C-c i"     . consult-imenu)
            ("C-c b"     . consult-project-buffer)
            ("C-x b"     . consult-buffer)
-           ("C-c r"     . consult-recent-file)
            ("C-c B"     . consult-bookmark)
            ("C-c `"     . flymake-goto-next-error)
            ("C-c h"     . consult-ripgrep)
@@ -1620,6 +1621,8 @@ I think enough people have taken potshots at JavaScript that I hardly need to ad
 
 #+begin_src emacs-lisp
   (use-package tidal
+    :ensure t
+    :demand
     :config
     (defun pt/replace-char (chr)
       (save-excursion (delete-char 1) (insert chr)))
@@ -1641,7 +1644,7 @@ I think enough people have taken potshots at JavaScript that I hardly need to ad
       (pt/tidal-see-output-no-select))
     (defun pt/hush ()
       (interactive)
-      (tidal-send-string "quiet >> clock"))
+      (tidal-send-string "quiet"))
     (defun pt/new-tidal-file ()
       "Create a new track."
       (interactive)
@@ -1668,8 +1671,9 @@ I think enough people have taken potshots at JavaScript that I hardly need to ad
            ("C-c d" . pt/hush)
            ("C-c C-d" . pt/hush))
     :config
+    (setq sclang-show-workspace-on-startup nil)
     (defun pt/sclang-hook ()
-      (add-to-list 'imenu-generic-expression '(("SynthDefs" "SynthDef(\\\([A-z0-9]+\)" 0) )))
+      (setq-local imenu-generic-expression (list (list nil "^SynthDef..\\([A-z0-9]+\\)" 1))))
     (defun pt/sclang-dwim ()
       (interactive)
         (popper-display-popup-at-bottom (get-buffer "*SCLang:PostBuffer*"))
@@ -1697,7 +1701,6 @@ I think enough people have taken potshots at JavaScript that I hardly need to ad
 
   ;; an in-progress UI for Tidal + SuperCollider
   (use-package pith
-    :after (tidal sclang)
     :load-path "/Users/patrickt/.config/emacs/pith"
     :bind (("C-c x" . pith-dispatch)))
 
@@ -1712,7 +1715,7 @@ I think enough people have taken potshots at JavaScript that I hardly need to ad
       (interactive)
         (call-interactively #'evil-numbers/dec-at-pt)
         (tidal-run-multiple-lines))
-    :bind (:map tidal-mode-map
+    :bind (:map global-map
                 (("s-k" . pt/tidal-inc)
                  ("s-j" . pt/tidal-dec))))
 
@@ -1724,6 +1727,8 @@ I think enough people have taken potshots at JavaScript that I hardly need to ad
                 ("K" . pt/emms-prev-then-play)
                 ("s-k" . dired-up-directory)
                 ("s-j" . dired-find-file))
+    :custom
+    (emms-info-asynchronously nil)
     :config
     (emms-all)
     (define-emms-simple-player afplay '(file)
@@ -1746,10 +1751,11 @@ I think enough people have taken potshots at JavaScript that I hardly need to ad
 *** Configuration
 
  #+begin_src emacs-lisp
-   (use-package yaml-mode :defer t)
-   (use-package dockerfile-mode :defer t)
-   (use-package toml-mode :defer t)
-   (use-package dhall-mode)
+  (use-package yaml-mode :defer t)
+  (use-package dockerfile-mode :defer t)
+  (use-package toml-mode :defer t)
+  (use-package dhall-mode)
+  (use-package terraform-mode :defer t)
  #+end_src
 
 I use Bazel for some Haskell projects.

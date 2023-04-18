@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: panout
+# key: panout
+# --
+Out.ar(\out.kr(0), DirtPan.ar(${1:snd}, ~dirt.numChannels, \pan.kr(0.5)))
